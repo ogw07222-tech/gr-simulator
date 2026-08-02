@@ -36,7 +36,7 @@ The application registers renderer ownership, geometry/material owners, the cont
 
 Subsystems register before initialization and are sorted by numeric order with stable registration order as the tie-breaker. Optional initialize, update, render, and dispose hooks receive the existing objects directly; the manager does not allocate per call. Disposal runs in reverse order and continues after individual failures.
 
-The current rendering subsystem is registered and active. Future physics, particles, HUD, input, and profiler systems can join the same lifecycle without changing the clock or frame driver.
+The particle subsystem and rendering subsystem are registered and active. Future physics, HUD, input, and profiler systems can join the same lifecycle without changing the clock or frame driver.
 
 ## Performance assumptions
 

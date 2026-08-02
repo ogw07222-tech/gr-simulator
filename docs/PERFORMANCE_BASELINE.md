@@ -35,6 +35,8 @@ Use DevTools User Timing around `VolumetricGrid.update` in a temporary profiling
 
 Inspect `renderer.info.render.calls`, triangles, points, and lines after a settled frame using DevTools or temporary diagnostics. Record the values for the reference scenario and after every rendering architecture change.
 
+For particles, record active count, fixed updates per rendered frame, trail length, ParticleManager update median/p95, ParticleRenderer sync median/p95, points drawn, and draw-call delta. Measure 0, 100, 500, and 1,000 active particles. The v0.4 target is 1,000 particles at 60 FPS on reference desktop hardware without update-loop allocations.
+
 ## Memory and garbage collection
 
 Use Chrome Performance with Memory enabled and take heap snapshots before warm-up, after the 30-second sample, and after teardown/navigation. Record JS heap range, allocation rate, GC event count and duration, detached DOM nodes, and retained Three.js resources. A rising post-GC floor or retained resources after disposal requires investigation.

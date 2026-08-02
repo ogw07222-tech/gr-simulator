@@ -3,3 +3,10 @@ export { SimulationClock } from "./SimulationClock.js";
 export { SimulationState, TIME_SCALES } from "./SimulationState.js";
 export { SnapshotManager } from "./SnapshotManager.js";
 export { SubsystemManager } from "./SubsystemManager.js";
+export {
+  Particle,
+  ParticleManager,
+  ParticleRenderer,
+  ParticleState,
+  ParticleTrail,
+} from "./particles/index.js";

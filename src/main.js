@@ -4,6 +4,8 @@ import { SchwarzschildModel } from "./physics/index.js";
 import { MassObject, Renderer, VolumetricGrid } from "./rendering/index.js";
 import {
   ResourceManager,
+  ParticleManager,
+  ParticleRenderer,
   SimulationClock,
   SimulationState,
   SnapshotManager,
@@ -41,8 +43,14 @@ const grid = resources.register(new VolumetricGrid({
   divisions: SIMULATION_DEFAULTS.gridDivisions,
 }));
 const massObject = resources.register(new MassObject());
+const particles = resources.register(new ParticleManager({
+  maxParticles: 1000,
+  maxTrailLength: 256,
+}));
+const particleRenderer = resources.register(new ParticleRenderer({ maxParticles: particles.maxParticles }));
 renderer.add(grid.object);
 renderer.add(massObject.group);
+renderer.add(particleRenderer.object);
 
 resources.register(new ControlPanel(
   document.querySelector("#control-panel"),
@@ -72,7 +80,17 @@ const renderingSubsystem = {
   },
 };
 
-const subsystems = new SubsystemManager([renderingSubsystem]);
+const particleSubsystem = {
+  order: 50,
+  update(delta) {
+    particles.update(delta);
+  },
+  render() {
+    particleRenderer.sync(particles);
+  },
+};
+
+const subsystems = new SubsystemManager([particleSubsystem, renderingSubsystem]);
 subsystems.initialize({ resources, snapshots, store });
 
 let animationId;
