@@ -49,5 +49,35 @@ test("preserves the v0.1 browser interaction baseline", async ({ page }) => {
   await expect(page.locator("#lapse")).not.toBeEmpty();
   await expect(page.locator("#vertices")).not.toBeEmpty();
 
+  await expect(page.locator("header b")).toHaveText("v0.5.0");
+  await expect(page.locator("#particle-count")).toHaveText("1");
+  await expect(page.locator("#runtime-state")).toHaveText("Running");
+
+  const timeScale = page.locator("#time-scale");
+  await timeScale.selectOption("2");
+  await expect(page.locator("#runtime-time-scale")).toHaveText("2x");
+
+  await page.getByRole("button", { name: "Pause", exact: true }).click();
+  await expect(page.locator("#runtime-state")).toHaveText("Paused");
+  const pausedTime = await page.locator("#simulation-time").textContent();
+  await page.waitForTimeout(150);
+  await expect(page.locator("#simulation-time")).toHaveText(pausedTime);
+
+  const pausedCanvas = await canvas.screenshot();
+  await page.mouse.move(canvasBounds.x + canvasBounds.width * 0.7, canvasBounds.y + canvasBounds.height * 0.7);
+  await page.mouse.down();
+  await page.mouse.move(canvasBounds.x + canvasBounds.width * 0.8, canvasBounds.y + canvasBounds.height * 0.55, { steps: 4 });
+  await page.mouse.up();
+  await page.waitForTimeout(100);
+  const movedCanvas = await canvas.screenshot();
+  expect(movedCanvas.equals(pausedCanvas)).toBe(false);
+
+  await page.getByRole("button", { name: "Reset Particle", exact: true }).click();
+  await expect(page.locator("#particle-count")).toHaveText("1");
+  await page.getByRole("button", { name: "Reset All", exact: true }).click();
+  await expect(page.locator("#simulation-time")).toHaveText("0.00 s");
+  await page.getByRole("button", { name: "Play", exact: true }).click();
+  await expect(page.locator("#runtime-state")).toHaveText("Running");
+
   expect(consoleErrors).toEqual([]);
 });
