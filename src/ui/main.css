@@ -1,6 +1,6 @@
 :root {
   color-scheme: dark;
-  font-family: Inter, "IBM Plex Sans", Pretendard, system-ui, sans-serif;
+  font-family: Pretendard, "Noto Sans KR", Inter, system-ui, sans-serif;
   --app-bg: #07090f;
   --panel-bg: rgba(12, 17, 26, .92);
   --panel-solid: #0c111a;
@@ -21,7 +21,7 @@
 
 * { box-sizing: border-box; }
 html, body { width: 100%; height: 100%; }
-body { margin: 0; overflow: hidden; background: var(--app-bg); }
+body { margin: 0; overflow: hidden; background: var(--app-bg); line-height: 1.5; word-break: keep-all; }
 button, input, select { font: inherit; }
 button, select, input { accent-color: var(--cyan); }
 button:focus-visible, input:focus-visible, select:focus-visible { outline: 2px solid var(--cyan); outline-offset: 2px; }
@@ -68,7 +68,7 @@ button:disabled { cursor: default; opacity: .42; }
 .eyebrow { display: block; color: var(--muted); font-size: .58rem; letter-spacing: .16em; }
 .version-chip { padding: 4px 8px; border: 1px solid var(--panel-border); border-radius: 999px; color: var(--cyan); background: rgba(57, 189, 248, .07); font: 600 .68rem ui-monospace, monospace; }
 .top-status { justify-content: center; }
-.status-badge { display: inline-flex; align-items: center; gap: 7px; min-width: 92px; padding: 6px 10px; border: 1px solid rgba(53, 208, 127, .28); border-radius: 7px; color: var(--green); background: rgba(53, 208, 127, .07); font-size: .7rem; font-weight: 700; text-transform: uppercase; letter-spacing: .07em; }
+.status-badge { display: inline-flex; align-items: center; gap: 7px; min-width: 92px; padding: 6px 10px; border: 1px solid rgba(53, 208, 127, .28); border-radius: 7px; color: var(--green); background: rgba(53, 208, 127, .07); font-size: .7rem; font-weight: 700; letter-spacing: .03em; }
 .status-badge i, .status-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--green); box-shadow: 0 0 9px rgba(53, 208, 127, .65); }
 .status-badge.paused { color: var(--orange); border-color: rgba(255, 159, 67, .28); background: rgba(255, 159, 67, .07); }
 .status-badge.paused i { background: var(--orange); }
@@ -85,11 +85,11 @@ button:disabled { cursor: default; opacity: .42; }
 .panel-heading { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 5px; }
 .panel-heading > div { display: flex; align-items: center; gap: 9px; }
 .section-index { color: var(--cyan); font: 700 .62rem ui-monospace, monospace; }
-.panel-heading h2 { margin: 0; font-size: .9rem; letter-spacing: .08em; text-transform: uppercase; }
+.panel-heading h2 { margin: 0; font-size: .9rem; letter-spacing: .03em; }
 .panel-close { display: none; min-height: 34px; padding: 0 10px; font-size: .68rem; }
 .panel-intro { margin: 0 0 15px; color: var(--muted); font-size: .7rem; line-height: 1.5; }
 .panel-section { padding: 14px 0; border-top: 1px solid rgba(143, 163, 189, .12); }
-.panel-section h3 { margin: 0 0 11px; color: var(--cyan); font-size: .65rem; letter-spacing: .11em; text-transform: uppercase; }
+.panel-section h3 { margin: 0 0 11px; color: var(--cyan); font-size: .65rem; letter-spacing: .04em; }
 .section-title-row { display: flex; align-items: center; justify-content: space-between; }
 
 .runtime-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 7px; }
