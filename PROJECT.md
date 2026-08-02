@@ -162,6 +162,8 @@ Completed: default particle startup, runtime controls, GPU trail rendering, and 
 
 Completed: responsive viewport-first dashboard, separate simulation and rendering-preference panels, live runtime telemetry, accessible mobile drawers, and rendering-only presentation settings. This milestone introduces no new physics behavior.
 
+Localization: Korean is the default interface language, English is available from the top-bar selector, and the selected locale is restored from `gr4d.locale`. Locale changes update only interface text and accessibility metadata; runtime, physics, particles, camera, and rendering state remain untouched.
+
 ---
 
 # Development Roadmap

@@ -1,3 +1,5 @@
+import { getLocale, subscribeLocale, t } from "./i18n.js";
+
 export class ControlPanel {
   constructor(root, store, model, grid, runtime = null) {
     this.root = root;
@@ -9,45 +11,63 @@ export class ControlPanel {
     this.render();
     this.bind();
     this.unsubscribe = store.subscribe((state) => this.sync(state));
+    this.unsubscribeLocale = subscribeLocale(() => this.localize());
+    this.localize();
     this.sync(store.getState());
   }
 
   render() {
     this.root.innerHTML = `
-      <div class="panel-heading"><div><span class="section-index">01</span><h2>Simulation</h2></div><button class="panel-close" data-close-panel type="button" aria-label="Close simulation controls">Close</button></div>
-      <p class="panel-intro">Runtime and Schwarzschild visualization controls.</p>
-      ${this.runtime ? `<section class="panel-section" aria-label="Runtime controls"><h3>Runtime</h3>
+      <div class="panel-heading"><div><span class="section-index">01</span><h2 data-i18n="panels.simulation"></h2></div><button class="panel-close" data-close-panel type="button" data-i18n="panels.close" data-i18n-aria="panels.closeSimulation"></button></div>
+      <p class="panel-intro" data-i18n="controls.runtimeIntro"></p>
+      ${this.runtime ? `<section class="panel-section" data-i18n-aria="controls.runtime"><h3 data-i18n="controls.runtime"></h3>
         <div class="runtime-actions">
-          <button id="play" class="primary-action" type="button">Play</button>
-          <button id="pause" type="button">Pause</button>
-          <button id="reset-particle" type="button">Reset Particle</button>
-          <button id="reset-all" class="danger-action" type="button">Reset All</button>
+          <button id="play" class="primary-action" type="button" data-i18n="controls.play"></button>
+          <button id="pause" type="button" data-i18n="controls.pause"></button>
+          <button id="reset-particle" type="button" data-i18n="controls.resetParticle"></button>
+          <button id="reset-all" class="danger-action" type="button" data-i18n="controls.resetAll"></button>
         </div>
-        <label class="select-control" for="time-scale"><span>Time scale</span><select id="time-scale" aria-label="Time Scale">
-          ${this.runtime.timeScales.map((scale) => `<option value="${scale}">${scale}x</option>`).join("")}
+        <label class="select-control" for="time-scale"><span data-i18n="controls.timeScale"></span><select id="time-scale" data-i18n-aria="controls.timeScale">
+          ${this.runtime.timeScales.map((scale) => `<option value="${scale}" data-scale="${scale}"></option>`).join("")}
         </select></label>
       </section>` : ""}
-      <section class="panel-section"><h3>Physics Inputs</h3>
-        <div class="mode-switch" role="group" aria-label="Distance mode">
+      <section class="panel-section"><h3 data-i18n="controls.physicsInputs"></h3>
+        <div class="mode-switch" role="group" data-i18n-aria="controls.distanceMode">
           <button data-mode="GR" type="button">GR 3D</button><button data-mode="GR_W" type="button">GR + W</button>
         </div>
-        <label class="range-control" for="mass"><span>Mass M</span><output id="mass-value"></output><input id="mass" type="range" min="10" max="300" step="5" /></label>
-        <label class="range-control" for="w"><span>W-axis distance</span><output id="w-value"></output><input id="w" type="range" min="0" max="6" step="0.05" /></label>
+        <label class="range-control" for="mass"><span data-i18n="controls.mass"></span><output id="mass-value"></output><input id="mass" type="range" min="10" max="300" step="5" /></label>
+        <label class="range-control" for="w"><span data-i18n="controls.wDistance"></span><output id="w-value"></output><input id="w" type="range" min="0" max="6" step="0.05" /></label>
       </section>
-      <section class="panel-section"><h3>Metric Readout</h3><div class="metrics">
-        <div><small>Schwarzschild radius</small><strong id="rs"></strong></div>
-        <div><small>Central lapse α</small><strong id="lapse"></strong></div>
-        <div><small>Curvature proxy</small><strong id="curvature"></strong></div>
-        <div><small>Grid vertices</small><strong id="vertices"></strong></div>
+      <section class="panel-section"><h3 data-i18n="metrics.title"></h3><div class="metrics">
+        <div><small data-i18n="metrics.schwarzschildRadius"></small><strong id="rs"></strong></div>
+        <div><small data-i18n="metrics.centralLapse"></small><strong id="lapse"></strong></div>
+        <div><small data-i18n="metrics.curvatureProxy"></small><strong id="curvature"></strong></div>
+        <div><small data-i18n="metrics.gridVertices"></small><strong id="vertices"></strong></div>
       </div></section>
-      ${this.runtime ? `<section class="panel-section"><h3>Runtime Status</h3><div class="runtime-status" aria-live="polite">
-        <div><small>State</small><strong id="runtime-state"></strong></div>
-        <div><small>Simulation time</small><strong id="simulation-time"></strong></div>
-        <div><small>Time scale</small><strong id="runtime-time-scale"></strong></div>
-        <div><small>Particle count</small><strong id="particle-count"></strong></div>
+      ${this.runtime ? `<section class="panel-section"><h3 data-i18n="runtime.title"></h3><div class="runtime-status" aria-live="polite">
+        <div><small data-i18n="runtime.state"></small><strong id="runtime-state"></strong></div>
+        <div><small data-i18n="runtime.simulationTime"></small><strong id="simulation-time"></strong></div>
+        <div><small data-i18n="runtime.timeScale"></small><strong id="runtime-time-scale"></strong></div>
+        <div><small data-i18n="runtime.particleCount"></small><strong id="particle-count"></strong></div>
       </div></section>` : ""}
-      <p class="scientific-note"><strong>Model scope</strong> Educational Schwarzschild metric visualization; not a numerical 3+1D Einstein solver.</p>
+      <p class="scientific-note"><strong data-i18n="model.scope"></strong> <span data-i18n="model.scopeDescription"></span></p>
     `;
+  }
+
+  localize() {
+    this.root.querySelectorAll("[data-i18n]").forEach((element) => { element.textContent = t(element.dataset.i18n); });
+    this.root.querySelectorAll("[data-i18n-aria]").forEach((element) => {
+      element.setAttribute("aria-label", t(element.dataset.i18nAria));
+    });
+    this.root.setAttribute("aria-label", t("panels.simulation"));
+    this.root.querySelectorAll("[data-scale]").forEach((option) => {
+      option.textContent = t("units.multiplier", { value: option.dataset.scale });
+    });
+    if (this.runtime && this.runtimeView.paused !== null) {
+      this.root.querySelector("#runtime-state").textContent = t(this.runtimeView.paused ? "status.paused" : "status.running");
+      this.root.querySelector("#runtime-time-scale").textContent = t("units.multiplier", { value: this.runtimeView.timeScale });
+    }
+    this.root.querySelector("#vertices").textContent = this.grid.segmentVertexCount.toLocaleString(getLocale());
   }
 
   bind() {
@@ -80,21 +100,21 @@ export class ControlPanel {
     this.root.querySelector("#rs").textContent = this.model.schwarzschildRadius(state.mass).toFixed(3);
     this.root.querySelector("#lapse").textContent = this.model.lapse(state.mass, sampleRadius).toFixed(3);
     this.root.querySelector("#curvature").textContent = this.model.curvatureProxy(state.mass, sampleRadius).toFixed(3);
-    this.root.querySelector("#vertices").textContent = this.grid.segmentVertexCount.toLocaleString("ko-KR");
+    this.root.querySelector("#vertices").textContent = this.grid.segmentVertexCount.toLocaleString(getLocale());
   }
 
   syncRuntime(state, particleCount) {
     if (!this.runtime) return;
     if (this.runtimeView.paused !== state.paused) {
       this.runtimeView.paused = state.paused;
-      this.root.querySelector("#runtime-state").textContent = state.paused ? "Paused" : "Running";
+      this.root.querySelector("#runtime-state").textContent = t(state.paused ? "status.paused" : "status.running");
       this.root.querySelector("#play").disabled = !state.paused;
       this.root.querySelector("#pause").disabled = state.paused;
     }
     if (this.runtimeView.timeScale !== state.timeScale) {
       this.runtimeView.timeScale = state.timeScale;
       this.root.querySelector("#time-scale").value = state.timeScale;
-      this.root.querySelector("#runtime-time-scale").textContent = `${state.timeScale}x`;
+      this.root.querySelector("#runtime-time-scale").textContent = t("units.multiplier", { value: state.timeScale });
     }
     if (this.runtimeView.particleCount !== particleCount) {
       this.runtimeView.particleCount = particleCount;
@@ -107,5 +127,5 @@ export class ControlPanel {
     }
   }
 
-  dispose() { this.unsubscribe?.(); }
+  dispose() { this.unsubscribe?.(); this.unsubscribeLocale?.(); }
 }

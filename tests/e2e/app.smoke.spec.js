@@ -1,5 +1,7 @@
 import { expect, test } from "@playwright/test";
 
+test.setTimeout(90_000);
+
 test("preserves the v0.1 browser interaction baseline", async ({ page }) => {
   const consoleErrors = [];
   page.on("console", (message) => {
@@ -8,6 +10,10 @@ test("preserves the v0.1 browser interaction baseline", async ({ page }) => {
   page.on("pageerror", (error) => consoleErrors.push(error.message));
 
   await page.goto("/");
+
+  await expect(page.locator("html")).toHaveAttribute("lang", "ko");
+  await expect(page.locator("#locale-select")).toHaveValue("ko");
+  await expect(page.getByRole("heading", { name: "시뮬레이션" })).toBeVisible();
 
   const canvas = page.locator("#viewport canvas");
   await expect(canvas).toHaveCount(1);
@@ -51,15 +57,15 @@ test("preserves the v0.1 browser interaction baseline", async ({ page }) => {
 
   await expect(page.locator(".version-chip")).toHaveText("v0.6.0");
   await expect(page.locator("#particle-count")).toHaveText("1");
-  await expect(page.locator("#runtime-state")).toHaveText("Running");
+  await expect(page.locator("#runtime-state")).toHaveText("실행 중");
 
   const timeScale = page.locator("#time-scale");
   await expect(timeScale.locator("option")).toHaveCount(8);
   await timeScale.selectOption("2");
-  await expect(page.locator("#runtime-time-scale")).toHaveText("2x");
+  await expect(page.locator("#runtime-time-scale")).toHaveText("2배");
 
-  await page.getByRole("button", { name: "Pause", exact: true }).click();
-  await expect(page.locator("#runtime-state")).toHaveText("Paused");
+  await page.getByRole("button", { name: "일시정지", exact: true }).click();
+  await expect(page.locator("#runtime-state")).toHaveText("일시정지");
   const pausedTime = await page.locator("#simulation-time").textContent();
   await page.waitForTimeout(150);
   await expect(page.locator("#simulation-time")).toHaveText(pausedTime);
@@ -73,12 +79,12 @@ test("preserves the v0.1 browser interaction baseline", async ({ page }) => {
   const movedCanvas = await canvas.screenshot();
   expect(movedCanvas.equals(pausedCanvas)).toBe(false);
 
-  await page.getByRole("button", { name: "Reset Particle", exact: true }).click();
+  await page.getByRole("button", { name: "입자 초기화", exact: true }).click();
   await expect(page.locator("#particle-count")).toHaveText("1");
-  await page.getByRole("button", { name: "Reset All", exact: true }).click();
+  await page.getByRole("button", { name: "전체 초기화", exact: true }).click();
   await expect(page.locator("#simulation-time")).toHaveText("0.00 s");
-  await page.getByRole("button", { name: "Play", exact: true }).click();
-  await expect(page.locator("#runtime-state")).toHaveText("Running");
+  await page.getByRole("button", { name: "재생", exact: true }).click();
+  await expect(page.locator("#runtime-state")).toHaveText("실행 중");
 
   const particleSize = page.locator("#particle-size");
   await particleSize.evaluate((input) => {
@@ -87,20 +93,34 @@ test("preserves the v0.1 browser interaction baseline", async ({ page }) => {
   });
   await expect(page.locator('[data-output="particle-size"]')).toHaveText("0.60");
   await page.locator("#trail-color-mode").selectOption("age");
-  await expect(page.locator("#trail-mode-description")).toContainText("oldest to newest");
-  await page.getByRole("button", { name: "Reset Visuals", exact: true }).click();
+  await expect(page.locator("#trail-mode-description")).toContainText("오래된 표본");
+  await page.getByRole("button", { name: "시각 설정 초기화", exact: true }).click();
   await expect(particleSize).toHaveValue("0.36");
   await expect(page.locator("#particle-count")).toHaveText("1");
 
-  await page.getByRole("button", { name: "Reset camera", exact: true }).click();
-  await page.getByRole("button", { name: "Toggle fullscreen", exact: true }).click();
+  await page.getByRole("button", { name: "카메라 초기화", exact: true }).click();
+  await page.getByRole("button", { name: "전체 화면 전환", exact: true }).click();
   await page.waitForTimeout(50);
   expect(await page.evaluate(() => document.fullscreenElement !== null)).toBe(true);
-  await page.getByRole("button", { name: "Toggle fullscreen", exact: true }).click();
-  await page.getByRole("button", { name: "Hide side panels", exact: true }).click();
+  await page.getByRole("button", { name: "전체 화면 전환", exact: true }).click();
+  await page.getByRole("button", { name: "패널 숨기기", exact: true }).click();
   await expect(page.locator("#app")).toHaveClass(/panels-hidden/);
-  await page.getByRole("button", { name: "Show Panels", exact: true }).click();
+  await page.getByRole("button", { name: "패널 표시", exact: true }).click();
   await expect(page.locator("#app")).not.toHaveClass(/panels-hidden/);
+
+  const timeBeforeLocaleSwitch = Number.parseFloat(await page.locator("#simulation-time").textContent());
+  await page.locator("#locale-select").selectOption("en");
+  await expect(page.locator("html")).toHaveAttribute("lang", "en");
+  await expect(page.getByRole("heading", { name: "Simulation" })).toBeVisible();
+  await expect(page.locator("#runtime-state")).toHaveText("Running");
+  await expect(page.locator("#runtime-time-scale")).toHaveText("2x");
+  expect(Number.parseFloat(await page.locator("#simulation-time").textContent())).toBeGreaterThanOrEqual(timeBeforeLocaleSwitch);
+  await page.reload();
+  await expect(page.locator("#locale-select")).toHaveValue("en");
+  await expect(page.locator("html")).toHaveAttribute("lang", "en");
+  await page.locator("#locale-select").selectOption("ko");
+  await expect(page.getByRole("heading", { name: "시뮬레이션" })).toBeVisible();
+  await expect(page.locator("html")).toHaveAttribute("lang", "ko");
 
   expect(consoleErrors).toEqual([]);
 });
@@ -118,18 +138,22 @@ test("keeps the scientific dashboard usable on mobile", async ({ page }) => {
   const overflow = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
   expect(overflow).toBeLessThanOrEqual(0);
 
-  await page.getByRole("button", { name: "Simulation", exact: true }).click();
+  await page.getByRole("button", { name: "시뮬레이션", exact: true }).click();
   const simulationPanel = page.locator("#control-panel");
   await expect(simulationPanel).toBeVisible();
   await expect(simulationPanel).toBeFocused();
-  const closeSimulation = page.locator("#control-panel").getByRole("button", { name: "Close simulation controls", exact: true });
+  const closeSimulation = page.locator("#control-panel").getByRole("button", { name: "시뮬레이션 제어 닫기", exact: true });
   await closeSimulation.click();
 
-  await page.getByRole("button", { name: "Visuals", exact: true }).click();
+  await page.getByRole("button", { name: "시각 설정", exact: true }).click();
   await expect(page.locator("#visual-settings-panel")).toBeVisible();
-  await page.locator("#visual-settings-panel").getByRole("button", { name: "Close visual settings", exact: true }).click();
+  await page.locator("#visual-settings-panel").getByRole("button", { name: "시각 설정 닫기", exact: true }).click();
   await expect(page.locator("#panel-backdrop")).toBeHidden();
-  await expect(page.getByRole("button", { name: "Visuals", exact: true })).toBeFocused();
+  await expect(page.getByRole("button", { name: "시각 설정", exact: true })).toBeFocused();
+
+  await page.locator("#locale-select").selectOption("en");
+  expect(await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth)).toBeLessThanOrEqual(0);
+  await expect(page.getByRole("button", { name: "Visuals", exact: true })).toBeVisible();
 
   await page.setViewportSize({ width: 844, height: 390 });
   await expect(page.getByRole("button", { name: "Simulation", exact: true })).toBeVisible();

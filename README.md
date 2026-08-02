@@ -16,6 +16,7 @@ A browser-based General Relativity visualization laboratory built with Three.js.
 - GPU-buffered particle trail rendering
 - Responsive simulation and visual-settings panels
 - Presentation-only particle, trail, grid, and mass-rendering controls
+- Live Korean/English interface switching with persisted language preference
 - Explicit cleanup of renderer, controls, geometry, material, and subscriptions
 
 ## Quick start
@@ -50,6 +51,13 @@ The first browser-smoke run requires `npx playwright install chromium`. Unit tes
 - Reset Particle / Reset All: restore particle or complete runtime time state
 - Visual Settings: adjust rendering materials without changing simulation state
 - Reset Camera / Fullscreen / Hide Panels: manage the scientific workspace
+- 한국어 / English: switch the complete interface language without resetting simulation, camera, or visual state
+
+## Localization
+
+Korean (`ko`) is the default interface language. The language selector restores a valid previous choice from the `gr4d.locale` localStorage key and updates the document language, metadata, visible labels, and accessibility text without reloading the page.
+
+Translations use stable keys in `src/ui/i18n.js`. To add a language, add a complete dictionary matching the existing `ko` and `en` keys, register its locale code in `SUPPORTED_LOCALES`, and add the selector label. Project name, FPS, GR, GPU, scientific units, and mathematical symbols remain untranslated where appropriate.
 
 ## Scientific dashboard
 
