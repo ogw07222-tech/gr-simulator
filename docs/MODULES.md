@@ -22,7 +22,7 @@ Owns read-only selectors, metric formatting, and diagnostic views. HUD refresh r
 
 ## `systems`
 
-Owns SimulationClock, SimulationState, SnapshotManager, ResourceManager, SubsystemManager, and application orchestration. Rendering and future evolving systems use this shared lifecycle.
+Owns SimulationClock, SimulationState, SnapshotManager, ResourceManager, SubsystemManager, ParticleManager, particle trails/render buffers, and application orchestration. Evolving physics can update the same fixed particle storage through this lifecycle.
 
 ## `utils`
 

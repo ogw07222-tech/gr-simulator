@@ -39,7 +39,8 @@ This backlog describes future work; this architecture PR does not implement new 
 - [ ] Add benchmark fixtures and reproducible experiment metadata.
 - [ ] Add Architecture Decision Record and experiment-report templates.
 - [ ] Define worker/GPU-compute evaluation criteria.
-- [ ] Design particle storage, pooling, LOD, and update budgets.
+- [x] Implement fixed particle storage, pooling, trails, selection, and one-buffer rendering.
+- [ ] Profile particle LOD and update budgets on reference hardware.
 - [ ] Define data export and reproducibility requirements.
 
 ## Deferred features

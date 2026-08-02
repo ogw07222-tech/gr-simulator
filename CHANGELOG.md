@@ -17,6 +17,10 @@ All notable changes to this project will be documented in this file. The format 
 - Immutable double-buffered render snapshots.
 - Ordered subsystem lifecycle and centralized resource ownership.
 - Runtime engine tests and performance-assumption documentation.
+- Fixed-capacity Particle data model and lifecycle manager.
+- Per-particle fixed ring-buffer trails and selection API.
+- Single-BufferGeometry particle renderer integrated with the runtime.
+- Particle lifecycle, trail, selection, rendering, capacity, and buffer-reuse tests.
 
 ### Changed
 

@@ -31,6 +31,8 @@ ui / hud / rendering
 - Core contains stable runtime contracts rather than domain implementations.
 - Utilities remain small and domain-neutral.
 
+The v0.4 particle subsystem runs at order 50 before rendering order 100. It owns fixed-capacity Particle storage and one BufferGeometry renderer while leaving relativistic evolution to future physics subsystems.
+
 ## Runtime model
 
 The planned frame sequence is:
