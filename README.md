@@ -26,9 +26,14 @@ npm run dev
 Production verification:
 
 ```bash
+npm run lint
+npm run test
 npm run build
+npm run test:smoke
 npm run preview
 ```
+
+The first browser-smoke run requires `npx playwright install chromium`. Unit tests use Vitest with jsdom; browser smoke tests run the actual application in Chromium.
 
 ## Controls
 
