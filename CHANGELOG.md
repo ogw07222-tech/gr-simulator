@@ -25,6 +25,8 @@ All notable changes to this project will be documented in this file. The format 
 - GPU-material controls for particle, trail, grid, and mass presentation.
 - Deterministic Single Color, Speed, Distance, and Age trail color modes.
 - Mobile and tablet drawer navigation with keyboard focus management.
+- Centralized Korean and English UI dictionaries with live, persisted language switching.
+- Localization coverage for document metadata, accessibility labels, dashboard status, controls, help text, and responsive drawers.
 
 ### Changed
 

@@ -27,6 +27,14 @@ Effects are deliberately restrained. Blur is limited to compact panels and overl
 
 No frontend framework or secondary runtime state store is introduced.
 
+## Localization
+
+`src/ui/i18n.js` owns the supported `ko` and `en` dictionaries and exposes `getLocale()`, `setLocale(locale)`, `t(key)`, and `subscribeLocale(listener)`. Korean is the default. A supported previous choice is restored from localStorage key `gr4d.locale`; invalid values fall back to Korean.
+
+Components render and bind events once, then subscribe to locale changes. Switching language updates text nodes, option labels, document metadata, and ARIA attributes in place. It does not rebuild the application or modify runtime, particle, camera, physics, or rendering state.
+
+Translation keys are grouped by stable domains such as `app.*`, `status.*`, `controls.*`, `panels.*`, `visual.*`, and `camera.*`. A new language must provide the complete key set, be added to `SUPPORTED_LOCALES`, and receive a visible selector label. `GR-4D Simulator`, FPS, GR, GPU, scientific units, and mathematical symbols remain unchanged where they are established technical notation.
+
 ## Supported visual settings
 
 - particle point size, opacity, and material brightness;
