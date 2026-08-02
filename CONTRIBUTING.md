@@ -12,10 +12,13 @@
 ```bash
 npm install
 npm run dev
+npm run lint
+npm run test
 npm run build
+npm run test:smoke
 ```
 
-There is no lint script in v0.1. Do not claim lint verification until a project lint configuration is added. Preserve the existing JavaScript style: ES modules, double quotes, semicolons, two-space indentation, trailing commas in multiline literals, and explicit `dispose()` methods for owned resources.
+Install Chromium once with `npx playwright install chromium` before running browser smoke tests. Preserve the existing JavaScript style: ES modules, double quotes, semicolons, two-space indentation, trailing commas in multiline literals, and explicit `dispose()` methods for owned resources.
 
 ## Module rules
 

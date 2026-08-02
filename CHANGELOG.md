@@ -9,6 +9,10 @@ All notable changes to this project will be documented in this file. The format 
 - Research-grade architecture, module-boundary, contribution, roadmap, and backlog documentation.
 - Public module entry points for core, physics, rendering, and UI.
 - Reserved HUD, systems, and utilities boundaries for staged future migration.
+- Vitest and jsdom characterization tests for the current physics model and Store.
+- Playwright browser smoke coverage for the v0.1 interaction baseline.
+- ESLint quality checks and GitHub Actions verification.
+- Performance baseline measurement documentation.
 
 ### Changed
 
