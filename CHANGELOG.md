@@ -13,6 +13,10 @@ All notable changes to this project will be documented in this file. The format 
 - Playwright browser smoke coverage for the v0.1 interaction baseline.
 - ESLint quality checks and GitHub Actions verification.
 - Performance baseline measurement documentation.
+- Fixed-timestep SimulationClock and central SimulationState.
+- Immutable double-buffered render snapshots.
+- Ordered subsystem lifecycle and centralized resource ownership.
+- Runtime engine tests and performance-assumption documentation.
 
 ### Changed
 

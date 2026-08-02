@@ -22,7 +22,7 @@ Owns read-only selectors, metric formatting, and diagnostic views. HUD refresh r
 
 ## `systems`
 
-Owns application lifecycle, simulation/render clocks, command scheduling, and subsystem orchestration. This boundary replaces composition logic incrementally after regression tests exist.
+Owns SimulationClock, SimulationState, SnapshotManager, ResourceManager, SubsystemManager, and application orchestration. Rendering and future evolving systems use this shared lifecycle.
 
 ## `utils`
 

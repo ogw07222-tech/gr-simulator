@@ -9,7 +9,15 @@ test("preserves the v0.1 browser interaction baseline", async ({ page }) => {
 
   await page.goto("/");
 
-  await expect(page.locator("#viewport canvas")).toHaveCount(1);
+  const canvas = page.locator("#viewport canvas");
+  await expect(canvas).toHaveCount(1);
+  const canvasBounds = await canvas.boundingBox();
+  expect(canvasBounds).not.toBeNull();
+  await page.mouse.move(canvasBounds.x + canvasBounds.width / 2, canvasBounds.y + canvasBounds.height / 2);
+  await page.mouse.down();
+  await page.mouse.move(canvasBounds.x + canvasBounds.width / 2 + 40, canvasBounds.y + canvasBounds.height / 2 + 20);
+  await page.mouse.up();
+  await page.mouse.wheel(0, -120);
 
   const grButton = page.getByRole("button", { name: "GR 3D" });
   const grWButton = page.getByRole("button", { name: "GR + W" });

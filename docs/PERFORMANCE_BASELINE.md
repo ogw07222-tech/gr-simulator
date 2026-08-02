@@ -25,6 +25,8 @@ Use Chrome DevTools Performance and Network panels with cache disabled. Record n
 
 Capture a 30-second Chrome Performance trace after warm-up. Record average FPS and frame-time median, p95, and maximum. Report the count of frames over 16.7 ms and 33.3 ms. Keep the tab visible and avoid background applications during capture.
 
+The v0.3 runtime clamps frame gaps to 100 ms and caps fixed simulation work at 480 steps per rendered frame. Record dropped-backlog events when runtime diagnostics expose them in a future profiling change; do not infer simulation throughput from FPS alone.
+
 ## Grid update time
 
 Use DevTools User Timing around `VolumetricGrid.update` in a temporary profiling branch or invoke the method from a benchmark harness. Measure default state, mass change, W change, and mode switch separately. Do not commit instrumentation to production without review. Report median, p95, vertex count, and update count.

@@ -29,7 +29,10 @@ export class MassObject {
   }
 
   update(model, mass) {
-    const rs = model.schwarzschildRadius(mass);
+    this.updateSchwarzschildRadius(model.schwarzschildRadius(mass));
+  }
+
+  updateSchwarzschildRadius(rs) {
     const visualRadius = Math.max(1.05, Math.sqrt(rs) * 1.45);
     this.horizon.scale.setScalar(visualRadius);
     this.core.rotation.y += 0.004;
