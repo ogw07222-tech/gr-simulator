@@ -1,29 +1,29 @@
 <!doctype html>
-<html lang="en">
+<html lang="ko">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="description" content="Browser-based General Relativity simulation and scientific visualization laboratory" />
+    <meta name="description" content="브라우저 기반 일반상대성이론 시뮬레이션 및 과학 시각화 실험실" />
     <title>GR-4D Simulator v0.6.0</title>
   </head>
   <body>
     <div id="app">
       <header id="top-bar" class="top-bar"></header>
-      <aside id="control-panel" class="side-panel simulation-panel" aria-label="Simulation controls"></aside>
+      <aside id="control-panel" class="side-panel simulation-panel"></aside>
       <main id="viewport-shell">
-        <div id="viewport" aria-label="Interactive three-dimensional gravity simulation"></div>
-        <div class="viewport-mode" aria-hidden="true"><span>ACTIVE MODEL</span><strong>Schwarzschild · Educational</strong></div>
-        <div class="camera-guide" aria-hidden="true"><span>Drag to orbit</span><span>Right-drag to pan</span><span>Wheel to zoom</span></div>
+        <div id="viewport"></div>
+        <div class="viewport-mode" aria-hidden="true"><span id="active-model-label"></span><strong id="active-model-name"></strong></div>
+        <div class="camera-guide" aria-hidden="true"><span id="orbit-hint"></span><span id="pan-hint"></span><span id="zoom-hint"></span></div>
         <div class="reticle" aria-hidden="true"></div>
       </main>
-      <aside id="visual-settings-panel" class="side-panel visual-panel" aria-label="Visual settings"></aside>
+      <aside id="visual-settings-panel" class="side-panel visual-panel"></aside>
       <footer class="status-strip">
-        <span><i class="status-dot"></i> Renderer online</span>
-        <span>Fixed simulation step <strong>1 / 240 s</strong></span>
-        <span>Camera <strong>Orbit controls</strong></span>
-        <span class="status-note">Visualization proxy · not a numerical relativity solver</span>
+        <span><i class="status-dot"></i><span id="renderer-status"></span></span>
+        <span><span id="fixed-step-label"></span><strong>1 / 240 s</strong></span>
+        <span><span id="camera-label"></span><strong id="camera-controls"></strong></span>
+        <span id="status-note" class="status-note"></span>
       </footer>
-      <button id="panel-backdrop" class="panel-backdrop" type="button" aria-label="Close open panel" hidden></button>
+      <button id="panel-backdrop" class="panel-backdrop" type="button" hidden></button>
     </div>
     <script type="module" src="/src/main.js"></script>
   </body>

@@ -1,3 +1,5 @@
+import { getUiText } from "./i18n.js";
+
 const DEFAULTS = Object.freeze({
   particleSize: 0.36,
   particleOpacity: 1,
@@ -15,11 +17,12 @@ const DEFAULTS = Object.freeze({
 });
 
 export class VisualSettingsPanel {
-  constructor(root, { particleRenderer, grid, massObject }) {
+  constructor(root, { particleRenderer, grid, massObject }, text = getUiText()) {
     this.root = root;
     this.particleRenderer = particleRenderer;
     this.grid = grid;
     this.massObject = massObject;
+    this.text = text.visuals;
     this.values = { ...DEFAULTS };
     this.render();
     this.bind();
@@ -32,33 +35,35 @@ export class VisualSettingsPanel {
   }
 
   render() {
+    const text = this.text;
+    this.root.setAttribute("aria-label", text.title);
     this.root.innerHTML = `
-      <div class="panel-heading"><div><span class="section-index">02</span><h2>Visual Settings</h2></div><button class="panel-close" data-close-panel type="button" aria-label="Close visual settings">Close</button></div>
-      <p class="panel-intro">Presentation controls affect GPU materials only. Simulation state remains unchanged.</p>
-      <section class="panel-section"><h3>Particle</h3>
-        ${this.renderRange("particle-size", "Point size", 0.18, 0.72, 0.02)}
-        ${this.renderRange("particle-brightness", "Brightness", 0.5, 1.5, 0.05)}
-        ${this.renderRange("particle-opacity", "Opacity", 0.2, 1, 0.05)}
+      <div class="panel-heading"><div><span class="section-index">02</span><h2>${text.title}</h2></div><button class="panel-close" data-close-panel type="button" aria-label="${text.closeLabel}">${text.close}</button></div>
+      <p class="panel-intro">${text.intro}</p>
+      <section class="panel-section"><h3>${text.particle}</h3>
+        ${this.renderRange("particle-size", text.particleSize, 0.18, 0.72, 0.02)}
+        ${this.renderRange("particle-brightness", text.brightness, 0.5, 1.5, 0.05)}
+        ${this.renderRange("particle-opacity", text.opacity, 0.2, 1, 0.05)}
       </section>
-      <section class="panel-section"><div class="section-title-row"><h3>Trail</h3><label class="switch"><input id="trail-visible" type="checkbox" /><span>Visible</span></label></div>
-        ${this.renderRange("trail-opacity", "Opacity", 0.1, 1, 0.05)}
-        ${this.renderRange("trail-brightness", "Brightness", 0.4, 1.5, 0.05)}
-        ${this.renderRange("trail-fade", "Age fade", 0, 1, 0.05)}
-        <label class="select-control" for="trail-color-mode"><span>Color mode</span><select id="trail-color-mode">
-          <option value="single">Single color</option><option value="speed">Speed</option>
-          <option value="distance">Distance</option><option value="age">Age</option>
+      <section class="panel-section"><div class="section-title-row"><h3>${text.trail}</h3><label class="switch"><input id="trail-visible" type="checkbox" /><span>${text.visible}</span></label></div>
+        ${this.renderRange("trail-opacity", text.opacity, 0.1, 1, 0.05)}
+        ${this.renderRange("trail-brightness", text.brightness, 0.4, 1.5, 0.05)}
+        ${this.renderRange("trail-fade", text.ageFade, 0, 1, 0.05)}
+        <label class="select-control" for="trail-color-mode"><span>${text.colorMode}</span><select id="trail-color-mode">
+          <option value="single">${text.singleColor}</option><option value="speed">${text.speed}</option>
+          <option value="distance">${text.distance}</option><option value="age">${text.age}</option>
         </select></label>
         <p id="trail-mode-description" class="control-description"></p>
       </section>
-      <section class="panel-section"><div class="section-title-row"><h3>Spacetime Grid</h3><label class="switch"><input id="grid-visible" type="checkbox" /><span>Visible</span></label></div>
-        ${this.renderRange("grid-opacity", "Opacity", 0.08, 0.9, 0.02)}
-        ${this.renderRange("grid-brightness", "Brightness", 0.3, 1.2, 0.05)}
+      <section class="panel-section"><div class="section-title-row"><h3>${text.spacetimeGrid}</h3><label class="switch"><input id="grid-visible" type="checkbox" /><span>${text.visible}</span></label></div>
+        ${this.renderRange("grid-opacity", text.opacity, 0.08, 0.9, 0.02)}
+        ${this.renderRange("grid-brightness", text.brightness, 0.3, 1.2, 0.05)}
       </section>
-      <section class="panel-section"><h3>Mass Rendering</h3>
-        ${this.renderRange("horizon-glow", "Horizon intensity", 0.08, 0.8, 0.02)}
-        ${this.renderRange("mass-brightness", "Core emissive", 0.5, 3, 0.1)}
+      <section class="panel-section"><h3>${text.massRendering}</h3>
+        ${this.renderRange("horizon-glow", text.horizonIntensity, 0.08, 0.8, 0.02)}
+        ${this.renderRange("mass-brightness", text.coreEmissive, 0.5, 3, 0.1)}
       </section>
-      <button id="reset-visuals" class="secondary-action" type="button">Reset Visuals</button>
+      <button id="reset-visuals" class="secondary-action" type="button">${text.reset}</button>
     `;
   }
 
@@ -121,13 +126,7 @@ export class VisualSettingsPanel {
     this.root.querySelector("#trail-visible").checked = values.trailVisible;
     this.root.querySelector("#grid-visible").checked = values.gridVisible;
     this.root.querySelector("#trail-color-mode").value = values.trailColorMode;
-    const descriptions = {
-      single: "High-contrast amber with age-based luminance fade.",
-      speed: "Cyan-to-amber mapping from current particle speed.",
-      distance: "Color mapped deterministically from radial distance.",
-      age: "Cool-to-warm gradient from oldest to newest sample.",
-    };
-    this.root.querySelector("#trail-mode-description").textContent = descriptions[values.trailColorMode];
+    this.root.querySelector("#trail-mode-description").textContent = this.text.trailDescriptions[values.trailColorMode];
   }
 
   reset() {
