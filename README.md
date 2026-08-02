@@ -1,6 +1,6 @@
 # GR-4D Simulator
 
-A browser-based General Relativity visualization laboratory built with Three.js. The current v0.1 release visualizes a Schwarzschild spatial slice and compares ordinary 3D distance with an educational W-axis effective-distance model.
+A browser-based General Relativity visualization laboratory built with Three.js. Version 0.6 presents the existing Schwarzschild spatial-slice and particle runtime through a responsive scientific dashboard.
 
 > This project is not yet a numerical Einstein field equation solver. The current implementation combines quantities derived from the Schwarzschild metric with explicitly documented weak-field visualization approximations.
 
@@ -12,11 +12,15 @@ A browser-based General Relativity visualization laboratory built with Three.js.
 - GR 3D and GR + W effective-distance comparison
 - Real-time mass and W-axis controls
 - OrbitControls camera navigation
+- Fixed-timestep runtime controls and one default test particle
+- GPU-buffered particle trail rendering
+- Responsive simulation and visual-settings panels
+- Presentation-only particle, trail, grid, and mass-rendering controls
 - Explicit cleanup of renderer, controls, geometry, material, and subscriptions
 
 ## Quick start
 
-Requirements: Node.js 20 or newer and npm.
+Requirements: Node.js 20.19 or newer (or Node.js 22.12+) and npm.
 
 ```bash
 npm install
@@ -42,6 +46,20 @@ The first browser-smoke run requires `npx playwright install chromium`. Unit tes
 - Mouse wheel: zoom
 - GR 3D / GR + W: select the effective-distance model
 - Mass M / W-axis distance: update simulation inputs
+- Play / Pause / Time Scale: control the existing fixed-step runtime
+- Reset Particle / Reset All: restore particle or complete runtime time state
+- Visual Settings: adjust rendering materials without changing simulation state
+- Reset Camera / Fullscreen / Hide Panels: manage the scientific workspace
+
+## Scientific dashboard
+
+The v0.6 interface uses an original mission-control-inspired design language: compact telemetry, restrained cyan/blue accents, a viewport-first layout, and separate simulation and presentation controls. Desktop uses persistent side panels; tablet and mobile use keyboard- and touch-accessible drawers.
+
+Screenshots are maintained in `docs/screenshots/` for desktop, tablet, and mobile verification. See [UI architecture](docs/UI_ARCHITECTURE.md) for theme tokens, supported visual settings, responsive behavior, and intentionally unsupported controls.
+
+| Desktop | Tablet portrait | Mobile portrait |
+| --- | --- | --- |
+| ![Desktop scientific dashboard](docs/screenshots/desktop.png) | ![Tablet viewport layout](docs/screenshots/tablet.png) | ![Mobile viewport layout](docs/screenshots/mobile.png) |
 
 ## Architecture
 
@@ -70,6 +88,7 @@ The long-term goal is a reproducible, testable, performance-oriented GR simulati
 - [Module boundaries](docs/MODULES.md)
 - [Runtime engine](docs/RUNTIME_ENGINE.md)
 - [Particle engine](docs/PARTICLE_ENGINE.md)
+- [UI architecture](docs/UI_ARCHITECTURE.md)
 - [Contributing](CONTRIBUTING.md)
 - [Roadmap](ROADMAP.md)
 - [Task backlog](TODO.md)

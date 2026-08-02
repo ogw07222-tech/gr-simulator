@@ -1,5 +1,3 @@
-import { VERSION } from "../core/constants.js";
-
 export class ControlPanel {
   constructor(root, store, model, grid, runtime = null) {
     this.root = root;
@@ -16,42 +14,39 @@ export class ControlPanel {
 
   render() {
     this.root.innerHTML = `
-      <header><div><span class="eyebrow">GENERAL RELATIVITY LAB</span><h1>GR-4D Simulator</h1></div><b>v${VERSION}</b></header>
-      <p class="scope">단일 Schwarzschild 질량의 공간 절편을 약한 장 근사로 시각화합니다.</p>
-      <div class="mode-switch" role="group" aria-label="거리 모드">
-        <button data-mode="GR">GR 3D</button><button data-mode="GR_W">GR + W</button>
-      </div>
-      <label>질량 M <output id="mass-value"></output><input id="mass" type="range" min="10" max="300" step="5" /></label>
-      <label>W축 거리 <output id="w-value"></output><input id="w" type="range" min="0" max="6" step="0.05" /></label>
-      <section class="metrics">
-        <div><small>Schwarzschild rₛ</small><strong id="rs"></strong></div>
-        <div><small>중심 lapse α</small><strong id="lapse"></strong></div>
-        <div><small>곡률 proxy</small><strong id="curvature"></strong></div>
-        <div><small>선분 정점</small><strong id="vertices"></strong></div>
-      </section>
-      ${this.runtime ? `
-      <section class="runtime" aria-label="Runtime controls">
+      <div class="panel-heading"><div><span class="section-index">01</span><h2>Simulation</h2></div><button class="panel-close" data-close-panel type="button" aria-label="Close simulation controls">Close</button></div>
+      <p class="panel-intro">Runtime and Schwarzschild visualization controls.</p>
+      ${this.runtime ? `<section class="panel-section" aria-label="Runtime controls"><h3>Runtime</h3>
         <div class="runtime-actions">
-          <button id="play" type="button">Play</button>
+          <button id="play" class="primary-action" type="button">Play</button>
           <button id="pause" type="button">Pause</button>
-        </div>
-        <label>Time Scale
-          <select id="time-scale" aria-label="Time Scale">
-            ${this.runtime.timeScales.map((scale) => `<option value="${scale}">${scale}x</option>`).join("")}
-          </select>
-        </label>
-        <div class="runtime-actions">
           <button id="reset-particle" type="button">Reset Particle</button>
-          <button id="reset-all" type="button">Reset All</button>
+          <button id="reset-all" class="danger-action" type="button">Reset All</button>
         </div>
-        <div class="runtime-status" aria-live="polite">
-          <div><small>Status</small><strong id="runtime-state"></strong></div>
-          <div><small>Simulation Time</small><strong id="simulation-time"></strong></div>
-          <div><small>Time Scale</small><strong id="runtime-time-scale"></strong></div>
-          <div><small>Particle Count</small><strong id="particle-count"></strong></div>
-        </div>
+        <label class="select-control" for="time-scale"><span>Time scale</span><select id="time-scale" aria-label="Time Scale">
+          ${this.runtime.timeScales.map((scale) => `<option value="${scale}">${scale}x</option>`).join("")}
+        </select></label>
       </section>` : ""}
-      <div class="notice"><strong>물리 범위</strong><br/>완전한 3+1D Einstein 방정식 해가 아닌, Schwarzschild 계량 기반 교육용 시각화입니다.</div>
+      <section class="panel-section"><h3>Physics Inputs</h3>
+        <div class="mode-switch" role="group" aria-label="Distance mode">
+          <button data-mode="GR" type="button">GR 3D</button><button data-mode="GR_W" type="button">GR + W</button>
+        </div>
+        <label class="range-control" for="mass"><span>Mass M</span><output id="mass-value"></output><input id="mass" type="range" min="10" max="300" step="5" /></label>
+        <label class="range-control" for="w"><span>W-axis distance</span><output id="w-value"></output><input id="w" type="range" min="0" max="6" step="0.05" /></label>
+      </section>
+      <section class="panel-section"><h3>Metric Readout</h3><div class="metrics">
+        <div><small>Schwarzschild radius</small><strong id="rs"></strong></div>
+        <div><small>Central lapse α</small><strong id="lapse"></strong></div>
+        <div><small>Curvature proxy</small><strong id="curvature"></strong></div>
+        <div><small>Grid vertices</small><strong id="vertices"></strong></div>
+      </div></section>
+      ${this.runtime ? `<section class="panel-section"><h3>Runtime Status</h3><div class="runtime-status" aria-live="polite">
+        <div><small>State</small><strong id="runtime-state"></strong></div>
+        <div><small>Simulation time</small><strong id="simulation-time"></strong></div>
+        <div><small>Time scale</small><strong id="runtime-time-scale"></strong></div>
+        <div><small>Particle count</small><strong id="particle-count"></strong></div>
+      </div></section>` : ""}
+      <p class="scientific-note"><strong>Model scope</strong> Educational Schwarzschild metric visualization; not a numerical 3+1D Einstein solver.</p>
     `;
   }
 

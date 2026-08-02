@@ -1,7 +1,7 @@
 import * as THREE from "three";
 
 export class ParticleRenderer {
-  constructor({ maxParticles = 1000, maxTrailLength = 256, pointSize = 0.18 } = {}) {
+  constructor({ maxParticles = 1000, maxTrailLength = 256, pointSize = 0.36 } = {}) {
     if (!Number.isInteger(maxParticles) || maxParticles < 1) {
       throw new RangeError("ParticleRenderer maxParticles must be a positive integer.");
     }
@@ -14,6 +14,7 @@ export class ParticleRenderer {
     this.positions = new Float32Array(maxParticles * 3);
     this.colors = new Float32Array(maxParticles * 3);
     this.trailPositions = new Float32Array(maxParticles * Math.max(0, maxTrailLength - 1) * 6);
+    this.trailColors = new Float32Array(maxParticles * Math.max(0, maxTrailLength - 1) * 6);
     this.geometry = new THREE.BufferGeometry();
     this.positionAttribute = new THREE.BufferAttribute(this.positions, 3);
     this.colorAttribute = new THREE.BufferAttribute(this.colors, 3);
@@ -26,21 +27,61 @@ export class ParticleRenderer {
       size: pointSize,
       sizeAttenuation: true,
       vertexColors: true,
+      transparent: true,
+      depthWrite: false,
     });
     this.object = new THREE.Points(this.geometry, this.material);
     this.object.frustumCulled = false;
+    this.haloMaterial = new THREE.PointsMaterial({
+      color: 0xffb347,
+      size: pointSize * 2.35,
+      sizeAttenuation: true,
+      transparent: true,
+      opacity: 0.22,
+      depthWrite: false,
+      blending: THREE.AdditiveBlending,
+    });
+    this.haloObject = new THREE.Points(this.geometry, this.haloMaterial);
+    this.haloObject.frustumCulled = false;
     this.trailGeometry = new THREE.BufferGeometry();
     this.trailPositionAttribute = new THREE.BufferAttribute(this.trailPositions, 3);
+    this.trailColorAttribute = new THREE.BufferAttribute(this.trailColors, 3);
     this.trailPositionAttribute.setUsage(THREE.DynamicDrawUsage);
+    this.trailColorAttribute.setUsage(THREE.DynamicDrawUsage);
     this.trailGeometry.setAttribute("position", this.trailPositionAttribute);
+    this.trailGeometry.setAttribute("color", this.trailColorAttribute);
     this.trailGeometry.setDrawRange(0, 0);
     this.trailMaterial = new THREE.LineBasicMaterial({
-      color: 0x54e2ff,
+      vertexColors: true,
       transparent: true,
-      opacity: 0.65,
+      opacity: 0.88,
+      depthWrite: false,
+      blending: THREE.AdditiveBlending,
     });
     this.trailObject = new THREE.LineSegments(this.trailGeometry, this.trailMaterial);
     this.trailObject.frustumCulled = false;
+    this.appearance = {
+      particleSize: pointSize,
+      particleOpacity: 1,
+      particleBrightness: 1,
+      trailVisible: true,
+      trailOpacity: 0.88,
+      trailBrightness: 1,
+      trailFade: 0.82,
+      trailColorMode: "single",
+    };
+    this.lastRevision = -1;
+  }
+
+  setAppearance(settings) {
+    Object.assign(this.appearance, settings);
+    this.material.size = this.appearance.particleSize;
+    this.material.opacity = this.appearance.particleOpacity;
+    this.material.color.setScalar(this.appearance.particleBrightness);
+    this.haloMaterial.size = this.appearance.particleSize * 2.35;
+    this.haloMaterial.opacity = this.appearance.particleOpacity * 0.22;
+    this.trailMaterial.opacity = this.appearance.trailOpacity;
+    this.trailObject.visible = this.appearance.trailVisible;
     this.lastRevision = -1;
   }
 
@@ -73,6 +114,8 @@ export class ParticleRenderer {
         this.trailPositions[target] = trail.positions[current];
         this.trailPositions[target + 1] = trail.positions[current + 1];
         this.trailPositions[target + 2] = trail.positions[current + 2];
+        this.#setTrailVertexColor(trailVertexCount, particle, trail, trailIndex - 1);
+        this.#setTrailVertexColor(trailVertexCount + 1, particle, trail, trailIndex);
         trailVertexCount += 2;
       }
     }
@@ -82,13 +125,48 @@ export class ParticleRenderer {
     this.positionAttribute.needsUpdate = true;
     this.colorAttribute.needsUpdate = true;
     this.trailPositionAttribute.needsUpdate = true;
+    this.trailColorAttribute.needsUpdate = true;
     this.lastRevision = revision;
     return true;
+  }
+
+  #setTrailVertexColor(vertexIndex, particle, trail, sampleIndex) {
+    const age = trail.count > 1 ? sampleIndex / (trail.count - 1) : 1;
+    const intensity = this.appearance.trailBrightness * (1 - this.appearance.trailFade * (1 - age));
+    let red = 1;
+    let green = 0.48;
+    let blue = 0.12;
+    if (this.appearance.trailColorMode === "speed") {
+      const speed = Math.min(Math.sqrt(
+        particle.velocity.x ** 2 + particle.velocity.y ** 2 + particle.velocity.z ** 2,
+      ) / 2, 1);
+      red = speed;
+      green = 0.75;
+      blue = 1 - speed * 0.75;
+    } else if (this.appearance.trailColorMode === "distance") {
+      const offset = ((trail.head - trail.count + sampleIndex + trail.maxLength) % trail.maxLength) * 3;
+      const distance = Math.sqrt(
+        trail.positions[offset] ** 2 + trail.positions[offset + 1] ** 2 + trail.positions[offset + 2] ** 2,
+      );
+      const normalized = Math.min(distance / 16, 1);
+      red = normalized;
+      green = 0.4 + (1 - normalized) * 0.55;
+      blue = 1 - normalized * 0.55;
+    } else if (this.appearance.trailColorMode === "age") {
+      red = 0.2 + age * 0.8;
+      green = 0.75 - age * 0.18;
+      blue = 1 - age * 0.82;
+    }
+    const offset = vertexIndex * 3;
+    this.trailColors[offset] = red * intensity;
+    this.trailColors[offset + 1] = green * intensity;
+    this.trailColors[offset + 2] = blue * intensity;
   }
 
   dispose() {
     this.geometry.dispose();
     this.material.dispose();
+    this.haloMaterial.dispose();
     this.trailGeometry.dispose();
     this.trailMaterial.dispose();
   }

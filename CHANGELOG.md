@@ -21,6 +21,10 @@ All notable changes to this project will be documented in this file. The format 
 - Per-particle fixed ring-buffer trails and selection API.
 - Single-BufferGeometry particle renderer integrated with the runtime.
 - Particle lifecycle, trail, selection, rendering, capacity, and buffer-reuse tests.
+- Responsive scientific dashboard with top telemetry, simulation controls, visual settings, and status strip.
+- GPU-material controls for particle, trail, grid, and mass presentation.
+- Deterministic Single Color, Speed, Distance, and Age trail color modes.
+- Mobile and tablet drawer navigation with keyboard focus management.
 
 ### Changed
 
@@ -28,6 +32,8 @@ All notable changes to this project will be documented in this file. The format 
 - Moved UI styles into the UI boundary.
 - Updated the composition root to import through module entry points.
 - Expanded the README with setup, architecture, research direction, and development principles.
+- Increased default particle and trail readability while preserving pooled BufferGeometry rendering.
+- Synchronized the application version to 0.6.0 and declared the Vite-compatible Node.js runtime requirement.
 
 ### Removed
 

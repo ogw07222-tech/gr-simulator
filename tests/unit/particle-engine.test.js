@@ -270,4 +270,29 @@ describe("ParticleRenderer", () => {
     expect(trailGeometryDispose).toHaveBeenCalledOnce();
     expect(trailMaterialDispose).toHaveBeenCalledOnce();
   });
+
+  it("updates rendering appearance without replacing GPU buffers", () => {
+    const renderer = new ParticleRenderer({ maxParticles: 2, maxTrailLength: 4 });
+    const positions = renderer.positions;
+    const trailPositions = renderer.trailPositions;
+
+    renderer.setAppearance({
+      particleSize: 0.6,
+      particleOpacity: 0.7,
+      particleBrightness: 1.2,
+      trailVisible: false,
+      trailOpacity: 0.5,
+      trailBrightness: 1.3,
+      trailFade: 0.6,
+      trailColorMode: "age",
+    });
+
+    expect(renderer.material.size).toBe(0.6);
+    expect(renderer.material.opacity).toBe(0.7);
+    expect(renderer.haloMaterial.size).toBeCloseTo(1.41);
+    expect(renderer.trailObject.visible).toBe(false);
+    expect(renderer.trailMaterial.opacity).toBe(0.5);
+    expect(renderer.positions).toBe(positions);
+    expect(renderer.trailPositions).toBe(trailPositions);
+  });
 });

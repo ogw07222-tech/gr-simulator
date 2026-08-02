@@ -38,6 +38,11 @@ export class MassObject {
     this.core.rotation.y += 0.004;
   }
 
+  setAppearance({ horizonOpacity, emissiveIntensity }) {
+    this.horizon.material.opacity = horizonOpacity;
+    this.core.material.emissiveIntensity = emissiveIntensity;
+  }
+
   dispose() {
     for (const child of this.group.children) {
       child.geometry?.dispose();
