@@ -1,48 +1,82 @@
 # GR-4D Simulator
 
-웹 기반 일반상대성이론(General Relativity) + W축 중력 시뮬레이터.
+A browser-based General Relativity visualization laboratory built with Three.js. The current v0.1 release visualizes a Schwarzschild spatial slice and compares ordinary 3D distance with an educational W-axis effective-distance model.
 
-## v0.1 범위
+> This project is not yet a numerical Einstein field equation solver. The current implementation combines quantities derived from the Schwarzschild metric with explicitly documented weak-field visualization approximations.
 
-- Three.js 기반 3차원 체적 격자
-- 단일 Schwarzschild 질량
-- Schwarzschild 반지름, lapse, 곡률 proxy 표시
-- GR 3D / GR + W 유효거리 비교
-- 질량과 W축 거리 실시간 조절
-- 물리, 장면, 상태, UI 모듈 분리
+## Current capabilities
 
-> 주의: v0.1은 완전한 Einstein field equation 수치해석기가 아닙니다. Schwarzschild 계량에서 얻은 물리량과 약한 장 시각화 근사를 사용합니다.
+- Three.js volumetric grid visualization
+- Single Schwarzschild mass and event-horizon representation
+- Schwarzschild radius, lapse, and curvature proxy metrics
+- GR 3D and GR + W effective-distance comparison
+- Real-time mass and W-axis controls
+- OrbitControls camera navigation
+- Explicit cleanup of renderer, controls, geometry, material, and subscriptions
 
-## 실행
+## Quick start
+
+Requirements: Node.js 20 or newer and npm.
 
 ```bash
 npm install
 npm run dev
 ```
 
-프로덕션 빌드:
+Production verification:
 
 ```bash
 npm run build
 npm run preview
 ```
 
-## 구조
+## Controls
+
+- Drag: rotate camera
+- Right-drag: pan camera
+- Mouse wheel: zoom
+- GR 3D / GR + W: select the effective-distance model
+- Mass M / W-axis distance: update simulation inputs
+
+## Architecture
 
 ```text
 src/
-├─ core/       # 상수와 상태 저장소
-├─ physics/    # 계량/물리 모델
-├─ scene/      # Three.js 렌더러와 시각 객체
-├─ ui/         # 컨트롤 패널
-├─ styles/     # 스타일
-└─ main.js     # 앱 조립
+├─ core/       # Configuration, state, shared runtime primitives
+├─ physics/    # Framework-independent physical models
+├─ rendering/  # Three.js renderer and scene representations
+├─ ui/         # Interactive controls and presentation styles
+├─ hud/        # Read-only metrics projection boundary
+├─ systems/    # Lifecycle, clocks, and orchestration boundary
+├─ utils/      # Small framework-independent helpers
+└─ main.js     # Composition root
 ```
 
-## v0.2 예정
+Each directory exposes or reserves a clear dependency boundary. Existing v0.1 behavior remains assembled in `main.js`; future migrations will move orchestration behind systems only after regression tests exist. See [Architecture](docs/ARCHITECTURE.md) and [Module Boundaries](docs/MODULES.md).
 
-- 다중 질량 데이터 모델
-- 질량 위치 이동
-- 곡률/퍼텐셜 heatmap
-- 물리 단위계 프리셋
-- 테스트 추가
+## Research direction
+
+The long-term goal is a reproducible, testable, performance-oriented GR simulation platform. Physical observables, educational proxies, and visual effects must remain separately named and validated. Numerical methods will be introduced only with reference cases, error bounds, and benchmark budgets.
+
+## Project documentation
+
+- [Physics model](docs/PHYSICS.md)
+- [Architecture](docs/ARCHITECTURE.md)
+- [Module boundaries](docs/MODULES.md)
+- [Contributing](CONTRIBUTING.md)
+- [Roadmap](ROADMAP.md)
+- [Task backlog](TODO.md)
+- [Changelog](CHANGELOG.md)
+
+## Development principles
+
+- Preserve existing behavior and public interactions.
+- Prefer measured performance work over speculative rewrites.
+- Keep physics independent from Three.js and the DOM.
+- Avoid per-frame allocations in performance-critical paths.
+- Require deterministic tests and documented tolerances for numerical changes.
+- Make ownership and disposal explicit for every runtime resource.
+
+## License
+
+[MIT](LICENSE)

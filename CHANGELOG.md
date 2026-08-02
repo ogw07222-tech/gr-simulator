@@ -1,0 +1,30 @@
+# Changelog
+
+All notable changes to this project will be documented in this file. The format follows Keep a Changelog principles and the project intends to use semantic versioning as its public API matures.
+
+## [Unreleased]
+
+### Added
+
+- Research-grade architecture, module-boundary, contribution, roadmap, and backlog documentation.
+- Public module entry points for core, physics, rendering, and UI.
+- Reserved HUD, systems, and utilities boundaries for staged future migration.
+
+### Changed
+
+- Renamed the scene source boundary to rendering.
+- Moved UI styles into the UI boundary.
+- Updated the composition root to import through module entry points.
+- Expanded the README with setup, architecture, research direction, and development principles.
+
+### Removed
+
+- Nothing. Existing v0.1 features and behavior are preserved.
+
+## [0.1.0] - 2026-07-28
+
+### Added
+
+- Initial Three.js volumetric-grid simulator.
+- Schwarzschild model and educational W-axis effective-distance comparison.
+- Interactive mass, W-axis, camera, and metrics controls.

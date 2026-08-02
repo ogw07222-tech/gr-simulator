@@ -1,11 +1,8 @@
-import "./styles/main.css";
-import { PHYSICS_DEFAULTS, SIMULATION_DEFAULTS } from "./core/constants.js";
-import { Store } from "./core/store.js";
-import { SchwarzschildModel } from "./physics/schwarzschild.js";
-import { Renderer } from "./scene/Renderer.js";
-import { VolumetricGrid } from "./scene/VolumetricGrid.js";
-import { MassObject } from "./scene/MassObject.js";
-import { ControlPanel } from "./ui/ControlPanel.js";
+import "./ui/main.css";
+import { PHYSICS_DEFAULTS, SIMULATION_DEFAULTS, Store } from "./core/index.js";
+import { SchwarzschildModel } from "./physics/index.js";
+import { MassObject, Renderer, VolumetricGrid } from "./rendering/index.js";
+import { ControlPanel } from "./ui/index.js";
 
 const store = new Store(SIMULATION_DEFAULTS);
 const model = new SchwarzschildModel(PHYSICS_DEFAULTS);
