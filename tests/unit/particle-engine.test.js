@@ -232,14 +232,42 @@ describe("ParticleRenderer", () => {
     expect(renderer.sync(manager)).toBe(false);
   });
 
+  it("renders trail ring buffers with one reusable LineSegments geometry", () => {
+    const manager = new ParticleManager({ maxParticles: 2, maxTrailLength: 4 });
+    const particle = manager.create({ position: [0, 0, 0], velocity: [1, 0, 0] });
+    const renderer = new ParticleRenderer({ maxParticles: 2, maxTrailLength: 4 });
+    const trailPositions = renderer.trailPositions;
+
+    manager.update(1);
+    manager.update(1);
+    manager.update(1);
+    renderer.sync(manager);
+
+    expect(renderer.trailObject).toBeInstanceOf(THREE.LineSegments);
+    expect(renderer.trailGeometry.drawRange.count).toBe(4);
+    expect(Array.from(renderer.trailPositions.slice(0, 12))).toEqual([
+      1, 0, 0, 2, 0, 0,
+      2, 0, 0, 3, 0, 0,
+    ]);
+    expect(renderer.trailPositions).toBe(trailPositions);
+
+    manager.reset(particle.id);
+    renderer.sync(manager);
+    expect(renderer.trailGeometry.drawRange.count).toBe(0);
+  });
+
   it("releases geometry and material resources", () => {
     const renderer = new ParticleRenderer();
     const geometryDispose = vi.spyOn(renderer.geometry, "dispose");
     const materialDispose = vi.spyOn(renderer.material, "dispose");
+    const trailGeometryDispose = vi.spyOn(renderer.trailGeometry, "dispose");
+    const trailMaterialDispose = vi.spyOn(renderer.trailMaterial, "dispose");
 
     renderer.dispose();
 
     expect(geometryDispose).toHaveBeenCalledOnce();
     expect(materialDispose).toHaveBeenCalledOnce();
+    expect(trailGeometryDispose).toHaveBeenCalledOnce();
+    expect(trailMaterialDispose).toHaveBeenCalledOnce();
   });
 });

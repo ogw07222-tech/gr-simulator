@@ -8,6 +8,7 @@ import {
   ParticleRenderer,
   SimulationClock,
   SimulationState,
+  TIME_SCALES,
   SnapshotManager,
   SubsystemManager,
 } from "./systems/index.js";
@@ -47,16 +48,42 @@ const particles = resources.register(new ParticleManager({
   maxParticles: 1000,
   maxTrailLength: 256,
 }));
-const particleRenderer = resources.register(new ParticleRenderer({ maxParticles: particles.maxParticles }));
+const particleRenderer = resources.register(new ParticleRenderer({
+  maxParticles: particles.maxParticles,
+  maxTrailLength: particles.maxTrailLength,
+}));
 renderer.add(grid.object);
 renderer.add(massObject.group);
 renderer.add(particleRenderer.object);
+renderer.add(particleRenderer.trailObject);
 
-resources.register(new ControlPanel(
+const defaultParticle = particles.create({
+  id: "default-particle",
+  position: [4, 1.5, 0],
+  velocity: [0, 0, 0.75],
+  restMass: 1,
+  radius: 0.22,
+  color: 0xffd166,
+});
+
+const runtimeControls = {
+  timeScales: TIME_SCALES,
+  play: () => clock.resume(),
+  pause: () => clock.pause(),
+  setTimeScale: (scale) => clock.setTimeScale(scale),
+  resetParticle: () => particles.reset(defaultParticle.id),
+  resetAll: () => {
+    clock.reset();
+    particles.reset();
+  },
+};
+
+const controlPanel = resources.register(new ControlPanel(
   document.querySelector("#control-panel"),
   store,
   model,
   grid,
+  runtimeControls,
 ));
 
 const snapshotSource = { mass: 0, schwarzschildRadius: 0 };
@@ -87,6 +114,7 @@ const particleSubsystem = {
   },
   render() {
     particleRenderer.sync(particles);
+    controlPanel.syncRuntime(simulationState, particles.count());
   },
 };
 
