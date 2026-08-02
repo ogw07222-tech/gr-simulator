@@ -1,16 +1,29 @@
 <!doctype html>
-<html lang="ko">
+<html lang="en">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="description" content="웹 기반 일반상대성이론 + W축 중력 시뮬레이터" />
-    <title>GR-4D Simulator v0.5.0</title>
+    <meta name="description" content="Browser-based General Relativity simulation and scientific visualization laboratory" />
+    <title>GR-4D Simulator v0.6.0</title>
   </head>
   <body>
     <div id="app">
-      <div id="viewport" aria-label="3차원 중력 시뮬레이션"></div>
-      <aside id="control-panel"></aside>
-      <div class="guide">드래그: 회전 · 우클릭: 이동 · 휠: 확대/축소</div>
+      <header id="top-bar" class="top-bar"></header>
+      <aside id="control-panel" class="side-panel simulation-panel" aria-label="Simulation controls"></aside>
+      <main id="viewport-shell">
+        <div id="viewport" aria-label="Interactive three-dimensional gravity simulation"></div>
+        <div class="viewport-mode" aria-hidden="true"><span>ACTIVE MODEL</span><strong>Schwarzschild · Educational</strong></div>
+        <div class="camera-guide" aria-hidden="true"><span>Drag to orbit</span><span>Right-drag to pan</span><span>Wheel to zoom</span></div>
+        <div class="reticle" aria-hidden="true"></div>
+      </main>
+      <aside id="visual-settings-panel" class="side-panel visual-panel" aria-label="Visual settings"></aside>
+      <footer class="status-strip">
+        <span><i class="status-dot"></i> Renderer online</span>
+        <span>Fixed simulation step <strong>1 / 240 s</strong></span>
+        <span>Camera <strong>Orbit controls</strong></span>
+        <span class="status-note">Visualization proxy · not a numerical relativity solver</span>
+      </footer>
+      <button id="panel-backdrop" class="panel-backdrop" type="button" aria-label="Close open panel" hidden></button>
     </div>
     <script type="module" src="/src/main.js"></script>
   </body>

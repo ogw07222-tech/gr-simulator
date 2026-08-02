@@ -148,6 +148,22 @@ Performance goals achieved
 
 ---
 
+# Integrated Milestones
+
+## v0.4 — Particle Engine
+
+Completed: fixed-capacity particle storage, batched rendering, fixed-memory trail buffers, and selection API.
+
+## v0.5 — Simulation Integration
+
+Completed: default particle startup, runtime controls, GPU trail rendering, and runtime status projection.
+
+## v0.6 — Scientific UI
+
+Completed: responsive viewport-first dashboard, separate simulation and rendering-preference panels, live runtime telemetry, accessible mobile drawers, and rendering-only presentation settings. This milestone introduces no new physics behavior.
+
+---
+
 # Development Roadmap
 
 ## v0.4

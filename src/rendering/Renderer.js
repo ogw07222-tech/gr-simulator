@@ -12,6 +12,7 @@ export class Renderer {
 
     this.camera = new THREE.PerspectiveCamera(58, 1, 0.1, 500);
     this.camera.position.set(22, 18, 22);
+    this.initialCameraPosition = this.camera.position.clone();
 
     this.renderer = new THREE.WebGLRenderer({ antialias: true });
     this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
@@ -35,6 +36,12 @@ export class Renderer {
   }
 
   add(object) { this.scene.add(object); }
+
+  resetCamera() {
+    this.camera.position.copy(this.initialCameraPosition);
+    this.controls.target.set(0, 0, 0);
+    this.controls.update();
+  }
 
   resize() {
     const width = this.container.clientWidth || window.innerWidth;

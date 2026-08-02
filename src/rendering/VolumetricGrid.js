@@ -78,6 +78,12 @@ export class VolumetricGrid {
 
   get segmentVertexCount() { return this.indices.length; }
 
+  setAppearance({ visible, opacity, brightness }) {
+    this.object.visible = visible;
+    this.material.opacity = opacity;
+    this.material.color.setRGB(brightness, brightness, brightness);
+  }
+
   dispose() {
     this.geometry.dispose();
     this.material.dispose();

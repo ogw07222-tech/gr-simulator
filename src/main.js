@@ -12,7 +12,7 @@ import {
   SnapshotManager,
   SubsystemManager,
 } from "./systems/index.js";
-import { ControlPanel } from "./ui/index.js";
+import { AppShell, ControlPanel, VisualSettingsPanel } from "./ui/index.js";
 
 function createRenderSnapshotBuffer() {
   const data = { mass: 0, schwarzschildRadius: 0 };
@@ -55,6 +55,7 @@ const particleRenderer = resources.register(new ParticleRenderer({
 renderer.add(grid.object);
 renderer.add(massObject.group);
 renderer.add(particleRenderer.object);
+renderer.add(particleRenderer.haloObject);
 renderer.add(particleRenderer.trailObject);
 
 const defaultParticle = particles.create({
@@ -85,6 +86,14 @@ const controlPanel = resources.register(new ControlPanel(
   grid,
   runtimeControls,
 ));
+resources.register(new VisualSettingsPanel(
+  document.querySelector("#visual-settings-panel"),
+  { particleRenderer, grid, massObject },
+));
+const appShell = resources.register(new AppShell(
+  document.querySelector("#app"),
+  { resetCamera: () => renderer.resetCamera() },
+));
 
 const snapshotSource = { mass: 0, schwarzschildRadius: 0 };
 let state = store.getState();
@@ -104,6 +113,7 @@ const renderingSubsystem = {
     const snapshot = snapshots.latest();
     massObject.updateSchwarzschildRadius(snapshot.schwarzschildRadius);
     renderer.render();
+    appShell.update(clock.renderDelta, simulationState);
   },
 };
 

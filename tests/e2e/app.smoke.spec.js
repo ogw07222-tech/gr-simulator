@@ -49,11 +49,12 @@ test("preserves the v0.1 browser interaction baseline", async ({ page }) => {
   await expect(page.locator("#lapse")).not.toBeEmpty();
   await expect(page.locator("#vertices")).not.toBeEmpty();
 
-  await expect(page.locator("header b")).toHaveText("v0.5.0");
+  await expect(page.locator(".version-chip")).toHaveText("v0.6.0");
   await expect(page.locator("#particle-count")).toHaveText("1");
   await expect(page.locator("#runtime-state")).toHaveText("Running");
 
   const timeScale = page.locator("#time-scale");
+  await expect(timeScale.locator("option")).toHaveCount(8);
   await timeScale.selectOption("2");
   await expect(page.locator("#runtime-time-scale")).toHaveText("2x");
 
@@ -79,5 +80,60 @@ test("preserves the v0.1 browser interaction baseline", async ({ page }) => {
   await page.getByRole("button", { name: "Play", exact: true }).click();
   await expect(page.locator("#runtime-state")).toHaveText("Running");
 
+  const particleSize = page.locator("#particle-size");
+  await particleSize.evaluate((input) => {
+    input.value = "0.6";
+    input.dispatchEvent(new Event("input", { bubbles: true }));
+  });
+  await expect(page.locator('[data-output="particle-size"]')).toHaveText("0.60");
+  await page.locator("#trail-color-mode").selectOption("age");
+  await expect(page.locator("#trail-mode-description")).toContainText("oldest to newest");
+  await page.getByRole("button", { name: "Reset Visuals", exact: true }).click();
+  await expect(particleSize).toHaveValue("0.36");
+  await expect(page.locator("#particle-count")).toHaveText("1");
+
+  await page.getByRole("button", { name: "Reset camera", exact: true }).click();
+  await page.getByRole("button", { name: "Toggle fullscreen", exact: true }).click();
+  await page.waitForTimeout(50);
+  expect(await page.evaluate(() => document.fullscreenElement !== null)).toBe(true);
+  await page.getByRole("button", { name: "Toggle fullscreen", exact: true }).click();
+  await page.getByRole("button", { name: "Hide side panels", exact: true }).click();
+  await expect(page.locator("#app")).toHaveClass(/panels-hidden/);
+  await page.getByRole("button", { name: "Show Panels", exact: true }).click();
+  await expect(page.locator("#app")).not.toHaveClass(/panels-hidden/);
+
+  expect(consoleErrors).toEqual([]);
+});
+
+test("keeps the scientific dashboard usable on mobile", async ({ page }) => {
+  const consoleErrors = [];
+  page.on("console", (message) => {
+    if (message.type() === "error") consoleErrors.push(message.text());
+  });
+  page.on("pageerror", (error) => consoleErrors.push(error.message));
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto("/");
+
+  await expect(page.locator("#viewport canvas")).toHaveCount(1);
+  const overflow = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
+  expect(overflow).toBeLessThanOrEqual(0);
+
+  await page.getByRole("button", { name: "Simulation", exact: true }).click();
+  const simulationPanel = page.locator("#control-panel");
+  await expect(simulationPanel).toBeVisible();
+  await expect(simulationPanel).toBeFocused();
+  const closeSimulation = page.locator("#control-panel").getByRole("button", { name: "Close simulation controls", exact: true });
+  await closeSimulation.click();
+
+  await page.getByRole("button", { name: "Visuals", exact: true }).click();
+  await expect(page.locator("#visual-settings-panel")).toBeVisible();
+  await page.locator("#visual-settings-panel").getByRole("button", { name: "Close visual settings", exact: true }).click();
+  await expect(page.locator("#panel-backdrop")).toBeHidden();
+  await expect(page.getByRole("button", { name: "Visuals", exact: true })).toBeFocused();
+
+  await page.setViewportSize({ width: 844, height: 390 });
+  await expect(page.getByRole("button", { name: "Simulation", exact: true })).toBeVisible();
+  const landscapeOverflow = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
+  expect(landscapeOverflow).toBeLessThanOrEqual(0);
   expect(consoleErrors).toEqual([]);
 });

@@ -30,6 +30,17 @@ export default [
     files: ["tests/e2e/**/*.js"],
     languageOptions: {
       globals: {
+        document: "readonly",
+        Event: "readonly",
+        window: "readonly",
+      },
+    },
+  },
+  {
+    files: ["tests/unit/**/*.js"],
+    languageOptions: {
+      globals: {
+        document: "readonly",
         Event: "readonly",
       },
     },
