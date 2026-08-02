@@ -1,71 +1,129 @@
 # GR-4D Simulator
 
-> Browser-based Research Grade General Relativity Simulator
+> Browser-based General Relativity Simulation Engine
 
 ---
 
 # Vision
 
-This project aims to become the most complete browser-based General Relativity simulator.
+GR-4D Simulator is not intended to be a simple gravity visualization.
 
-Goals:
+The long-term goal is to build a browser-based simulation engine capable of reproducing and visualizing phenomena from General Relativity with a clean, extensible software architecture.
 
-- Research-grade architecture
-- Scientific correctness
-- High performance
-- Expandability
-- Clean software engineering
-- Long-term maintainability
+Ultimately, the project aims to evolve into a research-grade educational and scientific simulation platform.
 
 ---
 
-# Development Principles
+# Project Philosophy
+
+This project follows one principle above everything else.
+
+> Build a simulation engine, not just a visualization.
+
+Every implementation should prioritize:
+
+- Correct architecture
+- Scientific correctness
+- Performance
+- Maintainability
+- Extensibility
+
+Feature count is never more important than software quality.
+
+---
+
+# Development Rules
 
 ## Never
 
 - Break existing functionality
 - Remove working features
-- Ignore tests
-- Sacrifice architecture for shortcuts
+- Introduce unnecessary complexity
+- Allocate objects every frame
+- Ignore failing tests
+- Sacrifice architecture for speed
 
 ## Always
 
 - Performance first
 - Test before merge
 - CI must pass
-- Minimize allocations
+- Modular architecture
 - Reuse memory
-- Preserve API compatibility
+- Minimize garbage collection
+- Separate simulation from rendering
 
 ---
 
-# Current Progress
+# Engine Architecture
 
-## v0.1 Core Architecture ✅
+The engine follows a strict separation of responsibilities.
 
-- Architecture
+```
+SimulationClock
+        │
+        ▼
+Physics Engine
+        │
+        ▼
+Snapshot Manager
+        │
+        ▼
+Renderer
+        │
+        ├────────► HUD
+        │
+        └────────► UI
+```
+
+### Rules
+
+Renderer never modifies physics.
+
+Physics never depends on rendering.
+
+Communication occurs only through immutable snapshots.
+
+Every subsystem must be independently replaceable.
+
+---
+
+# Current Development Status
+
+## v0.1 — Core Architecture ✅
+
+Completed
+
+- Project structure
+- Documentation
+- Module boundaries
 - README
 - ROADMAP
 - TODO
-- CONTRIBUTING
 - CHANGELOG
-- Documentation
+- CONTRIBUTING
 
 ---
 
-## v0.2 Safety Baseline ✅
+## v0.2 — Safety Baseline ✅
+
+Completed
 
 - Vitest
 - Playwright
 - ESLint
 - GitHub Actions
-- Physics Tests
-- Store Tests
-- Performance Baseline
+- Physics tests
+- Store tests
+- Performance baseline
 
 ---
 
-## v0.3 Runtime Engine ✅
+## v0.3 — Runtime Engine ✅
+
+Completed
+
+Subsystems
 
 - SimulationClock
 - SimulationState
@@ -73,40 +131,35 @@ Goals:
 - ResourceManager
 - SubsystemManager
 
-Features
+Capabilities
 
-- Fixed timestep
-- Pause
-- Resume
-- Time Scale
+- Fixed timestep (240 Hz)
+- Pause / Resume
+- Time scaling
 - Snapshot rendering
 - Resource ownership
+- Stable update loop
 
-Performance
+Performance goals achieved
 
-- No allocations inside animation loop
-
-Tests
-
-- Runtime tests
-- Physics tests
-- Store tests
-- Playwright
+- No allocations in animation loop
+- Buffer reuse
+- Stable rendering pipeline
 
 ---
 
-# Roadmap
+# Development Roadmap
 
 ## v0.4
 
 Particle Engine
 
 - ParticleManager
-- Massive Particles
-- Test Particles
-- Trail System
-- Buffer Rendering
+- Massive particles
+- Test particles
+- Trail system
 - Selection API
+- Buffer rendering
 
 ---
 
@@ -115,14 +168,14 @@ Particle Engine
 Simulation HUD
 
 - FPS
-- Simulation Time
-- Proper Time
-- Coordinate Time
+- Simulation time
+- Proper time
+- Coordinate time
 - Mass
-- Event Horizon
-- Angular Momentum
-- Energy
+- Event horizon radius
+- Angular momentum
 - Velocity
+- Energy
 
 ---
 
@@ -130,11 +183,11 @@ Simulation HUD
 
 Orbit Engine
 
-- Orbit Classification
-- Stable Orbit
-- Escape Orbit
+- Orbit classification
+- Stable orbit
+- Escape orbit
 - Capture
-- Trail Analysis
+- Trail analysis
 
 ---
 
@@ -142,11 +195,11 @@ Orbit Engine
 
 Schwarzschild Geodesics
 
-- Timelike Geodesics
-- Photon Sphere
+- Timelike geodesics
+- Photon sphere
 - ISCO
-- Perihelion Precession
-- Conserved Quantities
+- Perihelion precession
+- Conserved quantities
 
 ---
 
@@ -154,11 +207,11 @@ Schwarzschild Geodesics
 
 Kerr Metric
 
-- Rotating Black Hole
-- Frame Dragging
+- Rotating black holes
+- Frame dragging
 - Ergosphere
 - Kerr ISCO
-- Spin Parameter
+- Spin parameter
 
 ---
 
@@ -166,11 +219,11 @@ Kerr Metric
 
 Photon Ray Tracing
 
-- Photon Geodesics
-- Gravitational Lensing
-- Black Hole Shadow
-- Photon Ring
-- Accretion Disk
+- Photon geodesics
+- Gravitational lensing
+- Black hole shadow
+- Photon ring
+- Accretion disk
 
 ---
 
@@ -178,38 +231,51 @@ Photon Ray Tracing
 
 Research Edition
 
-- Inspector
-- Scientific Visualization
-- Data Export
-- Simulation Recording
-- Metric Viewer
-- Tensor Viewer
-- Experiment Presets
+- Scientific inspector
+- Data export
+- Simulation recording
+- Metric viewer
+- Tensor viewer
+- Experiment presets
 
 ---
 
-# Future Vision
+# Long-Term Goals
 
-## GPU Computing
+Future development targets include
 
-- WebGPU
-- Compute Shaders
-- Massive Parallel Simulation
-
----
-
-## Numerical Relativity
-
-- ADM Formalism
-- BSSN
-- Dynamic Space-time
+- WebGPU acceleration
+- Compute shaders
+- Massive particle simulation
+- Numerical Relativity
+- Dynamic spacetime
+- Einstein Field Equation experiments
 
 ---
 
-## Einstein Equation Solver
+# Scientific Direction
 
-Future long-term goal:
+Current engine
 
+```
+Mass
+
+↓
+
+Known Metric
+
+↓
+
+Geodesic Motion
+
+↓
+
+Visualization
+```
+
+Long-term vision
+
+```
 Stress-Energy Tensor
 
 ↓
@@ -234,55 +300,42 @@ Photon Simulation
 
 ↓
 
+Scientific Visualization
+```
+
+The project intentionally grows toward increasingly realistic General Relativity rather than remaining a visual demonstration.
+
+---
+
+# Performance Goals
+
+Target frame rate
+
+- 60 FPS
+
+Simulation
+
+- Fixed timestep
+- Stable integration
+- Deterministic updates
+
+Memory
+
+- Zero allocations in update loops
+- Buffer reuse
+- Typed arrays where appropriate
+
 Rendering
 
----
-
-# Runtime Philosophy
-
-Physics
-
-↓
-
-Snapshot
-
-↓
-
-Renderer
-
-↓
-
-HUD
-
-↓
-
-UI
-
-Renderer must never modify physics.
-
-Physics must never depend on rendering.
-
-Everything is modular.
-
----
-
-# Performance Targets
-
-60 FPS
-
-1000+ particles
-
-Zero allocations inside update loop
-
-Memory reuse
-
-Buffer reuse
-
-Typed arrays
+- GPU-friendly data layout
+- Minimize draw calls
+- Efficient BufferGeometry usage
 
 ---
 
 # Repository Workflow
+
+Every feature follows the same lifecycle.
 
 Issue
 
@@ -292,7 +345,11 @@ Branch
 
 ↓
 
-Commit
+Implementation
+
+↓
+
+Tests
 
 ↓
 
@@ -306,33 +363,35 @@ Review
 
 Merge
 
-↓
-
-Done
+No feature is considered complete until all automated verification passes.
 
 ---
 
 # Branch Naming
 
+```
 feature/gr-vX.X-name
+```
 
 Examples
 
+```
 feature/gr-v0.4-particles
 
 feature/gr-v0.5-hud
 
 feature/gr-v0.6-orbits
+```
 
 ---
 
-# Pull Request Rules
+# Pull Request Requirements
 
-Every PR must include
+Every Pull Request must include
 
 - Architecture summary
-- Tests
-- Build result
+- Test results
+- Build verification
 - Performance impact
 - Future extension points
 
@@ -340,13 +399,18 @@ Every PR must include
 
 # Lead Developer Notes
 
-The project is designed as a long-term research platform.
+This project is designed as a long-term engineering effort.
 
-Code quality is more important than development speed.
+Every architectural decision should make future implementation of
 
-Every subsystem should be extensible toward
-
-- General Relativity
+- Schwarzschild spacetime
+- Kerr spacetime
+- Photon ray tracing
+- Scientific visualization
 - Numerical Relativity
-- GPU Simulation
-- Scientific Research
+
+easier rather than harder.
+
+Build the engine first.
+
+Everything else is built on top of it.
