@@ -68,6 +68,7 @@ The long-term goal is a reproducible, testable, performance-oriented GR simulati
 - [Physics model](docs/PHYSICS.md)
 - [Architecture](docs/ARCHITECTURE.md)
 - [Module boundaries](docs/MODULES.md)
+- [Runtime engine](docs/RUNTIME_ENGINE.md)
 - [Contributing](CONTRIBUTING.md)
 - [Roadmap](ROADMAP.md)
 - [Task backlog](TODO.md)

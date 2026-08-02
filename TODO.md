@@ -12,11 +12,11 @@ This backlog describes future work; this architecture PR does not implement new 
 
 ## P1 — Runtime architecture
 
-- [ ] Introduce a `SimulatorApp` lifecycle without changing visible behavior.
-- [ ] Separate fixed-step simulation time from render time.
+- [ ] Introduce a `SimulatorApp` facade without changing the integrated runtime lifecycle.
+- [x] Separate fixed-step simulation time from render time.
 - [ ] Add selector-based subscriptions and dirty revisions.
-- [ ] Define idempotent `start`, `stop`, and `dispose` contracts.
-- [ ] Define resource ownership for shared geometry, material, texture, and observers.
+- [x] Define idempotent runtime start, stop, and dispose contracts.
+- [x] Define and integrate resource ownership for rendering, controls, observers, listeners, and subscriptions.
 
 ## P1 — Physics architecture
 

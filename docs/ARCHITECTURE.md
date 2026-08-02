@@ -42,7 +42,7 @@ The planned frame sequence is:
 5. Update presentation-only systems.
 6. Render the frame.
 
-This sequence is documentation only in v0.6-core. The existing v0.1 loop remains unchanged until tests and baselines are available.
+The v0.3 runtime implements this sequence with a fixed SimulationClock, revisioned SnapshotManager, ordered SubsystemManager, and centralized ResourceManager. The current static physics model remains state-change driven, preserving v0.1 behavior while future evolving systems can use fixed updates.
 
 ## Performance principles
 
