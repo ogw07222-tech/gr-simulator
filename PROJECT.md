@@ -2,6 +2,8 @@
 
 > Browser-based General Relativity Simulation Engine
 
+Current release: **v0.7.2**. The scientific UX layer is documented in [docs/USER_GUIDE.md](docs/USER_GUIDE.md) and [docs/GLOSSARY.md](docs/GLOSSARY.md); it does not alter the v0.7 physics model.
+
 ---
 
 # Vision

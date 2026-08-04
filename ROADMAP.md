@@ -2,6 +2,13 @@
 
 Version targets describe dependency order, not delivery dates. Every milestone must preserve the v0.1 experience unless a separately reviewed migration says otherwise.
 
+## v0.7.2 — Scientific UX
+
+- Accessible categorized controls and progressive disclosure
+- Bilingual embedded user guide and contextual glossary
+- Explicit three-step, draft-first orbit experiment workflow
+- No physics, runtime-default, camera, or rendering changes
+
 ## v0.2 — Safety baseline
 
 - Characterization tests for current physics, state, UI, and cleanup

@@ -15,7 +15,7 @@ test("preserves simulation behavior while switching scientific UI locales", asyn
   await expect(page.locator("html")).toHaveAttribute("lang", "en");
   await expect(page.locator("#locale-select")).toHaveValue("en");
   await expect(page.getByRole("heading", { name: "Simulation" })).toBeVisible();
-  await expect(page.locator(".version-chip")).toHaveText("v0.7.0");
+  await expect(page.locator(".version-chip")).toHaveText("v0.7.2");
   await expect(page.locator("#geo-classification")).toHaveText("Stable circular");
   await expect(page.locator("#geo-status")).toHaveText("Active");
   await expect(page.locator("#orbit-preset")).toHaveValue("circular");
@@ -132,6 +132,22 @@ test("keeps the scientific dashboard within all approved responsive viewports", 
       await expect(page.locator("#viewport canvas")).toHaveCount(1);
     }
   }
+  expect(consoleErrors).toEqual([]);
+});
+
+test("opens bilingual scientific guidance without resetting simulation state", async ({ page }) => {
+  const consoleErrors = collectErrors(page);
+  await page.goto("/");
+  const before = await page.evaluate(() => window.__GR4D_DIAGNOSTICS__.getSnapshot().runtime.simulationTime);
+  await page.locator("#open-guide").click();
+  await expect(page.getByRole("dialog")).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Scientific User Guide" })).toBeVisible();
+  await page.locator("#locale-select").selectOption("ko");
+  await expect(page.getByRole("heading", { name: "과학 사용자 안내서" })).toBeVisible();
+  await page.keyboard.press("Escape");
+  await expect(page.getByRole("dialog")).toBeHidden();
+  const after = await page.evaluate(() => window.__GR4D_DIAGNOSTICS__.getSnapshot().runtime.simulationTime);
+  expect(after).toBeGreaterThan(before);
   expect(consoleErrors).toEqual([]);
 });
 

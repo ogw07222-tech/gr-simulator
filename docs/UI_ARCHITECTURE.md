@@ -1,5 +1,13 @@
 # Scientific UI architecture
 
+## v0.7.2 interaction layer
+
+- `ControlPanel` and `VisualSettingsPanel` group existing controls with native `details/summary` disclosures. Simulation and orbit setup open initially; numerical integration stays collapsed.
+- `UserGuide` is an AppShell-owned bilingual dialog. It updates in place on locale changes, traps focus, closes with Escape, and restores focus without recreating the simulation.
+- `ScientificHelp` provides one reusable contextual popover for all `data-help-key` triggers. Definitions remain centralized in the locale dictionaries.
+- Orbit fields remain drafts until `applyOrbit` validates and applies the complete configuration atomically. Locale, camera, runtime, particle, and rendering state are not rebuilt.
+- Long-form reference lives in `docs/USER_GUIDE.md` and `docs/GLOSSARY.md`.
+
 ## Design language
 
 The interface is an original scientific dashboard influenced by mission-control software and technical visualization tools. It does not reproduce artwork, icons, logos, or layouts from external references.

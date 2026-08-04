@@ -1,5 +1,7 @@
 import { VERSION } from "../core/constants.js";
 import { getLocale, setLocale, subscribeLocale, t } from "./i18n.js";
+import { ScientificHelp } from "./ScientificHelp.js";
+import { UserGuide } from "./UserGuide.js";
 
 export class AppShell {
   constructor(root, { resetCamera }) {
@@ -11,6 +13,8 @@ export class AppShell {
     this.lastFrameTime = null;
     this.paused = false;
     this.render();
+    this.scientificHelp = new ScientificHelp(root);
+    this.userGuide = new UserGuide(root);
     this.bind();
     this.unsubscribeLocale = subscribeLocale(() => this.localize());
     this.localize();
@@ -31,6 +35,7 @@ export class AppShell {
       <nav class="top-actions" data-i18n-aria="camera.viewportTools">
         <button id="open-simulation" class="mobile-only" type="button" data-i18n="panels.simulation"></button>
         <button id="open-visuals" class="mobile-only" type="button" data-i18n="panels.visualsShort"></button>
+        <button id="open-guide" class="guide-action" type="button" data-i18n="guide.open" data-i18n-aria="guide.open"></button>
         <label class="locale-control"><span class="sr-only" data-i18n="language.label"></span><select id="locale-select" data-i18n-aria="language.label">
           <option value="ko" data-i18n="language.ko"></option><option value="en" data-i18n="language.en"></option>
         </select></label>
@@ -61,6 +66,7 @@ export class AppShell {
       if (event.key === "Escape") this.closeDrawers();
     };
     this.root.querySelector("#reset-camera").addEventListener("click", this.resetCamera);
+    this.root.querySelector("#open-guide").addEventListener("click", (event) => this.userGuide.open(event.currentTarget));
     this.root.querySelector("#locale-select").addEventListener("change", (event) => setLocale(event.target.value));
     this.root.querySelector("#fullscreen").addEventListener("click", () => this.toggleFullscreen());
     this.root.querySelector("#toggle-panels").addEventListener("click", () => this.togglePanels());
@@ -122,6 +128,8 @@ export class AppShell {
   }
 
   dispose() {
+    this.scientificHelp.dispose();
+    this.userGuide.dispose();
     this.unsubscribeLocale?.();
     document.removeEventListener("keydown", this.handleKeydown);
   }

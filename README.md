@@ -1,6 +1,8 @@
 # GR-4D Simulator
 
-A browser-based General Relativity visualization laboratory built with Three.js. Version 0.7.0 adds SI-facing, equatorial timelike geodesics in a fixed analytic Schwarzschild spacetime while preserving the existing visualization dashboard.
+A browser-based General Relativity visualization laboratory built with Three.js. Version 0.7.2 adds a bilingual scientific guide, contextual glossary, and structured experiment workflow while preserving the v0.7 Schwarzschild physics and rendering behavior.
+
+User documentation: [scientific user guide](docs/USER_GUIDE.md) · [glossary](docs/GLOSSARY.md)
 
 > This project is not yet a numerical Einstein field equation solver. The current implementation combines quantities derived from the Schwarzschild metric with explicitly documented weak-field visualization approximations.
 
