@@ -134,3 +134,40 @@ test("keeps the scientific dashboard within all approved responsive viewports", 
   }
   expect(consoleErrors).toEqual([]);
 });
+
+test("advances the geodesic particle through snapshots and GPU input while running", async ({ page }) => {
+  const consoleErrors = collectErrors(page);
+  await page.goto("/");
+  await page.waitForFunction(() => window.__GR4D_DIAGNOSTICS__?.getSnapshot().physicsUpdates > 0);
+
+  const initial = await page.evaluate(() => window.__GR4D_DIAGNOSTICS__.getSnapshot());
+  await page.waitForTimeout(500);
+  const running = await page.evaluate(() => window.__GR4D_DIAGNOSTICS__.getSnapshot());
+
+  expect(initial.runtime.running).toBe(true);
+  expect(initial.runtime.paused).toBe(false);
+  expect(running.lastPhysicsDelta).toBe(1 / 240);
+  expect(running.physicsUpdates).toBeGreaterThan(initial.physicsUpdates);
+  expect(running.physics.phi).toBeGreaterThan(initial.physics.phi);
+  expect(running.particle.z).toBeGreaterThan(initial.particle.z);
+  expect(running.snapshot.z).toBe(running.particle.z);
+  expect(running.particleRenderer.z).toBeCloseTo(running.snapshot.z, 6);
+  expect(running.snapshot.revision).toBeGreaterThan(initial.snapshot.revision);
+  expect(running.particleRenderer.revision).toBeGreaterThan(initial.particleRenderer.revision);
+
+  await page.getByRole("button", { name: "Pause", exact: true }).click();
+  const paused = await page.evaluate(() => window.__GR4D_DIAGNOSTICS__.getSnapshot());
+  await page.waitForTimeout(300);
+  const pausedLater = await page.evaluate(() => window.__GR4D_DIAGNOSTICS__.getSnapshot());
+  expect(pausedLater.physicsUpdates).toBe(paused.physicsUpdates);
+  expect(pausedLater.physics.phi).toBe(paused.physics.phi);
+  expect(pausedLater.particle.z).toBe(paused.particle.z);
+  expect(pausedLater.snapshot.revision).toBe(paused.snapshot.revision);
+
+  await page.locator("#time-scale").selectOption("100");
+  await page.getByRole("button", { name: "Play", exact: true }).click();
+  await page.waitForTimeout(500);
+  const accelerated = await page.evaluate(() => window.__GR4D_DIAGNOSTICS__.getSnapshot());
+  expect(accelerated.particleRenderer.z - paused.particleRenderer.z).toBeGreaterThan(0.05);
+  expect(consoleErrors).toEqual([]);
+});

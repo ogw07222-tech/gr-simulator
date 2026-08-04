@@ -29,3 +29,9 @@ Node 24.14.0 on the development Windows host, 240 fixed updates, circular states
 | 1000 | 138.15 ms | 0.5756 ms |
 
 These are solver-only microbenchmarks, not browser FPS guarantees. One production scientific particle is enabled. 100 particles are currently a measured CPU reference; 1000 remains a capacity experiment, not a supported high-accuracy interactive claim. Re-run with `npm run benchmark:physics` on target hardware.
+
+## Runtime motion observability
+
+The production default is a circular orbit at `6 r_s` around a `4×10⁶ M☉` black hole. Its proper-time orbital period is approximately `4456.6 s` and its Schwarzschild-coordinate period is approximately `5146.1 s`. At `1×`, the expected azimuth change is only about `0.001410 rad/s`; at the default camera scale a short observation can therefore look stationary even while the solver, canonical particle, snapshot, and GPU position buffer are all advancing.
+
+The formal diagnostics snapshot reports the clock accumulator, last fixed physics delta, update count, runtime state, normalized geodesic state, canonical render position, snapshot render position, and particle-renderer input position. The browser regression test compares every stage while running, verifies no change while paused, and uses the existing `100×` runtime control to establish visibly resolvable render-coordinate motion without changing equations, SI conversion, initial conditions, or fixed `dt`.

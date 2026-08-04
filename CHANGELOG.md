@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+### Fixed
+
+- Added end-to-end motion diagnostics and regression coverage across the fixed simulation clock, Schwarzschild subsystem, canonical particle, immutable snapshot, and GPU particle-position buffer. The default `4×10⁶ M☉` real-time orbit remains physically unchanged; its approximately 74.3-minute proper-time period explains why brief `1×` observations appear stationary.
+
 ## [0.7.0] - 2026-08-05
 
 ### Added

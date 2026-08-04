@@ -24,6 +24,7 @@ function createRenderSnapshotBuffer() {
     energy: 0, angularMomentum: 0, angularMomentumSI: 0, energyDrift: 0,
     angularMomentumDrift: 0, normalizationResidual: 0, integrationSubsteps: 0,
     minimumRadiusRs: 0, maximumRadiusRs: 0,
+    renderX: 0, renderY: 0, renderZ: 0,
   };
   const view = Object.freeze({
     get mass() { return data.mass; },
@@ -48,6 +49,9 @@ function createRenderSnapshotBuffer() {
     get integrationSubsteps() { return data.integrationSubsteps; },
     get minimumRadiusRs() { return data.minimumRadiusRs; },
     get maximumRadiusRs() { return data.maximumRadiusRs; },
+    get renderX() { return data.renderX; },
+    get renderY() { return data.renderY; },
+    get renderZ() { return data.renderZ; },
   });
   return { data, view };
 }
@@ -75,6 +79,9 @@ function copyRenderSnapshot(target, source) {
   target.integrationSubsteps = source.integrationSubsteps;
   target.minimumRadiusRs = source.minimumRadiusRs;
   target.maximumRadiusRs = source.maximumRadiusRs;
+  target.renderX = source.renderX;
+  target.renderY = source.renderY;
+  target.renderZ = source.renderZ;
 }
 
 const resources = new ResourceManager();
@@ -200,9 +207,11 @@ subsystems.initialize({ resources, snapshots, store });
 
 let animationId;
 let disposed = false;
-const runtimeDiagnostics = { animationFrames: 0, renderedFrames: 0 };
+const runtimeDiagnostics = { animationFrames: 0, renderedFrames: 0, physicsUpdates: 0, lastPhysicsDelta: 0 };
 function prepareGridView(camera) { grid.updateView(camera); }
 function updateSimulation(delta, runtimeState) {
+  runtimeDiagnostics.physicsUpdates += 1;
+  runtimeDiagnostics.lastPhysicsDelta = delta;
   subsystems.update(delta, runtimeState, snapshots.latest());
 }
 
@@ -238,6 +247,45 @@ window.__GR4D_DIAGNOSTICS__ = Object.freeze({
       animationFrames: runtimeDiagnostics.animationFrames,
       renderedFrames: runtimeDiagnostics.renderedFrames,
       simulationDelta: clock.simulationDelta,
+      accumulator: clock.accumulator,
+      physicsUpdates: runtimeDiagnostics.physicsUpdates,
+      lastPhysicsDelta: runtimeDiagnostics.lastPhysicsDelta,
+      runtime: {
+        running: simulationState.running,
+        paused: simulationState.paused,
+        timeScale: simulationState.timeScale,
+        frame: simulationState.frame,
+        simulationTime: simulationState.simulationTime,
+        renderTime: simulationState.renderTime,
+      },
+      physics: {
+        status: geodesicSubsystem.geodesic.status,
+        normalizedTime: geodesicSubsystem.geodesic.state.values[0],
+        radius: geodesicSubsystem.geodesic.state.values[1],
+        phi: geodesicSubsystem.geodesic.state.values[2],
+        radialVelocity: geodesicSubsystem.geodesic.state.values[3],
+        normalizedProperTime: geodesicSubsystem.geodesic.state.values[4],
+      },
+      particle: {
+        revision: particles.revision(),
+        x: geodesicSubsystem.particle.position.x,
+        y: geodesicSubsystem.particle.position.y,
+        z: geodesicSubsystem.particle.position.z,
+        trailLength: geodesicSubsystem.particle.trail.length,
+      },
+      snapshot: {
+        revision: snapshots.revision(),
+        x: snapshots.latest().renderX,
+        y: snapshots.latest().renderY,
+        z: snapshots.latest().renderZ,
+        properTime: snapshots.latest().properTime,
+      },
+      particleRenderer: {
+        revision: particleRenderer.lastRevision,
+        x: particleRenderer.positions[0],
+        y: particleRenderer.positions[1],
+        z: particleRenderer.positions[2],
+      },
       maxFps: frameRateController.maxFps,
       grid: { ...grid.getDiagnostics() },
       renderer: { ...renderer.getDiagnostics() },

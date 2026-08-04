@@ -115,6 +115,9 @@ export class SchwarzschildParticleSubsystem {
     target.integrationSubsteps = this.geodesic.diagnostics.substeps;
     target.minimumRadiusRs = this.geodesic.diagnostics.minimumRadius;
     target.maximumRadiusRs = this.geodesic.diagnostics.maximumRadius;
+    target.renderX = this.particle.position.x;
+    target.renderY = this.particle.position.y;
+    target.renderZ = this.particle.position.z;
   }
 
   #syncParticle(appendTrail) {
