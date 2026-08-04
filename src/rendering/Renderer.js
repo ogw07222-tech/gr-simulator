@@ -24,6 +24,7 @@ export class Renderer {
     this.controls.dampingFactor = 0.06;
     this.controls.minDistance = 8;
     this.controls.maxDistance = 300;
+    this.diagnostics = { drawCalls: 0, lines: 0, points: 0, triangles: 0, geometries: 0, textures: 0 };
 
     this.scene.add(new THREE.AmbientLight(0xffffff, 0.42));
     const key = new THREE.PointLight(0x66e6ff, 22, 90);
@@ -51,10 +52,21 @@ export class Renderer {
     this.renderer.setSize(width, height, false);
   }
 
-  render() {
+  render(prepareFrame = null) {
     this.controls.update();
+    prepareFrame?.(this.camera);
     this.renderer.render(this.scene, this.camera);
+    const render = this.renderer.info.render;
+    const memory = this.renderer.info.memory;
+    this.diagnostics.drawCalls = render.calls;
+    this.diagnostics.lines = render.lines;
+    this.diagnostics.points = render.points;
+    this.diagnostics.triangles = render.triangles;
+    this.diagnostics.geometries = memory.geometries;
+    this.diagnostics.textures = memory.textures;
   }
+
+  getDiagnostics() { return this.diagnostics; }
 
   dispose() {
     this.resizeObserver.disconnect();

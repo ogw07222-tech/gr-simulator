@@ -4,6 +4,7 @@ import { SchwarzschildModel } from "./physics/index.js";
 import { MassObject, Renderer, VolumetricGrid } from "./rendering/index.js";
 import {
   ResourceManager,
+  FrameRateController,
   ParticleManager,
   ParticleRenderer,
   SimulationClock,
@@ -31,6 +32,7 @@ function copyRenderSnapshot(target, source) {
 const resources = new ResourceManager();
 const simulationState = new SimulationState();
 const clock = new SimulationClock({ state: simulationState });
+const frameRateController = new FrameRateController();
 const snapshots = new SnapshotManager({
   createBuffer: createRenderSnapshotBuffer,
   copy: copyRenderSnapshot,
@@ -97,6 +99,7 @@ const visualSettings = resources.register(new VisualSettingsPanel(
     particleRenderer,
     grid,
     massObject,
+    frameRateController,
     trailCapacity: {
       current: initialTrailCapacity,
       options: trailCapacityOptions,
@@ -127,11 +130,11 @@ applyState(state);
 
 const renderingSubsystem = {
   order: 100,
-  render() {
+  render(renderDelta) {
     const snapshot = snapshots.latest();
     massObject.updateSchwarzschildRadius(snapshot.schwarzschildRadius);
-    renderer.render();
-    appShell.update(clock.renderDelta, simulationState);
+    renderer.render(prepareGridView);
+    appShell.update(renderDelta, simulationState);
   },
 };
 
@@ -150,17 +153,30 @@ const subsystems = new SubsystemManager([particleSubsystem, renderingSubsystem])
 subsystems.initialize({ resources, snapshots, store });
 
 let animationId;
+let disposed = false;
+const runtimeDiagnostics = { animationFrames: 0, renderedFrames: 0 };
+function prepareGridView(camera) { grid.updateView(camera); }
 function updateSimulation(delta, runtimeState) {
   subsystems.update(delta, runtimeState, snapshots.latest());
 }
 
 function animate(timestamp) {
   animationId = requestAnimationFrame(animate);
+  runtimeDiagnostics.animationFrames += 1;
+  if (document.hidden) {
+    clock.synchronize(timestamp);
+    frameRateController.shouldRender(timestamp, true);
+    return;
+  }
   clock.tick(timestamp, updateSimulation);
-  subsystems.render(clock.renderDelta, simulationState, snapshots.latest());
+  if (!frameRateController.shouldRender(timestamp)) return;
+  runtimeDiagnostics.renderedFrames += 1;
+  subsystems.render(frameRateController.renderDelta, simulationState, snapshots.latest());
 }
 
 function dispose() {
+  if (disposed) return;
+  disposed = true;
   cancelAnimationFrame(animationId);
   clock.stop();
   subsystems.dispose();
@@ -169,5 +185,18 @@ function dispose() {
 
 resources.register(window, () => window.removeEventListener("beforeunload", dispose));
 window.addEventListener("beforeunload", dispose);
+if (import.meta.hot) import.meta.hot.dispose(dispose);
+window.__GR4D_DIAGNOSTICS__ = Object.freeze({
+  getSnapshot() {
+    return {
+      animationFrames: runtimeDiagnostics.animationFrames,
+      renderedFrames: runtimeDiagnostics.renderedFrames,
+      simulationDelta: clock.simulationDelta,
+      maxFps: frameRateController.maxFps,
+      grid: { ...grid.getDiagnostics() },
+      renderer: { ...renderer.getDiagnostics() },
+    };
+  },
+});
 clock.start();
 animationId = requestAnimationFrame(animate);

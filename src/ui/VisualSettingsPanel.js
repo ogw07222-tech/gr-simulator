@@ -13,22 +13,28 @@ const DEFAULTS = Object.freeze({
   gridVisible: true,
   gridOpacity: 0.52,
   gridBrightness: 0.82,
+  gridMaxRenderDistance: 140,
+  gridNearFadeEnabled: true,
+  gridNearFadeDistance: 10,
+  maxFps: 60,
   horizonGlow: 0.42,
-  massBrightness: 1.8,
+  massBrightness: 1,
 });
 
 export class VisualSettingsPanel {
-  constructor(root, { particleRenderer, grid, massObject, trailCapacity = null }) {
+  constructor(root, { particleRenderer, grid, massObject, frameRateController = null, trailCapacity = null }) {
     this.root = root;
     this.particleRenderer = particleRenderer;
     this.grid = grid;
     this.massObject = massObject;
+    this.frameRateController = frameRateController ?? { maxFps: 60, setMaxFps() {} };
     this.trailCapacity = trailCapacity ?? {
       current: particleRenderer.maxTrailLength,
       options: [particleRenderer.maxTrailLength],
       resize: () => false,
     };
     this.values = { ...DEFAULTS };
+    this.values.maxFps = this.frameRateController.maxFps;
     this.render();
     this.bind();
     this.unsubscribeLocale = subscribeLocale(() => this.localize());
@@ -45,6 +51,12 @@ export class VisualSettingsPanel {
     this.root.innerHTML = `
       <div class="panel-heading"><div><span class="section-index">02</span><h2 data-i18n="panels.visualSettings"></h2></div><button class="panel-close" data-close-panel type="button" data-i18n="panels.close" data-i18n-aria="panels.closeVisuals"></button></div>
       <p class="panel-intro" data-i18n="visual.intro"></p>
+      <section class="panel-section"><h3 data-i18n="visual.performance"></h3>
+        <label class="select-control" for="max-fps"><span data-i18n="visual.maximumFps"></span><select id="max-fps">
+          <option value="30">30 FPS</option><option value="45">45 FPS</option><option value="60">60 FPS</option><option value="90">90 FPS</option><option value="120">120 FPS</option><option value="0" data-i18n="visual.unlimited"></option>
+        </select></label>
+        <p class="control-description" data-i18n="visual.fpsNote"></p>
+      </section>
       <section class="panel-section"><h3 data-i18n="visual.particle"></h3>
         ${this.renderRange("particle-size", "visual.particleSize", 0.18, 0.72, 0.02)}
         ${this.renderRange("particle-brightness", "visual.brightness", 0.5, 1.5, 0.05)}
@@ -68,6 +80,10 @@ export class VisualSettingsPanel {
       <section class="panel-section"><div class="section-title-row"><h3 data-i18n="visual.spacetimeGrid"></h3><label class="switch"><input id="grid-visible" type="checkbox" /><span data-i18n="visual.visible"></span></label></div>
         ${this.renderRange("grid-opacity", "visual.opacity", 0.08, 0.9, 0.02)}
         ${this.renderRange("grid-brightness", "visual.brightness", 0.3, 1.2, 0.05)}
+        ${this.renderRange("grid-render-distance", "visual.gridRenderDistance", 40, 260, 10)}
+        <p class="control-description" data-i18n="visual.worldUnits"></p>
+        <label class="switch"><input id="grid-near-fade" type="checkbox" /><span data-i18n="visual.gridNearFade"></span></label>
+        ${this.renderRange("grid-near-fade-distance", "visual.gridNearFadeDistance", 2, 30, 1)}
         <div class="scientific-legend" aria-live="polite">
           <div class="legend-heading"><strong data-i18n="legend.gridTitle"></strong><small data-i18n="legend.gridUnit"></small></div>
           <div class="legend-gradient grid-gradient" aria-hidden="true"></div>
@@ -101,6 +117,7 @@ export class VisualSettingsPanel {
       ["particle-opacity", "particleOpacity"], ["trail-opacity", "trailOpacity"],
       ["trail-brightness", "trailBrightness"], ["trail-fade", "trailFade"],
       ["grid-opacity", "gridOpacity"], ["grid-brightness", "gridBrightness"],
+      ["grid-render-distance", "gridMaxRenderDistance"], ["grid-near-fade-distance", "gridNearFadeDistance"],
       ["horizon-glow", "horizonGlow"], ["mass-brightness", "massBrightness"],
     ];
     bindings.forEach(([id, key]) => {
@@ -115,6 +132,14 @@ export class VisualSettingsPanel {
     });
     this.root.querySelector("#grid-visible").addEventListener("change", (event) => {
       this.values.gridVisible = event.target.checked;
+      this.apply();
+    });
+    this.root.querySelector("#grid-near-fade").addEventListener("change", (event) => {
+      this.values.gridNearFadeEnabled = event.target.checked;
+      this.apply();
+    });
+    this.root.querySelector("#max-fps").addEventListener("change", (event) => {
+      this.values.maxFps = Number(event.target.value);
       this.apply();
     });
     this.root.querySelector("#trail-capacity").addEventListener("change", (event) => {
@@ -133,6 +158,12 @@ export class VisualSettingsPanel {
       opacity: this.values.gridOpacity,
       brightness: this.values.gridBrightness,
     });
+    this.grid.setViewSettings({
+      maxRenderDistance: this.values.gridMaxRenderDistance,
+      nearFadeEnabled: this.values.gridNearFadeEnabled,
+      nearFadeDistance: this.values.gridNearFadeDistance,
+    });
+    this.frameRateController.setMaxFps(this.values.maxFps);
     this.massObject.setAppearance({
       horizonOpacity: this.values.horizonGlow,
       emissiveIntensity: this.values.massBrightness,
@@ -147,6 +178,7 @@ export class VisualSettingsPanel {
       "particle-opacity": values.particleOpacity, "trail-opacity": values.trailOpacity,
       "trail-brightness": values.trailBrightness, "trail-fade": values.trailFade,
       "grid-opacity": values.gridOpacity, "grid-brightness": values.gridBrightness,
+      "grid-render-distance": values.gridMaxRenderDistance, "grid-near-fade-distance": values.gridNearFadeDistance,
       "horizon-glow": values.horizonGlow, "mass-brightness": values.massBrightness,
     };
     Object.entries(pairs).forEach(([id, value]) => {
@@ -155,6 +187,8 @@ export class VisualSettingsPanel {
     });
     this.root.querySelector("#trail-visible").checked = values.trailVisible;
     this.root.querySelector("#grid-visible").checked = values.gridVisible;
+    this.root.querySelector("#grid-near-fade").checked = values.gridNearFadeEnabled;
+    this.root.querySelector("#max-fps").value = values.maxFps;
     this.root.querySelector("#trail-capacity").value = this.trailCapacity.current;
     this.updateLegends();
   }

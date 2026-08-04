@@ -37,6 +37,16 @@ export default [
     },
   },
   {
+    files: ["scripts/render-*.mjs"],
+    languageOptions: {
+      globals: {
+        document: "readonly",
+        performance: "readonly",
+        window: "readonly",
+      },
+    },
+  },
+  {
     files: ["tests/unit/**/*.js"],
     languageOptions: {
       globals: {

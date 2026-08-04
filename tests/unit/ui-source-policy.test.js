@@ -23,7 +23,7 @@ describe("UI source policy", () => {
 
   it("does not embed translated prose in UI component templates", () => {
     const files = ["src/ui/AppShell.js", "src/ui/ControlPanel.js", "src/ui/VisualSettingsPanel.js"];
-    const allowed = new Set(["GR-4D Simulator", "FPS", "GR 3D", "GR + W", "-- ms"]);
+    const allowed = new Set(["GR-4D Simulator", "FPS", "GR 3D", "GR + W", "-- ms", "30 FPS", "45 FPS", "60 FPS", "90 FPS", "120 FPS"]);
     files.forEach((file) => {
       const source = readFileSync(resolve(ROOT, file), "utf8");
       const matches = [...source.matchAll(/>([^<>{}]*[A-Za-z가-힣][^<>{}]*)</g)]

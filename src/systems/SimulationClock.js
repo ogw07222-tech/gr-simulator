@@ -50,6 +50,12 @@ export class SimulationClock {
     this.state.setTimeScale(timeScale);
   }
 
+  synchronize(timestamp = null) {
+    this.lastTimestamp = timestamp;
+    this.renderDelta = 0;
+    this.accumulator = 0;
+  }
+
   tick(timestamp, update) {
     if (!this.state.running) return 0;
 

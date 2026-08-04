@@ -183,6 +183,8 @@ Every scientific or scientific-looking change is governed by these permanent rul
 
 The v0.6.1 correction follows these rules: the Schwarzschild proxy is unchanged, raw displacements remain inspectable, and the nonlinear `asinh` mapping exists only in rendering.
 
+The v0.6.2 correction extends the same rule: camera culling, LOD, proximity fade, FPS caps, and color maps operate only in the presentation layer. They do not modify raw displacement, particle velocity, the fixed timestep, or any physical equation. Fixed buffers and dirty-state counters make this separation measurable.
+
 ---
 
 # Development Roadmap
@@ -407,6 +409,8 @@ No feature is considered complete until all automated verification passes.
 The production application is designed for `https://ogw07222-tech.github.io/gr-simulator/`. GitHub Actions owns production publishing: validation and build complete before the immutable `dist` artifact can reach the `github-pages` environment. Local development retains root-based Vite routing, while Pages builds use `/gr-simulator/` through an explicit deployment environment flag.
 
 Repository owners must configure **Settings → Pages → Build and deployment → Source** to **GitHub Actions**. A merged deployment configuration is not evidence of a live release; only a successful Pages workflow and environment URL establish deployment success.
+
+CI job-name changes are operational migrations. The current single `verify` check remains unchanged in v0.6.2; issue #20 tracks a coordinated split with repository ruleset updates.
 
 ---
 

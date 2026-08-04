@@ -1,6 +1,6 @@
 // Edit English interface copy here. Keep this key structure identical to ko.js.
 export const en = Object.freeze({
-  app: { title: "GR-4D Simulator v0.6.1", description: "Browser-based General Relativity simulation and scientific visualization laboratory", eyebrow: "RELATIVITY RESEARCH CONSOLE" },
+  app: { title: "GR-4D Simulator v0.6.2", description: "Browser-based General Relativity simulation and scientific visualization laboratory", eyebrow: "RELATIVITY RESEARCH CONSOLE" },
   language: { label: "Select language", ko: "한국어", en: "English" },
   status: {
     running: "Running", paused: "Paused", frame: "FRAME", rendererOnline: "Renderer online",
@@ -29,18 +29,22 @@ export const en = Object.freeze({
   },
   visual: {
     intro: "Presentation controls affect GPU materials only. Simulation state remains unchanged.",
+    performance: "Render Performance", maximumFps: "Maximum rendering FPS", unlimited: "Unlimited",
+    fpsNote: "Rendering cadence only; the fixed 1/240 s simulation step is unchanged.",
     particle: "Particle", particleSize: "Particle Size", brightness: "Brightness", opacity: "Opacity",
     trail: "Trail", visible: "Visible", ageFade: "Age fade", speed: "Speed",
     trailCapacity: "Trail capacity", trailCapacitySamples: "{value} samples",
     trailCapacityNote: "Fixed preparatory capacity; resizing occurs only when this setting changes.",
-    trailSpeedDescription: "Current world-space speed in simulation units per second.",
+    trailSpeedDescription: "Current speed in simulation world units per second; brighter values approach white.",
     spacetimeGrid: "Spacetime Grid", massRendering: "Mass Rendering", horizonIntensity: "Horizon intensity",
-    coreEmissive: "Core emissive", reset: "Reset Visuals",
+    gridRenderDistance: "Maximum grid render distance", gridNearFade: "Grid near-camera fade",
+    gridNearFadeDistance: "Near fade distance", worldUnits: "Distance in simulation world units.",
+    coreEmissive: "Horizon rim intensity", reset: "Reset Visuals",
   },
   legend: {
     speedTitle: "Current particle speed", speedUnit: "simulation units / s",
     gridTitle: "Grid deformation proxy", gridUnit: "model-space display proxy",
-    gridScale: "Color and geometry use asinh visualization scaling; raw values are unchanged.",
+    gridScale: "Blue-to-red color and geometry use asinh display scaling for this educational deformation proxy; raw values are unchanged.",
     minimum: "Min", midpoint: "Mid", maximum: "Max",
   },
   camera: {

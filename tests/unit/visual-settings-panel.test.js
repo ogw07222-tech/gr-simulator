@@ -6,17 +6,19 @@ describe("VisualSettingsPanel", () => {
   let particleRenderer;
   let grid;
   let massObject;
+  let frameRateController;
 
   beforeEach(() => {
     document.body.innerHTML = '<aside id="visuals"></aside>';
     root = document.querySelector("#visuals");
     particleRenderer = { setAppearance: vi.fn(), getSpeedLegend: () => ({ minimum: 0, midpoint: 1, maximum: 2 }) };
-    grid = { setAppearance: vi.fn(), getLegend: () => ({ rawMinimum: 0, rawMidpoint: 0.25, rawMaximum: 1 }) };
+    grid = { setAppearance: vi.fn(), setViewSettings: vi.fn(), getLegend: () => ({ rawMinimum: 0, rawMidpoint: 0.25, rawMaximum: 1 }) };
     massObject = { setAppearance: vi.fn() };
+    frameRateController = { maxFps: 60, setMaxFps: vi.fn() };
   });
 
   it("applies visual settings without simulation state", () => {
-    new VisualSettingsPanel(root, { particleRenderer, grid, massObject });
+    new VisualSettingsPanel(root, { particleRenderer, grid, massObject, frameRateController });
     const size = root.querySelector("#particle-size");
     size.value = "0.6";
     size.dispatchEvent(new Event("input", { bubbles: true }));
@@ -27,7 +29,7 @@ describe("VisualSettingsPanel", () => {
   });
 
   it("restores documented visual defaults", () => {
-    new VisualSettingsPanel(root, { particleRenderer, grid, massObject });
+    new VisualSettingsPanel(root, { particleRenderer, grid, massObject, frameRateController });
     const trailVisible = root.querySelector("#trail-visible");
     trailVisible.checked = false;
     trailVisible.dispatchEvent(new Event("change", { bubbles: true }));
@@ -44,11 +46,22 @@ describe("VisualSettingsPanel", () => {
     const resize = vi.fn();
     new VisualSettingsPanel(root, {
       particleRenderer, grid, massObject,
+      frameRateController,
       trailCapacity: { current: 512, options: [256, 512, 1024], resize },
     });
     root.querySelector("#trail-capacity").value = "1024";
     root.querySelector("#trail-capacity").dispatchEvent(new Event("change", { bubbles: true }));
     expect(resize).toHaveBeenCalledOnce();
     expect(resize).toHaveBeenCalledWith(1024);
+  });
+
+  it("applies FPS and grid-view settings without touching simulation state", () => {
+    new VisualSettingsPanel(root, { particleRenderer, grid, massObject, frameRateController });
+    root.querySelector("#max-fps").value = "30";
+    root.querySelector("#max-fps").dispatchEvent(new Event("change", { bubbles: true }));
+    expect(frameRateController.setMaxFps).toHaveBeenLastCalledWith(30);
+    root.querySelector("#grid-render-distance").value = "80";
+    root.querySelector("#grid-render-distance").dispatchEvent(new Event("input", { bubbles: true }));
+    expect(grid.setViewSettings).toHaveBeenLastCalledWith(expect.objectContaining({ maxRenderDistance: 80 }));
   });
 });

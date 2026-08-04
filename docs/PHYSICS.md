@@ -51,3 +51,9 @@ where `d_max` is the maximum raw displacement for the current sample and `s = 0.
 The adaptive grid covers 240 world units with nominal 3-unit near-field spacing. Far-field spacing expands geometrically by 1.5 until the boundary. The current model remains evaluated at every retained vertex; the far field is not fabricated or clamped to zero. Tests verify finite source behavior, decreasing far-field magnitude, and approach toward the model's flat asymptote.
 
 Neither the raw proxy nor its color legend is curvature, proper distance, an orbit solution, or a numerical-relativity result.
+
+## v0.6.2 rendering boundary
+
+The evaluated coordinates, effective-radius domain, raw displacement equation, softening, and `asinh` normalization are unchanged. Chunk membership, camera-frustum tests, render distance, LOD draw ranges, proximity opacity, and the blue-cyan-red palette are presentation decisions applied after evaluation. A culled vertex still has the same mathematically evaluated raw value in the reusable model buffer.
+
+The black central sphere is a presentation silhouette. The green translucent shell is tied to the existing visual event-horizon radius but its rim brightness is not physical emission. Neither presentation object adds an observable or changes the Schwarzschild radius.

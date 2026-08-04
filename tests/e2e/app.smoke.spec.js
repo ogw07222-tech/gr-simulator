@@ -15,7 +15,7 @@ test("preserves simulation behavior while switching scientific UI locales", asyn
   await expect(page.locator("html")).toHaveAttribute("lang", "en");
   await expect(page.locator("#locale-select")).toHaveValue("en");
   await expect(page.getByRole("heading", { name: "Simulation" })).toBeVisible();
-  await expect(page.locator(".version-chip")).toHaveText("v0.6.1");
+  await expect(page.locator(".version-chip")).toHaveText("v0.6.2");
 
   const canvas = page.locator("#viewport canvas");
   await expect(canvas).toHaveCount(1);
@@ -43,6 +43,10 @@ test("preserves simulation behavior while switching scientific UI locales", asyn
   await expect(page.locator("#speed-legend-max")).toHaveText("2.0");
   await expect(page.locator("#grid-legend-max")).not.toBeEmpty();
   await expect(page.locator("#trail-capacity")).toHaveValue("1024");
+  await expect(page.locator("#max-fps")).toHaveValue("60");
+  await expect(page.locator("#grid-near-fade")).toBeChecked();
+  await expect(page.locator("#grid-render-distance")).toHaveValue("140");
+  await page.locator("#max-fps").selectOption("30");
   await page.locator("#trail-capacity").selectOption("512");
   await expect(page.locator("#trail-capacity")).toHaveValue("512");
 
@@ -67,10 +71,12 @@ test("preserves simulation behavior while switching scientific UI locales", asyn
   await expect(page.locator("html")).toHaveAttribute("lang", "ko");
   await expect(page.getByRole("heading", { name: "시뮬레이션" })).toBeVisible();
   await expect(page.locator("#runtime-time-scale")).toHaveText("2배");
+  await expect(page.locator("#max-fps")).toHaveValue("30");
   await expect(page.locator("#trail-capacity")).toHaveValue("512");
   expect(Number.parseFloat(await page.locator("#simulation-time").textContent())).toBeGreaterThanOrEqual(timeBeforeLocaleSwitch);
   await page.reload();
   await expect(page.locator("#locale-select")).toHaveValue("ko");
+  await expect(page.locator("#max-fps")).toHaveValue("30");
   await page.locator("#locale-select").selectOption("en");
   await expect(page.getByRole("heading", { name: "Simulation" })).toBeVisible();
   expect(consoleErrors).toEqual([]);
