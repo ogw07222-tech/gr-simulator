@@ -67,4 +67,12 @@ This backlog describes future work; this architecture PR does not implement new 
 
 ## Deferred features
 
-Multiple masses, geodesic integration, heatmaps, particle effects, and additional metrics remain deferred until P0 and P1 foundations are validated.
+Multiple masses, null geodesics, Kerr spacetime, heatmaps, particle effects, and additional metrics remain deferred until each has a governing model and validation plan.
+
+## v0.7 follow-up
+
+- [x] Centralize SI constants and normalized Schwarzschild conversions.
+- [x] Integrate massive equatorial geodesics, diagnostics, capture, finite-domain exit, and snapshots.
+- [x] Validate circular, eccentric, plunging, unbound, deterministic, and render-FPS-independent cases.
+- [ ] Add trajectory-history evidence before refining provisional non-circular classifications.
+- [ ] Evaluate worker parallelism before supporting more than 100 simultaneous scientific geodesic solvers.

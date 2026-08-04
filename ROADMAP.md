@@ -68,8 +68,8 @@ Exit criterion: new numerical models can be integrated behind tested contracts w
 - [x] Keep render FPS caps independent from the fixed simulation timestep.
 - [x] Bound dynamic particle/trail GPU uploads to used ranges.
 - [x] Add repeatable resource-growth soak diagnostics.
-- [ ] Orbit classification and Schwarzschild geodesics remain deferred.
+- [x] Add SI-based equatorial timelike Schwarzschild geodesics and conservative orbit classification (v0.7).
 
 ## Beyond v0.6
 
-Candidate research features include multiple bodies, geodesic integration, field sampling, heatmaps, and data export. Each requires an independent physical model specification and validation plan.
+Candidate research features include inclined orbital planes, null geodesics, Kerr spacetime, multiple bodies, field sampling, heatmaps, and data export. Each requires an independent physical model specification and validation plan.

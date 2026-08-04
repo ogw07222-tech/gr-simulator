@@ -58,3 +58,9 @@ Desktop displays both side panels. Tablet and mobile convert them into slide-ove
 ## Unsupported future controls
 
 The UI intentionally omits arbitrary thick 3D lines, fake bloom without post-processing, Energy/Proper Time/Curvature coloring, orbit analytics, and scientific particle inspection. These controls require corresponding tested engine data or rendering capabilities.
+
+## v0.7 orbit controls and HUD
+
+The simulation panel adds bilingual basic and advanced orbit setup. Input edits remain draft DOM state; Apply validates mass, radius, local subluminal velocity, conserved quantities, and substep bounds before atomically replacing the solver state. Language switching only replaces localized text and preserves the active orbit, camera, runtime, and draft values.
+
+The scientific HUD consumes reusable snapshots and refreshes text at no more than 10 Hz. It distinguishes SI from normalized quantities and labels local static-observer speed explicitly. At capture the last outside-horizon value is retained; no inside-horizon local-static speed is presented.

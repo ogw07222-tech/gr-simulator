@@ -146,6 +146,7 @@ export class ParticleManager {
   }
 
   revision() { return this.currentRevision; }
+  touch() { this.currentRevision += 1; }
   dispose() { this.clear(); }
 
   #nextAvailableId() {

@@ -461,3 +461,9 @@ easier rather than harder.
 Build the engine first.
 
 Everything else is built on top of it.
+
+## v0.7 scientific runtime contract
+
+The production particle path now evaluates equatorial timelike geodesics in one fixed analytic Schwarzschild spacetime. SI values cross a dedicated unit boundary; integration uses `r_s=1`, `c=1`, and normalized proper time. `SimulationClock` remains authoritative for fixed updates, physics publishes reusable snapshots, and rendering never evaluates geodesic equations.
+
+The supported solver domain is `1.001<r/r_s≤10`. The lower boundary avoids the Schwarzschild-coordinate singularity and records capture at the last valid state; the upper boundary records `OutOfDomain` without automatically claiming escape. This milestone does not solve the Einstein field equations or add Kerr rotation, photons, self-gravity, radiation reaction, lensing, or inclined orbital planes.

@@ -1,7 +1,7 @@
 {
   "name": "gr-4d-gravity-simulator",
   "private": true,
-  "version": "0.6.2",
+  "version": "0.7.0",
   "engines": { "node": ">=20.19.0" },
   "type": "module",
   "scripts": {
@@ -10,10 +10,12 @@
     "preview": "vite preview",
     "lint": "eslint .",
     "test": "vitest run",
+    "test:physics": "vitest run tests/physics",
     "test:watch": "vitest",
     "test:smoke": "playwright test",
     "test:soak": "node scripts/render-soak.mjs",
-    "test:benchmark": "node scripts/render-benchmark.mjs"
+    "test:benchmark": "node scripts/render-benchmark.mjs",
+    "benchmark:physics": "node scripts/physics-benchmark.mjs"
   },
   "dependencies": {
     "three": "^0.180.0"

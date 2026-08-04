@@ -15,7 +15,10 @@ test("preserves simulation behavior while switching scientific UI locales", asyn
   await expect(page.locator("html")).toHaveAttribute("lang", "en");
   await expect(page.locator("#locale-select")).toHaveValue("en");
   await expect(page.getByRole("heading", { name: "Simulation" })).toBeVisible();
-  await expect(page.locator(".version-chip")).toHaveText("v0.6.2");
+  await expect(page.locator(".version-chip")).toHaveText("v0.7.0");
+  await expect(page.locator("#geo-classification")).toHaveText("Stable circular");
+  await expect(page.locator("#geo-status")).toHaveText("Active");
+  await expect(page.locator("#orbit-preset")).toHaveValue("circular");
 
   const canvas = page.locator("#viewport canvas");
   await expect(canvas).toHaveCount(1);
@@ -52,8 +55,10 @@ test("preserves simulation behavior while switching scientific UI locales", asyn
   await expect(page.locator("#runtime-time-scale")).toHaveText("2x");
   await page.getByRole("button", { name: "Pause", exact: true }).click();
   const pausedTime = await page.locator("#simulation-time").textContent();
+  const pausedProperTime = await page.locator("#geo-proper-time").textContent();
   await page.waitForTimeout(150);
   await expect(page.locator("#simulation-time")).toHaveText(pausedTime);
+  await expect(page.locator("#geo-proper-time")).toHaveText(pausedProperTime);
 
   const pausedCanvas = await canvas.screenshot();
   await page.mouse.move(bounds.x + bounds.width * 0.7, bounds.y + bounds.height * 0.7);
@@ -64,6 +69,9 @@ test("preserves simulation behavior while switching scientific UI locales", asyn
   expect(movedCanvas.equals(pausedCanvas)).toBe(false);
 
   await page.getByRole("button", { name: "Play", exact: true }).click();
+  await page.locator("#orbit-radius").fill("5");
+  await page.getByRole("button", { name: "Apply Initial Condition" }).click();
+  await expect(page.locator("#geo-radius")).toContainText("5.000000 rₛ");
   const timeBeforeLocaleSwitch = Number.parseFloat(await page.locator("#simulation-time").textContent());
   await page.locator("#locale-select").selectOption("ko");
   await expect(page.locator("html")).toHaveAttribute("lang", "ko");
@@ -102,5 +110,27 @@ test("keeps bilingual drawers and legends usable on mobile", async ({ page }) =>
   await page.setViewportSize({ width: 844, height: 390 });
   await expect(page.getByRole("button", { name: "시뮬레이션", exact: true })).toBeVisible();
   expect(await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth)).toBeLessThanOrEqual(0);
+  expect(consoleErrors).toEqual([]);
+});
+
+test("keeps the scientific dashboard within all approved responsive viewports", async ({ page }) => {
+  const consoleErrors = collectErrors(page);
+  const viewports = [
+    { width: 1600, height: 1000 },
+    { width: 1024, height: 768 },
+    { width: 768, height: 1024 },
+    { width: 390, height: 844 },
+    { width: 844, height: 390 },
+  ];
+  for (const viewport of viewports) {
+    await page.setViewportSize(viewport);
+    await page.goto("/");
+    for (const locale of ["en", "ko"]) {
+      await page.locator("#locale-select").selectOption(locale);
+      await expect(page.locator("html")).toHaveAttribute("lang", locale);
+      expect(await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth)).toBeLessThanOrEqual(0);
+      await expect(page.locator("#viewport canvas")).toHaveCount(1);
+    }
+  }
   expect(consoleErrors).toEqual([]);
 });
