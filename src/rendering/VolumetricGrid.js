@@ -1,30 +1,6 @@
 import * as THREE from "three";
 import { GRID_ASINH_SOFTNESS, normalizeAsinh, writeGridDeformationColor } from "./VisualizationScale.js";
 
-const HIGH_LOD_DISTANCE = 50;
-const MIDDLE_LOD_DISTANCE = 110;
-const LOD_HYSTERESIS = 5;
-
-function createAdaptiveCoordinates(size, nearExtent, nearDivisions, farSpacingRatio) {
-  const half = size / 2;
-  const nearStep = (nearExtent * 2) / nearDivisions;
-  const positive = [0];
-  for (let value = nearStep; value <= nearExtent + Number.EPSILON; value += nearStep) positive.push(value);
-  let spacing = nearStep * farSpacingRatio;
-  let value = nearExtent + spacing;
-  while (value < half) {
-    positive.push(value);
-    spacing *= farSpacingRatio;
-    value += spacing;
-  }
-  if (positive[positive.length - 1] !== half) positive.push(half);
-  const coordinates = new Float32Array(positive.length * 2 - 1);
-  let target = 0;
-  for (let index = positive.length - 1; index > 0; index -= 1) coordinates[target++] = -positive[index];
-  for (let index = 0; index < positive.length; index += 1) coordinates[target++] = positive[index];
-  return coordinates;
-}
-
 function smoothstep(inner, outer, value) {
   if (value <= inner) return 0;
   if (value >= outer) return 1;
@@ -38,73 +14,99 @@ export function normalizeNearFade(distance, outerDistance) {
 }
 
 export class VolumetricGrid {
-  constructor({ size = 240, divisions = 8, nearExtent = 12, farSpacingRatio = 1.5 } = {}) {
+  constructor({ size = 150, spacing = 5, chunkDivisions = 4 } = {}) {
+    if (!Number.isFinite(size) || size <= 0) throw new RangeError("Grid size must be positive and finite.");
+    if (!Number.isFinite(spacing) || spacing <= 0) throw new RangeError("Grid spacing must be positive and finite.");
+    if (!Number.isInteger(chunkDivisions) || chunkDivisions < 1) throw new RangeError("Grid chunk divisions must be a positive integer.");
+    const intervals = Math.round(size / spacing);
+    if (Math.abs(intervals * spacing - size) > Number.EPSILON * size) {
+      throw new RangeError("Grid size must be an integer multiple of spacing.");
+    }
+
     this.size = size;
-    this.divisions = divisions;
-    this.nearExtent = nearExtent;
-    this.farSpacingRatio = farSpacingRatio;
-    this.coordinates = createAdaptiveCoordinates(size, nearExtent, divisions, farSpacingRatio);
-    this.axisPointCount = this.coordinates.length;
+    this.spacing = spacing;
+    this.chunkDivisions = chunkDivisions;
+    this.halfExtent = size / 2;
+    this.axisPointCount = intervals + 1;
     this.basePositions = new Float32Array(this.axisPointCount ** 3 * 3);
     this.rawDisplacements = new Float64Array(this.axisPointCount ** 3);
     this.displayValues = new Float32Array(this.axisPointCount ** 3);
-    this.warpedPositions = new Float32Array(this.basePositions.length);
+    this.positions = new Float32Array(this.basePositions.length);
+    this.colors = new Float32Array(this.basePositions.length);
+    this.#buildPositions();
     this.indices = this.#buildTopology();
-    this.positions = new Float32Array(this.indices.length * 3);
-    this.colors = new Float32Array(this.indices.length * 3);
+
+    this.positionAttribute = new THREE.BufferAttribute(this.positions, 3);
+    this.colorAttribute = new THREE.BufferAttribute(this.colors, 3);
+    this.positionAttribute.setUsage(THREE.DynamicDrawUsage);
+    this.colorAttribute.setUsage(THREE.DynamicDrawUsage);
+    this.material = new THREE.LineBasicMaterial({ vertexColors: true, transparent: true, opacity: 0.68, depthWrite: false });
     this.object = new THREE.Group();
-    this.object.name = "adaptive-grid-chunks";
+    this.object.name = "uniform-supported-domain-grid";
     this.chunks = this.#buildChunks();
-    this.material = this.chunks[0]?.material ?? null;
+    this.viewProjection = new THREE.Matrix4();
+    this.frustum = new THREE.Frustum();
+
     this.visible = true;
     this.baseOpacity = 0.68;
     this.brightness = 1;
-    this.maxRenderDistance = 140;
     this.nearFadeEnabled = true;
     this.nearFadeDistance = 10;
-    this.viewProjection = new THREE.Matrix4();
-    this.frustum = new THREE.Frustum();
     this.lastInputSignature = "";
     this.legend = { rawMinimum: 0, rawMidpoint: 0, rawMaximum: 0, farFieldValue: 0, softness: GRID_ASINH_SOFTNESS };
     this.diagnostics = {
       recomputations: 0,
       bufferUploads: 0,
-      visibleChunks: 0,
-      visibleVertices: 0,
+      visibleChunks: this.chunks.length,
+      visibleVertices: this.indices.length,
       totalChunks: this.chunks.length,
-      renderCapacityVertices: this.chunks.reduce((sum, chunk) => sum + chunk.highCount, 0),
+      renderCapacityVertices: this.indices.length,
     };
+  }
+
+  #buildPositions() {
+    const n = this.axisPointCount;
+    let offset = 0;
+    for (let x = 0; x < n; x += 1) {
+      const px = -this.halfExtent + x * this.spacing;
+      for (let y = 0; y < n; y += 1) {
+        const py = -this.halfExtent + y * this.spacing;
+        for (let z = 0; z < n; z += 1) {
+          this.basePositions[offset] = px;
+          this.basePositions[offset + 1] = py;
+          this.basePositions[offset + 2] = -this.halfExtent + z * this.spacing;
+          this.positions[offset] = this.basePositions[offset];
+          this.positions[offset + 1] = this.basePositions[offset + 1];
+          this.positions[offset + 2] = this.basePositions[offset + 2];
+          writeGridDeformationColor(this.colors, offset, 0);
+          offset += 3;
+        }
+      }
+    }
   }
 
   #buildTopology() {
     const n = this.axisPointCount;
     const vertexIndex = (x, y, z) => x * n * n + y * n + z;
-    let vertexOffset = 0;
-    for (let x = 0; x < n; x += 1) {
-      for (let y = 0; y < n; y += 1) {
-        for (let z = 0; z < n; z += 1) {
-          this.basePositions[vertexOffset++] = this.coordinates[x];
-          this.basePositions[vertexOffset++] = this.coordinates[y];
-          this.basePositions[vertexOffset++] = this.coordinates[z];
-        }
-      }
-    }
-    const indices = [];
+    const indices = new Uint32Array(6 * (n - 1) * n * n);
+    let offset = 0;
     for (let x = 0; x < n; x += 1) {
       for (let y = 0; y < n; y += 1) {
         for (let z = 0; z < n; z += 1) {
           const here = vertexIndex(x, y, z);
-          if (x < n - 1) indices.push(here, vertexIndex(x + 1, y, z));
-          if (y < n - 1) indices.push(here, vertexIndex(x, y + 1, z));
-          if (z < n - 1) indices.push(here, vertexIndex(x, y, z + 1));
+          if (x < n - 1) { indices[offset++] = here; indices[offset++] = vertexIndex(x + 1, y, z); }
+          if (y < n - 1) { indices[offset++] = here; indices[offset++] = vertexIndex(x, y + 1, z); }
+          if (z < n - 1) { indices[offset++] = here; indices[offset++] = vertexIndex(x, y, z + 1); }
         }
       }
     }
-    return new Uint32Array(indices);
+    return indices;
   }
 
   #buildChunks() {
-    const buckets = new Map();
+    const count = this.chunkDivisions ** 3;
+    const buckets = Array.from({ length: count }, () => []);
+    const chunkSize = this.size / this.chunkDivisions;
     for (let offset = 0; offset < this.indices.length; offset += 2) {
       const first = this.indices[offset];
       const second = this.indices[offset + 1];
@@ -113,69 +115,42 @@ export class VolumetricGrid {
       const x = (this.basePositions[a] + this.basePositions[b]) * 0.5;
       const y = (this.basePositions[a + 1] + this.basePositions[b + 1]) * 0.5;
       const z = (this.basePositions[a + 2] + this.basePositions[b + 2]) * 0.5;
-      const radialBand = Math.max(Math.abs(x), Math.abs(y), Math.abs(z));
-      const region = radialBand <= this.nearExtent ? "near" : radialBand <= this.size / 4 ? "middle" : "far";
-      const octant = (x >= 0 ? 4 : 0) | (y >= 0 ? 2 : 0) | (z >= 0 ? 1 : 0);
-      const key = `${region}-${octant}`;
-      let bucket = buckets.get(key);
-      if (!bucket) {
-        bucket = { key, region, low: [], middle: [], high: [] };
-        buckets.set(key, bucket);
-      }
-      const segment = offset / 2;
-      const tier = segment % 4 === 0 ? bucket.low : segment % 2 === 0 ? bucket.middle : bucket.high;
-      tier.push(first, second);
+      const ix = Math.min(this.chunkDivisions - 1, Math.floor((x + this.halfExtent) / chunkSize));
+      const iy = Math.min(this.chunkDivisions - 1, Math.floor((y + this.halfExtent) / chunkSize));
+      const iz = Math.min(this.chunkDivisions - 1, Math.floor((z + this.halfExtent) / chunkSize));
+      buckets[(ix * this.chunkDivisions + iy) * this.chunkDivisions + iz].push(first, second);
     }
 
     const chunks = [];
-    for (const bucket of buckets.values()) {
-      const sourceIndices = new Uint32Array([...bucket.low, ...bucket.middle, ...bucket.high]);
-      const positions = new Float32Array(sourceIndices.length * 3);
-      const colors = new Float32Array(sourceIndices.length * 3);
-      for (let index = 0; index < sourceIndices.length; index += 1) {
-        const source = sourceIndices[index] * 3;
-        const target = index * 3;
-        positions[target] = this.basePositions[source];
-        positions[target + 1] = this.basePositions[source + 1];
-        positions[target + 2] = this.basePositions[source + 2];
-        writeGridDeformationColor(colors, target, 0);
-      }
+    for (let index = 0; index < buckets.length; index += 1) {
+      if (buckets[index].length === 0) continue;
+      const ix = Math.floor(index / (this.chunkDivisions * this.chunkDivisions));
+      const remainder = index % (this.chunkDivisions * this.chunkDivisions);
+      const iy = Math.floor(remainder / this.chunkDivisions);
+      const iz = remainder % this.chunkDivisions;
+      const minimum = new THREE.Vector3(
+        -this.halfExtent + ix * chunkSize - this.spacing,
+        -this.halfExtent + iy * chunkSize - this.spacing,
+        -this.halfExtent + iz * chunkSize - this.spacing,
+      );
+      const maximum = new THREE.Vector3(
+        -this.halfExtent + (ix + 1) * chunkSize + this.spacing,
+        -this.halfExtent + (iy + 1) * chunkSize + this.spacing,
+        -this.halfExtent + (iz + 1) * chunkSize + this.spacing,
+      );
+      const box = new THREE.Box3(minimum, maximum);
       const geometry = new THREE.BufferGeometry();
-      const positionAttribute = new THREE.BufferAttribute(positions, 3);
-      const colorAttribute = new THREE.BufferAttribute(colors, 3);
-      positionAttribute.setUsage(THREE.DynamicDrawUsage);
-      colorAttribute.setUsage(THREE.DynamicDrawUsage);
-      geometry.setAttribute("position", positionAttribute);
-      geometry.setAttribute("color", colorAttribute);
-      geometry.computeBoundingBox();
-      geometry.boundingBox.expandByScalar(4);
-      geometry.computeBoundingSphere();
-      const material = new THREE.LineBasicMaterial({ vertexColors: true, transparent: true, opacity: 0.68, depthWrite: false });
-      const line = new THREE.LineSegments(geometry, material);
-      line.name = `grid-${bucket.key}`;
+      geometry.setAttribute("position", this.positionAttribute);
+      geometry.setAttribute("color", this.colorAttribute);
+      const chunkIndices = new Uint32Array(buckets[index]);
+      geometry.setIndex(new THREE.BufferAttribute(chunkIndices, 1));
+      geometry.boundingBox = box;
+      geometry.boundingSphere = box.getBoundingSphere(new THREE.Sphere());
+      const line = new THREE.LineSegments(geometry, this.material);
+      line.name = `uniform-grid-${ix}-${iy}-${iz}`;
       line.frustumCulled = true;
-      const chunk = {
-        key: bucket.key,
-        region: bucket.region,
-        sourceIndices,
-        positions,
-        colors,
-        geometry,
-        positionAttribute,
-        colorAttribute,
-        material,
-        line,
-        box: geometry.boundingBox,
-        center: geometry.boundingBox.getCenter(new THREE.Vector3()),
-        lowCount: bucket.low.length,
-        middleCount: bucket.low.length + bucket.middle.length,
-        highCount: sourceIndices.length,
-        lod: "high",
-        visible: true,
-      };
-      geometry.setDrawRange(0, chunk.highCount);
       this.object.add(line);
-      chunks.push(chunk);
+      chunks.push({ geometry, indices: chunkIndices, line, box });
     }
     return chunks;
   }
@@ -205,83 +180,54 @@ export class VolumetricGrid {
       this.displayValues[vertex] = normalized;
       const spatialRadius = Math.sqrt(x * x + y * y + z * z);
       const ratio = spatialRadius > 0 ? maxDisplacement * normalized / spatialRadius : 0;
-      this.warpedPositions[offset] = x * (1 - ratio);
-      this.warpedPositions[offset + 1] = y * (1 - ratio);
-      this.warpedPositions[offset + 2] = z * (1 - ratio);
+      this.positions[offset] = x * (1 - ratio);
+      this.positions[offset + 1] = y * (1 - ratio);
+      this.positions[offset + 2] = z * (1 - ratio);
+      writeGridDeformationColor(this.colors, offset, normalized);
     }
 
     this.legend.farFieldValue = this.rawDisplacements[this.rawDisplacements.length - 1];
-    for (let index = 0; index < this.indices.length; index += 1) {
-      const vertex = this.indices[index];
-      const source = vertex * 3;
-      const target = index * 3;
-      this.positions[target] = this.warpedPositions[source];
-      this.positions[target + 1] = this.warpedPositions[source + 1];
-      this.positions[target + 2] = this.warpedPositions[source + 2];
-      writeGridDeformationColor(this.colors, target, this.displayValues[vertex]);
-    }
-    for (let chunkIndex = 0; chunkIndex < this.chunks.length; chunkIndex += 1) {
-      const chunk = this.chunks[chunkIndex];
-      for (let index = 0; index < chunk.sourceIndices.length; index += 1) {
-        const vertex = chunk.sourceIndices[index];
-        const source = vertex * 3;
-        const target = index * 3;
-        chunk.positions[target] = this.warpedPositions[source];
-        chunk.positions[target + 1] = this.warpedPositions[source + 1];
-        chunk.positions[target + 2] = this.warpedPositions[source + 2];
-        writeGridDeformationColor(chunk.colors, target, this.displayValues[vertex]);
-      }
-      chunk.positionAttribute.needsUpdate = true;
-      chunk.colorAttribute.needsUpdate = true;
-    }
+    this.positionAttribute.needsUpdate = true;
+    this.colorAttribute.needsUpdate = true;
     this.diagnostics.recomputations += 1;
-    this.diagnostics.bufferUploads += this.chunks.length * 2;
+    this.diagnostics.bufferUploads += 2;
     return true;
   }
 
   updateView(camera) {
+    const distance = camera.position.distanceTo(this.object.position);
+    const fade = this.nearFadeEnabled ? normalizeNearFade(distance, this.nearFadeDistance) : 1;
     camera.updateMatrixWorld();
-    this.object.updateMatrixWorld();
     this.viewProjection.multiplyMatrices(camera.projectionMatrix, camera.matrixWorldInverse);
     this.frustum.setFromProjectionMatrix(this.viewProjection);
+    this.object.visible = this.visible && fade > 0.01;
+    this.material.opacity = this.baseOpacity * fade;
     let visibleChunks = 0;
     let visibleVertices = 0;
     for (let index = 0; index < this.chunks.length; index += 1) {
       const chunk = this.chunks[index];
-      const distance = chunk.center.distanceTo(camera.position);
-      const fadeDistance = chunk.box.distanceToPoint(camera.position);
-      const limit = this.maxRenderDistance + (chunk.visible ? LOD_HYSTERESIS : -LOD_HYSTERESIS);
-      const fade = this.nearFadeEnabled ? normalizeNearFade(fadeDistance, this.nearFadeDistance) : 1;
-      chunk.visible = this.visible && distance <= limit && fade > 0.01 && this.frustum.intersectsObject(chunk.line);
-      chunk.line.visible = chunk.visible;
-      chunk.material.opacity = this.baseOpacity * fade;
-      if (!chunk.visible) continue;
-      if (chunk.lod === "high" && distance > HIGH_LOD_DISTANCE + LOD_HYSTERESIS) chunk.lod = "middle";
-      else if (chunk.lod === "middle" && distance < HIGH_LOD_DISTANCE - LOD_HYSTERESIS) chunk.lod = "high";
-      else if (chunk.lod === "middle" && distance > MIDDLE_LOD_DISTANCE + LOD_HYSTERESIS) chunk.lod = "low";
-      else if (chunk.lod === "low" && distance < MIDDLE_LOD_DISTANCE - LOD_HYSTERESIS) chunk.lod = "middle";
-      const count = chunk.lod === "high" ? chunk.highCount : chunk.lod === "middle" ? chunk.middleCount : chunk.lowCount;
-      chunk.geometry.setDrawRange(0, count);
+      chunk.line.visible = this.object.visible && this.frustum.intersectsBox(chunk.box);
+      if (!chunk.line.visible) continue;
       visibleChunks += 1;
-      visibleVertices += count;
+      visibleVertices += chunk.indices.length;
     }
     this.diagnostics.visibleChunks = visibleChunks;
     this.diagnostics.visibleVertices = visibleVertices;
     return this.diagnostics;
   }
 
-  setViewSettings({ maxRenderDistance, nearFadeEnabled, nearFadeDistance }) {
-    if (Number.isFinite(maxRenderDistance)) this.maxRenderDistance = Math.max(20, maxRenderDistance);
+  setViewSettings({ nearFadeEnabled, nearFadeDistance }) {
     if (typeof nearFadeEnabled === "boolean") this.nearFadeEnabled = nearFadeEnabled;
     if (Number.isFinite(nearFadeDistance)) this.nearFadeDistance = Math.max(1, nearFadeDistance);
   }
 
   get segmentVertexCount() { return this.indices.length; }
   get topologyVertexCount() { return this.rawDisplacements.length; }
-  get nominalNearSpacing() { return (this.nearExtent * 2) / this.divisions; }
+  get nominalNearSpacing() { return this.spacing; }
   get geometryMemoryBytes() {
-    let bytes = this.basePositions.byteLength + this.rawDisplacements.byteLength + this.displayValues.byteLength + this.warpedPositions.byteLength + this.indices.byteLength + this.positions.byteLength + this.colors.byteLength;
-    for (let index = 0; index < this.chunks.length; index += 1) bytes += this.chunks[index].sourceIndices.byteLength + this.chunks[index].positions.byteLength + this.chunks[index].colors.byteLength;
+    let bytes = this.basePositions.byteLength + this.rawDisplacements.byteLength + this.displayValues.byteLength
+      + this.positions.byteLength + this.colors.byteLength + this.indices.byteLength;
+    for (let index = 0; index < this.chunks.length; index += 1) bytes += this.chunks[index].indices.byteLength;
     return bytes;
   }
   getLegend() { return this.legend; }
@@ -291,15 +237,11 @@ export class VolumetricGrid {
     this.visible = visible;
     this.baseOpacity = opacity;
     this.brightness = brightness;
-    for (let index = 0; index < this.chunks.length; index += 1) {
-      this.chunks[index].material.color.setRGB(brightness, brightness, brightness);
-    }
+    this.material.color.setRGB(brightness, brightness, brightness);
   }
 
   dispose() {
-    for (let index = 0; index < this.chunks.length; index += 1) {
-      this.chunks[index].geometry.dispose();
-      this.chunks[index].material.dispose();
-    }
+    for (let index = 0; index < this.chunks.length; index += 1) this.chunks[index].geometry.dispose();
+    this.material.dispose();
   }
 }

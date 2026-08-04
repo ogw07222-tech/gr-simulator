@@ -5,6 +5,7 @@ export const ParticleState = Object.freeze({
   ESCAPING: "Escaping",
   CAPTURED: "Captured",
   ABSORBED: "Absorbed",
+  OUT_OF_DOMAIN: "OutOfDomain",
 });
 
 const PARTICLE_STATES = new Set(Object.values(ParticleState));

@@ -23,6 +23,7 @@ export const ko = Object.freeze({
     curvatureProxy: "곡률 근사값", gridVertices: "격자 정점",
   },
   runtime: { title: "실행 상태", state: "상태", simulationTime: "시뮬레이션 시간", timeScale: "시간 배속", particleCount: "입자 수" },
+  particle: { outOfDomain: "지원 영역 이탈" },
   model: {
     scope: "모델 범위", scopeDescription: "교육용 슈바르츠실트 계량 시각화이며, 수치 3+1차원 아인슈타인 방정식 해석기가 아닙니다.",
     active: "활성 모델", name: "슈바르츠실트 · 교육용",
@@ -37,8 +38,7 @@ export const ko = Object.freeze({
     trailCapacityNote: "향후 궤도를 위한 고정 준비 용량이며, 이 설정을 바꿀 때만 버퍼를 재할당합니다.",
     trailSpeedDescription: "현재 속도는 시뮬레이션 월드 단위/초이며, 빠를수록 흰색에 가까워집니다.",
     spacetimeGrid: "시공간 격자", massRendering: "질량체 표현", horizonIntensity: "사건지평선 강도",
-    gridRenderDistance: "최대 격자 렌더 거리", gridNearFade: "카메라 근접 격자 감쇠",
-    gridNearFadeDistance: "근접 감쇠 거리", worldUnits: "거리는 시뮬레이션 월드 단위입니다.",
+    gridNearFade: "카메라 근접 격자 감쇠", gridNearFadeDistance: "근접 감쇠 거리",
     coreEmissive: "사건지평선 테두리 강도", reset: "시각 설정 초기화",
   },
   legend: {

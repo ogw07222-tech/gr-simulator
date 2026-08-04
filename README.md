@@ -18,7 +18,7 @@ A browser-based General Relativity visualization laboratory built with Three.js.
 - Presentation-only particle, trail, grid, and mass-rendering controls
 - Live Korean/English interface switching with persisted language preference
 - Explicit cleanup of renderer, controls, geometry, material, and subscriptions
-- Chunked grid culling, close-camera fade, and independent maximum-render-FPS controls
+- Uniform finite-domain grid, close-camera fade, and independent maximum-render-FPS controls
 
 ## Quick start
 
@@ -81,9 +81,9 @@ Translations use stable keys in `src/ui/i18n.js`. To add a language, add a compl
 
 The v0.6.2 interface uses an original scientific-dashboard design language: compact telemetry, restrained accents, a viewport-first layout, and separate simulation and presentation controls. Grid deformation and trail speed include explicit legends. Desktop uses persistent side panels; tablet and mobile use keyboard- and touch-accessible drawers.
 
-The grid spans a larger adaptive world-space domain. Its dense central region preserves detail while geometrically increasing far-field spacing keeps geometry bounded. Raw model displacement is retained unchanged; a documented `asinh` transfer is applied only to display magnitude. Particle trails use a fixed configurable capacity, resize only when the setting changes, and are colored only by measured particle speed.
+The grid uniformly covers the supported `[-75, 75]³` world domain at five-unit spacing. The boundary derives from maximum mass 300, a maximum supported orbital radius of `10 r_s`, and a 1.25 safety margin. Camera distance never changes grid topology or omits visible far sections. Raw model displacement remains unchanged; a documented `asinh` transfer applies only to display magnitude. Particles attempting to leave the domain retain their last valid state and are classified separately from capture.
 
-The grid is rendered as 24 fixed near/middle/far octant chunks. Camera frustum, maximum render distance, and hysteretic high/middle/low draw ranges determine only what is submitted to the GPU; they never alter model samples. A smooth near-camera fade keeps the black body, green horizon, particle, and trail readable. The maximum FPS selector caps rendering at 30, 45, 60, 90, 120 FPS or leaves it unlimited while the simulation remains fixed at 240 Hz.
+The complete supported grid is rendered as one uniformly sampled indexed object. Native whole-object frustum culling may skip it only when its bounds are entirely outside the view; camera distance never changes visible topology. A smooth near-camera fade keeps the black body, green horizon, particle, and trail readable. The maximum FPS selector caps rendering at 30, 45, 60, 90, 120 FPS or leaves it unlimited while the simulation remains fixed at 240 Hz.
 
 Screenshots are maintained in `docs/screenshots/` for desktop, tablet, and mobile verification. See [UI architecture](docs/UI_ARCHITECTURE.md) for theme tokens, supported visual settings, responsive behavior, and intentionally unsupported controls.
 

@@ -28,7 +28,7 @@ The ParticleManager and ParticleRenderer are registered as an active runtime sub
 
 Every pool slot owns id, position, velocity, acceleration, restMass, properTime, coordinateTime, energy, angularMomentum, radius, color, alive, state, trail, and userData. Position, velocity, acceleration, and angular momentum are Three.js Vector3 instances. Color is a Three.js Color.
 
-Supported states are Idle, Moving, Orbiting, Escaping, Captured, and Absorbed. The engine stores caller-assigned state but intentionally does not classify trajectories.
+Supported states are Idle, Moving, Orbiting, Escaping, Captured, Absorbed, and OutOfDomain. The engine does not classify orbits. It only classifies an attempted exit from the finite runtime boundary separately from event-horizon capture.
 
 ## Lifecycle API
 
@@ -41,7 +41,7 @@ Supported states are Idle, Moving, Orbiting, Escaping, Captured, and Absorbed. T
 - `spawnBatch(definitions)`: creates a batch and rolls back on failure.
 - `select(id)`, `selected()`, `clearSelection()`: selection API without UI.
 
-The base update applies acceleration to velocity, then velocity to position, and increments coordinateTime. It does not modify properTime, energy, angularMomentum, or state. Future physics systems own those quantities and may update the same preallocated particle values before rendering.
+The base update applies acceleration to velocity, then velocity to position, and increments coordinateTime. Inside the application, initial positions are validated against the `[-75, 75]` domain. An attempted exit leaves position, velocity, coordinate time, and trail at their last valid values; records the attempted position, velocity, time, and previous state in reusable diagnostics; and sets `OutOfDomain`. Reset restores the spawn state. Proper time, energy, angular momentum, capture, and orbit classification remain future physics responsibilities.
 
 ## Trail storage
 

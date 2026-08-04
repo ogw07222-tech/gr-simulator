@@ -49,7 +49,7 @@ Exit criterion: new numerical models can be integrated behind tested contracts w
 
 - [x] Separate raw model values from documented display transforms.
 - [x] Add explicit legends and units for grid deformation and trail speed.
-- [x] Use a bounded adaptive grid and fixed configurable trail storage.
+- [x] Use a bounded uniform grid and fixed configurable trail storage.
 - [x] Make English the default locale while retaining complete Korean support.
 - [ ] Keep orbit classification and Schwarzschild geodesics deferred to separately reviewed physics milestones.
 
@@ -61,8 +61,10 @@ Exit criterion: new numerical models can be integrated behind tested contracts w
 
 ### v0.6.2 render-performance correction
 
-- [x] Partition the grid into fixed near/middle/far spatial chunks.
-- [x] Add frustum, render-distance, hysteretic LOD, and close-camera fade policies.
+- [x] Define the finite domain from maximum mass, `10 r_s` orbital support, and a 1.25 safety margin.
+- [x] Use one uniform five-unit grid without distance LOD, sparse far-field topology, or render-distance omission.
+- [x] Retain native whole-object frustum culling, close-camera fade, and a guided camera range.
+- [x] Classify domain exit independently from capture while preserving last valid particle state.
 - [x] Keep render FPS caps independent from the fixed simulation timestep.
 - [x] Bound dynamic particle/trail GPU uploads to used ranges.
 - [x] Add repeatable resource-growth soak diagnostics.

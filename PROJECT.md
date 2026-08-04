@@ -183,7 +183,7 @@ Every scientific or scientific-looking change is governed by these permanent rul
 
 The v0.6.1 correction follows these rules: the Schwarzschild proxy is unchanged, raw displacements remain inspectable, and the nonlinear `asinh` mapping exists only in rendering.
 
-The v0.6.2 correction extends the same rule: camera culling, LOD, proximity fade, FPS caps, and color maps operate only in the presentation layer. They do not modify raw displacement, particle velocity, the fixed timestep, or any physical equation. Fixed buffers and dirty-state counters make this separation measurable.
+The v0.6.2 correction uses one scientifically bounded, uniformly sampled domain. Maximum mass 300 gives `r_s = 6`; the future orbit contract supports initial radii through `10 r_s`, with a 1.25 safety margin producing `[-75, 75]³`. Distance LOD and render-distance omission were rejected because they broke visual continuity. Proximity fade, FPS caps, and color maps remain presentation-only; raw displacement, the fixed timestep, and physical equations are unchanged. Domain exit is distinct from event-horizon capture.
 
 ---
 

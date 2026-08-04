@@ -1,5 +1,6 @@
 import * as THREE from "three";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
+import { SIMULATION_DOMAIN } from "../core/constants.js";
 
 export class Renderer {
   constructor(container) {
@@ -23,7 +24,7 @@ export class Renderer {
     this.controls.enableDamping = true;
     this.controls.dampingFactor = 0.06;
     this.controls.minDistance = 8;
-    this.controls.maxDistance = 300;
+    this.controls.maxDistance = SIMULATION_DOMAIN.halfExtent * 1.6;
     this.diagnostics = { drawCalls: 0, lines: 0, points: 0, triangles: 0, geometries: 0, textures: 0 };
 
     this.scene.add(new THREE.AmbientLight(0xffffff, 0.42));

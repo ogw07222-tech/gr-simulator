@@ -35,7 +35,7 @@ test("preserves simulation behavior while switching scientific UI locales", asyn
     input.dispatchEvent(new Event("input", { bubbles: true }));
   });
   await expect(page.locator("#rs")).toHaveText("4.000");
-  await expect(page.locator("#vertices")).toHaveText("69,828");
+  await expect(page.locator("#vertices")).toHaveText("172,980");
 
   await expect(page.locator("#trail-color-mode")).toHaveCount(0);
   await expect(page.locator(".speed-gradient")).toBeVisible();
@@ -45,7 +45,7 @@ test("preserves simulation behavior while switching scientific UI locales", asyn
   await expect(page.locator("#trail-capacity")).toHaveValue("1024");
   await expect(page.locator("#max-fps")).toHaveValue("60");
   await expect(page.locator("#grid-near-fade")).toBeChecked();
-  await expect(page.locator("#grid-render-distance")).toHaveValue("140");
+  await expect(page.locator("#grid-near-fade-distance")).toHaveValue("10");
   await page.locator("#max-fps").selectOption("30");
   await page.locator("#trail-capacity").selectOption("512");
   await expect(page.locator("#trail-capacity")).toHaveValue("512");

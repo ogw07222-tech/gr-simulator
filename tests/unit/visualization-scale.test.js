@@ -46,36 +46,40 @@ describe("scientific visualization mappings", () => {
     expect(Array.from(colors).every(Number.isFinite)).toBe(true);
   });
 
-  it("builds a ten-times-wider adaptive grid with bounded topology", () => {
+  it("builds the approved finite domain with uniform spacing", () => {
     const grid = new VolumetricGrid({
       size: state.gridSize,
-      divisions: state.gridDivisions,
-      nearExtent: state.gridNearExtent,
-      farSpacingRatio: state.gridFarSpacingRatio,
+      spacing: state.gridSpacing,
     });
-    expect(grid.coordinates[0]).toBe(-120);
-    expect(grid.coordinates.at(-1)).toBe(120);
-    expect(grid.nominalNearSpacing).toBe(3);
-    expect(grid.segmentVertexCount).toBe(69828);
-    expect(grid.topologyVertexCount).toBe(12167);
-    expect(grid.segmentVertexCount).toBeLessThan(70000);
-    expect(new Set(grid.chunks.map((chunk) => chunk.region))).toEqual(new Set(["near", "middle", "far"]));
-    expect(grid.chunks.length).toBeLessThanOrEqual(24);
+    expect(grid.basePositions[0]).toBe(-75);
+    expect(grid.basePositions.at(-1)).toBe(75);
+    expect(grid.nominalNearSpacing).toBe(5);
+    expect(grid.segmentVertexCount).toBe(172980);
+    expect(grid.topologyVertexCount).toBe(29791);
+    expect(grid.object).toBeInstanceOf(THREE.Group);
+    expect(grid.chunks).toHaveLength(64);
+    expect(grid.chunks.reduce((sum, chunk) => sum + chunk.indices.length, 0)).toBe(grid.indices.length);
   });
 
-  it("culls chunks by view and distance with bounded LOD hysteresis", () => {
+  it("keeps complete topology and buffers unchanged while the camera moves", () => {
     const grid = new VolumetricGrid();
     const model = new SchwarzschildModel(PHYSICS_DEFAULTS);
     grid.update(model, state);
+    const indices = grid.indices;
+    const positions = grid.positions;
     const camera = new THREE.PerspectiveCamera(58, 1, 0.1, 500);
     camera.position.set(22, 18, 22);
     camera.lookAt(0, 0, 0);
     camera.updateProjectionMatrix();
-    grid.setViewSettings({ maxRenderDistance: 40, nearFadeEnabled: false, nearFadeDistance: 10 });
+    grid.setViewSettings({ nearFadeEnabled: false, nearFadeDistance: 10 });
     const diagnostics = grid.updateView(camera);
-    expect(diagnostics.visibleChunks).toBeGreaterThan(0);
-    expect(diagnostics.visibleChunks).toBeLessThan(diagnostics.totalChunks);
-    expect(diagnostics.visibleVertices).toBeLessThan(diagnostics.renderCapacityVertices);
+    camera.position.set(100, 100, 100);
+    grid.updateView(camera);
+    expect(diagnostics.visibleVertices).toBeGreaterThan(0);
+    expect(diagnostics.visibleVertices).toBeLessThanOrEqual(diagnostics.renderCapacityVertices);
+    expect(diagnostics.totalChunks).toBe(64);
+    expect(grid.indices).toBe(indices);
+    expect(grid.positions).toBe(positions);
     const recomputations = diagnostics.recomputations;
     const uploads = diagnostics.bufferUploads;
     expect(grid.update(model, state)).toBe(false);
@@ -93,43 +97,20 @@ describe("scientific visualization mappings", () => {
     grid.update(model, state);
     const raw = Float64Array.from(grid.rawDisplacements);
     const camera = new THREE.PerspectiveCamera(58, 1, 0.1, 500);
-    camera.position.set(20, 20, 20);
+    camera.position.set(5, 0, 0);
     camera.lookAt(0, 0, 0);
     camera.updateProjectionMatrix();
-    grid.setViewSettings({ maxRenderDistance: 260, nearFadeEnabled: true, nearFadeDistance: 20 });
+    grid.setViewSettings({ nearFadeEnabled: true, nearFadeDistance: 20 });
     grid.updateView(camera);
-    expect(grid.chunks.some((chunk) => chunk.material.opacity < grid.baseOpacity)).toBe(true);
+    expect(grid.material.opacity).toBeLessThan(grid.baseOpacity);
     expect(Array.from(grid.rawDisplacements)).toEqual(Array.from(raw));
-  });
-
-  it("keeps LOD stable inside hysteresis thresholds", () => {
-    const grid = new VolumetricGrid();
-    const model = new SchwarzschildModel(PHYSICS_DEFAULTS);
-    grid.update(model, state);
-    grid.setViewSettings({ maxRenderDistance: 260, nearFadeEnabled: false, nearFadeDistance: 10 });
-    const chunk = grid.chunks.find((entry) => entry.region === "far");
-    const camera = new THREE.PerspectiveCamera(58, 1, 0.1, 500);
-    const place = (distance) => {
-      camera.position.set(chunk.center.x + distance, chunk.center.y, chunk.center.z);
-      camera.lookAt(chunk.center);
-      camera.updateProjectionMatrix();
-      grid.updateView(camera);
-    };
-    place(56);
-    expect(chunk.lod).toBe("middle");
-    place(52);
-    expect(chunk.lod).toBe("middle");
-    place(44);
-    expect(chunk.lod).toBe("high");
   });
 
   it("preserves finite raw model values independently of display extent", () => {
     const model = new SchwarzschildModel(PHYSICS_DEFAULTS);
     const grid = new VolumetricGrid({
       size: state.gridSize,
-      divisions: state.gridDivisions,
-      nearExtent: state.gridNearExtent,
-      farSpacingRatio: state.gridFarSpacingRatio,
+      spacing: state.gridSpacing,
     });
     grid.update(model, { ...state, maxDisplacement: 1 });
     const raw = Float64Array.from(grid.rawDisplacements);
