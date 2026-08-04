@@ -1,5 +1,17 @@
 # Changelog
 
+## [Unreleased]
+
+### Added
+
+- Environment-aware Vite base-path configuration for GitHub Pages.
+- Validated Pages artifact build and automatic deployment workflow.
+- Deployment operations, local preview, repository setting, and custom-domain documentation.
+
+### Deployment scope
+
+- No physics, particle, runtime, rendering, UI, or localization behavior changed.
+
 ## [0.6.1] - 2026-08-04
 
 ### Added
@@ -22,7 +34,7 @@
 
 All notable changes to this project will be documented in this file. The format follows Keep a Changelog principles and the project intends to use semantic versioning as its public API matures.
 
-## [Unreleased]
+## [0.6.0]
 
 ### Added
 

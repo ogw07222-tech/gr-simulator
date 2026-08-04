@@ -402,6 +402,12 @@ Merge
 
 No feature is considered complete until all automated verification passes.
 
+## Production Deployment
+
+The production application is designed for `https://ogw07222-tech.github.io/gr-simulator/`. GitHub Actions owns production publishing: validation and build complete before the immutable `dist` artifact can reach the `github-pages` environment. Local development retains root-based Vite routing, while Pages builds use `/gr-simulator/` through an explicit deployment environment flag.
+
+Repository owners must configure **Settings → Pages → Build and deployment → Source** to **GitHub Actions**. A merged deployment configuration is not evidence of a live release; only a successful Pages workflow and environment URL establish deployment success.
+
 ---
 
 # Branch Naming

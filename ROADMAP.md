@@ -53,6 +53,12 @@ Exit criterion: new numerical models can be integrated behind tested contracts w
 - [x] Make English the default locale while retaining complete Korean support.
 - [ ] Keep orbit classification and Schwarzschild geodesics deferred to separately reviewed physics milestones.
 
+### Delivery infrastructure
+
+- [x] Define a validated GitHub Pages build using the `/gr-simulator/` repository base path.
+- [x] Gate production artifact upload and deployment behind lint, unit tests, and build validation.
+- [ ] Confirm the first live deployment only after the GitHub Pages workflow succeeds on `main`.
+
 ## Beyond v0.6
 
 Candidate research features include multiple bodies, geodesic integration, field sampling, heatmaps, and data export. Each requires an independent physical model specification and validation plan.

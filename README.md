@@ -38,6 +38,23 @@ npm run test:smoke
 npm run preview
 ```
 
+For a local production preview that is reachable outside the local machine:
+
+```bash
+npm run build
+npm run preview -- --host 0.0.0.0
+```
+
+`vite preview` is a local verification server, not the production hosting server.
+
+## Deployment
+
+The expected production URL is [https://ogw07222-tech.github.io/gr-simulator/](https://ogw07222-tech.github.io/gr-simulator/). Pushes to `main` automatically run lint, unit tests, a production build, artifact upload, and deployment through the **Deploy GitHub Pages** workflow. A deployment is successful only after both workflow jobs complete successfully.
+
+Deployment status and logs are available in the repository's **Actions** tab. The same workflow can be rerun with **Run workflow**. The repository owner must select **Settings → Pages → Build and deployment → Source → GitHub Actions** once before the first deployment.
+
+GitHub Pages serves this repository from `/gr-simulator/`. The deployment workflow enables that Vite base path while localhost and Codespaces retain `/`. See [Deployment](docs/DEPLOYMENT.md) for validation, local Pages preview, permissions, and future custom-domain guidance.
+
 The first browser-smoke run requires `npx playwright install chromium`. Unit tests use Vitest with jsdom; browser smoke tests run the actual application in Chromium.
 
 ## Controls
@@ -99,6 +116,7 @@ The long-term goal is a reproducible, testable, performance-oriented GR simulati
 - [Runtime engine](docs/RUNTIME_ENGINE.md)
 - [Particle engine](docs/PARTICLE_ENGINE.md)
 - [UI architecture](docs/UI_ARCHITECTURE.md)
+- [Deployment](docs/DEPLOYMENT.md)
 - [Contributing](CONTRIBUTING.md)
 - [Roadmap](ROADMAP.md)
 - [Task backlog](TODO.md)
