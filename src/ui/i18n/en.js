@@ -1,6 +1,6 @@
 // Edit English interface copy here. Keep this key structure identical to ko.js.
 export const en = Object.freeze({
-  app: { title: "GR-4D Simulator v0.6.2", description: "Browser-based General Relativity simulation and scientific visualization laboratory", eyebrow: "RELATIVITY RESEARCH CONSOLE" },
+  app: { title: "GR-4D Simulator v0.7.0", description: "Browser-based General Relativity simulation and scientific visualization laboratory", eyebrow: "RELATIVITY RESEARCH CONSOLE" },
   language: { label: "Select language", ko: "한국어", en: "English" },
   status: {
     running: "Running", paused: "Paused", frame: "FRAME", rendererOnline: "Renderer online",
@@ -52,5 +52,42 @@ export const en = Object.freeze({
     orbitHint: "Drag to orbit", panHint: "Right-drag to pan", zoomHint: "Wheel to zoom",
   },
   drawer: { close: "Close open panel" },
+  orbit: {
+    setup: "Schwarzschild Orbit Setup", preset: "Initial condition", circular: "Circular orbit",
+    localVelocity: "Local static-observer velocity", constants: "Conserved quantities",
+    massSolar: "Black-hole mass (M☉)", radiusRs: "Initial radius (rₛ)",
+    radialVelocity: "Local radial velocity (fraction of c)", tangentialVelocity: "Local tangential velocity (fraction of c)",
+    advanced: "Advanced solver inputs", specificEnergy: "Specific energy ε",
+    specificAngularMomentum: "Normalized specific angular momentum λ",
+    radialDirection: "Initial radial direction", outward: "Outward", inward: "Inward",
+    maximumSubsteps: "Maximum substeps",
+    integrator: "Classical RK4 · normalized step ≤ 0.02 · maximum 128 substeps per runtime update",
+    apply: "Apply Initial Condition", radiusKmValue: "Physical radius: {value} km",
+    speedValue: "Local speed: {kilometres} km/s · {fraction} c",
+    errorMass: "Mass must be between 1 and 10¹⁰ solar masses.",
+    errorRadius: "Radius must be outside the horizon and no greater than 10 rₛ.",
+    errorCircularRadius: "A timelike circular orbit requires a radius greater than 1.5 rₛ.",
+    errorVelocity: "The combined local velocity must remain below the speed of light.",
+    errorInitialCondition: "These conserved quantities do not permit the requested initial state.",
+    errorSubsteps: "Maximum substeps must be an integer from 1 to 4096.",
+    classification: {
+      StableCircular: "Stable circular", UnstableCircular: "Unstable circular",
+      BoundNonCircular: "Bound non-circular", PlungingCaptured: "Plunging / captured",
+      UnboundScattering: "Unbound / scattering", OutOfDomain: "Out of domain",
+      NumericalFailure: "Numerical failure", Indeterminate: "Indeterminate",
+    },
+    status: {
+      Active: "Active", Captured: "Captured", OutOfDomain: "Out of domain",
+      InvalidInitialCondition: "Invalid initial condition", NumericalFailure: "Numerical failure", Paused: "Paused",
+    },
+  },
+  geodesic: {
+    title: "Scientific Geodesic HUD", mass: "Black-hole mass", schwarzschildRadius: "Schwarzschild radius",
+    radius: "Particle radius", localSpeed: "Local static-observer speed", coordinateTime: "Coordinate time",
+    properTime: "Proper time", energy: "Specific energy ε", angularMomentum: "Specific angular momentum λ / SI",
+    classification: "Orbit classification", status: "Integration status", energyDrift: "Relative energy drift",
+    angularMomentumDrift: "Relative angular-momentum drift", normalizationResidual: "Four-velocity residual",
+    substeps: "Integrator substeps",
+  },
   units: { multiplier: "{value}x" },
 });

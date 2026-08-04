@@ -73,3 +73,9 @@ ParticleRenderer uses one BufferGeometry and one PointsMaterial for the entire p
 - Proper-time evolution, energy, angular momentum, captured/absorbed transitions, and geodesics belong to future physics systems.
 - Photon, spacecraft, clock, massive-particle, and test-particle behavior can specialize update policy without replacing pool or render storage.
 - Snapshot export and persistent trajectory recording require explicit copy/recording systems; reusable live buffers are not history storage.
+
+## v0.7 geodesic integration
+
+The production default particle is now driven by `SchwarzschildParticleSubsystem`. It maps normalized polar state to the established x-z render plane, writes actual integrated positions into the existing fixed-capacity trail, and updates particle time, energy, angular momentum, and terminal state. `ParticleManager.update()` remains available only as the legacy straight-line diagnostic path and is not used by the production default.
+
+Rendering still batches particles and trails through reusable GPU buffers. Physics state remains owned by the geodesic solver; the particle object is the render-facing projection, not the integrator state.

@@ -7,6 +7,7 @@ import {
   FrameRateController,
   ParticleManager,
   ParticleRenderer,
+  SchwarzschildParticleSubsystem,
   SimulationClock,
   SimulationState,
   TIME_SCALES,
@@ -16,10 +17,37 @@ import {
 import { AppShell, ControlPanel, VisualSettingsPanel } from "./ui/index.js";
 
 function createRenderSnapshotBuffer() {
-  const data = { mass: 0, schwarzschildRadius: 0 };
+  const data = {
+    mass: 0, schwarzschildRadius: 0, geodesicStatus: "", orbitClassification: "",
+    massSolar: 0, massKg: 0, schwarzschildRadiusMetres: 0, radiusRs: 0, radiusMetres: 0,
+    coordinateTime: 0, properTime: 0, localSpeedFraction: 0, localSpeedMetresPerSecond: 0,
+    energy: 0, angularMomentum: 0, angularMomentumSI: 0, energyDrift: 0,
+    angularMomentumDrift: 0, normalizationResidual: 0, integrationSubsteps: 0,
+    minimumRadiusRs: 0, maximumRadiusRs: 0,
+  };
   const view = Object.freeze({
     get mass() { return data.mass; },
     get schwarzschildRadius() { return data.schwarzschildRadius; },
+    get geodesicStatus() { return data.geodesicStatus; },
+    get orbitClassification() { return data.orbitClassification; },
+    get massSolar() { return data.massSolar; },
+    get massKg() { return data.massKg; },
+    get schwarzschildRadiusMetres() { return data.schwarzschildRadiusMetres; },
+    get radiusRs() { return data.radiusRs; },
+    get radiusMetres() { return data.radiusMetres; },
+    get coordinateTime() { return data.coordinateTime; },
+    get properTime() { return data.properTime; },
+    get localSpeedFraction() { return data.localSpeedFraction; },
+    get localSpeedMetresPerSecond() { return data.localSpeedMetresPerSecond; },
+    get energy() { return data.energy; },
+    get angularMomentum() { return data.angularMomentum; },
+    get angularMomentumSI() { return data.angularMomentumSI; },
+    get energyDrift() { return data.energyDrift; },
+    get angularMomentumDrift() { return data.angularMomentumDrift; },
+    get normalizationResidual() { return data.normalizationResidual; },
+    get integrationSubsteps() { return data.integrationSubsteps; },
+    get minimumRadiusRs() { return data.minimumRadiusRs; },
+    get maximumRadiusRs() { return data.maximumRadiusRs; },
   });
   return { data, view };
 }
@@ -27,6 +55,26 @@ function createRenderSnapshotBuffer() {
 function copyRenderSnapshot(target, source) {
   target.mass = source.mass;
   target.schwarzschildRadius = source.schwarzschildRadius;
+  target.geodesicStatus = source.geodesicStatus;
+  target.orbitClassification = source.orbitClassification;
+  target.massSolar = source.massSolar;
+  target.massKg = source.massKg;
+  target.schwarzschildRadiusMetres = source.schwarzschildRadiusMetres;
+  target.radiusRs = source.radiusRs;
+  target.radiusMetres = source.radiusMetres;
+  target.coordinateTime = source.coordinateTime;
+  target.properTime = source.properTime;
+  target.localSpeedFraction = source.localSpeedFraction;
+  target.localSpeedMetresPerSecond = source.localSpeedMetresPerSecond;
+  target.energy = source.energy;
+  target.angularMomentum = source.angularMomentum;
+  target.angularMomentumSI = source.angularMomentumSI;
+  target.energyDrift = source.energyDrift;
+  target.angularMomentumDrift = source.angularMomentumDrift;
+  target.normalizationResidual = source.normalizationResidual;
+  target.integrationSubsteps = source.integrationSubsteps;
+  target.minimumRadiusRs = source.minimumRadiusRs;
+  target.maximumRadiusRs = source.maximumRadiusRs;
 }
 
 const resources = new ResourceManager();
@@ -64,24 +112,19 @@ renderer.add(particleRenderer.object);
 renderer.add(particleRenderer.haloObject);
 renderer.add(particleRenderer.trailObject);
 
-const defaultParticle = particles.create({
-  id: "default-particle",
-  position: [4, 1.5, 0],
-  velocity: [0, 0, 0.75],
-  restMass: 1,
-  radius: 0.22,
-  color: 0xffd166,
-});
+const geodesicSubsystem = new SchwarzschildParticleSubsystem({ particles });
 
 const runtimeControls = {
   timeScales: TIME_SCALES,
   play: () => clock.resume(),
   pause: () => clock.pause(),
   setTimeScale: (scale) => clock.setTimeScale(scale),
-  resetParticle: () => particles.reset(defaultParticle.id),
+  applyOrbit: (configuration) => geodesicSubsystem.apply(configuration),
+  getOrbitConfiguration: () => ({ ...geodesicSubsystem.configuration }),
+  resetParticle: () => geodesicSubsystem.reset(),
   resetAll: () => {
     clock.reset();
-    particles.reset();
+    geodesicSubsystem.reset();
   },
 };
 
@@ -122,6 +165,7 @@ const applyState = (nextState) => {
   visualSettings.updateLegends();
   snapshotSource.mass = state.mass;
   snapshotSource.schwarzschildRadius = model.schwarzschildRadius(state.mass);
+  geodesicSubsystem.writeSnapshot(snapshotSource);
   snapshots.publish(snapshotSource);
 };
 resources.register(store.subscribe(applyState));
@@ -138,13 +182,16 @@ const renderingSubsystem = {
 };
 
 const particleSubsystem = {
-  order: 50,
+  order: 60,
   update(delta) {
-    particles.update(delta);
+    geodesicSubsystem.update(delta);
+    geodesicSubsystem.writeSnapshot(snapshotSource);
+    snapshots.publish(snapshotSource);
   },
   render() {
     particleRenderer.sync(particles);
     controlPanel.syncRuntime(simulationState, particles.count());
+    controlPanel.syncGeodesic(snapshots.latest(), simulationState);
   },
 };
 

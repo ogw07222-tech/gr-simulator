@@ -1,6 +1,6 @@
 // 한국어 UI 문구는 이 파일에서 관리합니다. 키 구조를 en.js와 동일하게 유지하세요.
 export const ko = Object.freeze({
-  app: { title: "GR-4D Simulator v0.6.2", description: "브라우저 기반 일반상대성이론 시뮬레이션 및 과학 시각화 실험실", eyebrow: "일반상대성이론 연구 콘솔" },
+  app: { title: "GR-4D Simulator v0.7.0", description: "브라우저 기반 일반상대성이론 시뮬레이션 및 과학 시각화 실험실", eyebrow: "일반상대성이론 연구 콘솔" },
   language: { label: "언어 선택", ko: "한국어", en: "English" },
   status: {
     running: "실행 중", paused: "일시정지", frame: "프레임", rendererOnline: "렌더러 정상",
@@ -52,5 +52,41 @@ export const ko = Object.freeze({
     orbitHint: "드래그: 회전", panHint: "오른쪽 드래그: 이동", zoomHint: "휠: 확대/축소",
   },
   drawer: { close: "열린 패널 닫기" },
+  orbit: {
+    setup: "슈바르츠실트 궤도 설정", preset: "초기 조건", circular: "원형 궤도",
+    localVelocity: "정지 관측자 기준 국소 속도", constants: "보존량 직접 입력",
+    massSolar: "블랙홀 질량 (M☉)", radiusRs: "초기 반지름 (rₛ)",
+    radialVelocity: "국소 방사 속도 (광속 비율)", tangentialVelocity: "국소 접선 속도 (광속 비율)",
+    advanced: "고급 적분기 입력", specificEnergy: "비에너지 ε",
+    specificAngularMomentum: "정규화 비각운동량 λ",
+    radialDirection: "초기 방사 방향", outward: "바깥쪽", inward: "안쪽",
+    maximumSubsteps: "최대 서브스텝 수",
+    integrator: "고전 RK4 · 정규화 스텝 ≤ 0.02 · 런타임 갱신당 최대 128 서브스텝",
+    apply: "초기 조건 적용", radiusKmValue: "물리 반지름: {value} km",
+    speedValue: "국소 속도: {kilometres} km/s · {fraction} c",
+    errorMass: "질량은 태양 질량의 1배 이상 10¹⁰배 이하여야 합니다.",
+    errorRadius: "반지름은 사건의 지평선 밖이며 10 rₛ 이하여야 합니다.",
+    errorCircularRadius: "시간꼴 원형 궤도에는 1.5 rₛ보다 큰 반지름이 필요합니다.",
+    errorVelocity: "합성 국소 속도는 광속보다 작아야 합니다.",
+    errorInitialCondition: "입력한 보존량으로는 요청한 초기 상태가 허용되지 않습니다.",
+    errorSubsteps: "최대 서브스텝 수는 1~4096 사이의 정수여야 합니다.",
+    classification: {
+      StableCircular: "안정 원형", UnstableCircular: "불안정 원형", BoundNonCircular: "비원형 속박",
+      PlungingCaptured: "낙하·포획", UnboundScattering: "비속박·산란", OutOfDomain: "영역 이탈",
+      NumericalFailure: "수치 계산 실패", Indeterminate: "판정 보류",
+    },
+    status: {
+      Active: "적분 중", Captured: "포획됨", OutOfDomain: "영역 이탈",
+      InvalidInitialCondition: "잘못된 초기 조건", NumericalFailure: "수치 계산 실패", Paused: "일시정지",
+    },
+  },
+  geodesic: {
+    title: "과학 지오데식 HUD", mass: "블랙홀 질량", schwarzschildRadius: "슈바르츠실트 반지름",
+    radius: "입자 반지름", localSpeed: "정지 관측자 기준 국소 속도", coordinateTime: "좌표 시간",
+    properTime: "고유 시간", energy: "비에너지 ε", angularMomentum: "비각운동량 λ / SI",
+    classification: "궤도 분류", status: "적분 상태", energyDrift: "상대 에너지 편차",
+    angularMomentumDrift: "상대 각운동량 편차", normalizationResidual: "4-속도 정규화 잔차",
+    substeps: "적분 서브스텝",
+  },
   units: { multiplier: "{value}배" },
 });

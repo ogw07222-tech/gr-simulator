@@ -1,4 +1,5 @@
 import { getLocale, subscribeLocale, t } from "./i18n.js";
+import { validateOrbitConfiguration } from "./OrbitInputValidation.js";
 
 export class ControlPanel {
   constructor(root, store, model, grid, runtime = null) {
@@ -8,6 +9,7 @@ export class ControlPanel {
     this.grid = grid;
     this.runtime = runtime;
     this.runtimeView = { paused: null, timeScale: null, particleCount: null, simulationTime: null };
+    this.geodesicView = { snapshot: null, lastRefresh: 0 };
     this.render();
     this.bind();
     this.unsubscribe = store.subscribe((state) => this.sync(state));
@@ -44,11 +46,53 @@ export class ControlPanel {
         <div><small data-i18n="metrics.curvatureProxy"></small><strong id="curvature"></strong></div>
         <div><small data-i18n="metrics.gridVertices"></small><strong id="vertices"></strong></div>
       </div></section>
+      ${this.runtime?.applyOrbit ? `<section class="panel-section orbit-setup"><h3 data-i18n="orbit.setup"></h3>
+        <label class="select-control" for="orbit-preset"><span data-i18n="orbit.preset"></span><select id="orbit-preset">
+          <option value="circular" data-i18n="orbit.circular"></option>
+          <option value="local" data-i18n="orbit.localVelocity"></option>
+          <option value="constants" data-i18n="orbit.constants"></option>
+        </select></label>
+        <label class="numeric-control" for="black-hole-mass"><span data-i18n="orbit.massSolar"></span><input id="black-hole-mass" type="number" min="1" max="10000000000" step="1" /></label>
+        <label class="numeric-control" for="orbit-radius"><span data-i18n="orbit.radiusRs"></span><input id="orbit-radius" type="number" min="1.000001" max="10" step="0.01" /></label>
+        <output id="orbit-radius-km" class="derived-value"></output>
+        <div class="orbit-local-inputs">
+          <label class="numeric-control" for="radial-beta"><span data-i18n="orbit.radialVelocity"></span><input id="radial-beta" type="number" min="-0.999" max="0.999" step="0.001" /></label>
+          <label class="numeric-control" for="tangential-beta"><span data-i18n="orbit.tangentialVelocity"></span><input id="tangential-beta" type="number" min="-0.999" max="0.999" step="0.001" /></label>
+          <output id="orbit-speed" class="derived-value"></output>
+        </div>
+        <details class="advanced-controls"><summary data-i18n="orbit.advanced"></summary>
+          <div class="orbit-constant-inputs">
+            <label class="numeric-control" for="specific-energy"><span data-i18n="orbit.specificEnergy"></span><input id="specific-energy" type="number" min="0.001" step="0.001" /></label>
+            <label class="numeric-control" for="specific-angular-momentum"><span data-i18n="orbit.specificAngularMomentum"></span><input id="specific-angular-momentum" type="number" step="0.001" /></label>
+            <label class="select-control" for="radial-direction"><span data-i18n="orbit.radialDirection"></span><select id="radial-direction"><option value="1" data-i18n="orbit.outward"></option><option value="-1" data-i18n="orbit.inward"></option></select></label>
+          </div>
+          <label class="numeric-control" for="maximum-substeps"><span data-i18n="orbit.maximumSubsteps"></span><input id="maximum-substeps" type="number" min="1" max="4096" step="1" /></label>
+          <p class="scientific-note" data-i18n="orbit.integrator"></p>
+        </details>
+        <button id="apply-orbit" class="primary-action" type="button" data-i18n="orbit.apply"></button>
+        <p id="orbit-error" class="input-error" role="alert" hidden></p>
+      </section>` : ""}
       ${this.runtime ? `<section class="panel-section"><h3 data-i18n="runtime.title"></h3><div class="runtime-status" aria-live="polite">
         <div><small data-i18n="runtime.state"></small><strong id="runtime-state"></strong></div>
         <div><small data-i18n="runtime.simulationTime"></small><strong id="simulation-time"></strong></div>
         <div><small data-i18n="runtime.timeScale"></small><strong id="runtime-time-scale"></strong></div>
         <div><small data-i18n="runtime.particleCount"></small><strong id="particle-count"></strong></div>
+      </div></section>` : ""}
+      ${this.runtime?.applyOrbit ? `<section class="panel-section"><h3 data-i18n="geodesic.title"></h3><div class="runtime-status geodesic-status" aria-live="polite">
+        <div><small data-i18n="geodesic.mass"></small><strong id="geo-mass"></strong></div>
+        <div><small data-i18n="geodesic.schwarzschildRadius"></small><strong id="geo-rs"></strong></div>
+        <div><small data-i18n="geodesic.radius"></small><strong id="geo-radius"></strong></div>
+        <div><small data-i18n="geodesic.localSpeed"></small><strong id="geo-speed"></strong></div>
+        <div><small data-i18n="geodesic.coordinateTime"></small><strong id="geo-coordinate-time"></strong></div>
+        <div><small data-i18n="geodesic.properTime"></small><strong id="geo-proper-time"></strong></div>
+        <div><small data-i18n="geodesic.energy"></small><strong id="geo-energy"></strong></div>
+        <div><small data-i18n="geodesic.angularMomentum"></small><strong id="geo-angular-momentum"></strong></div>
+        <div><small data-i18n="geodesic.classification"></small><strong id="geo-classification"></strong></div>
+        <div><small data-i18n="geodesic.status"></small><strong id="geo-status"></strong></div>
+        <div><small data-i18n="geodesic.energyDrift"></small><strong id="geo-energy-drift"></strong></div>
+        <div><small data-i18n="geodesic.angularMomentumDrift"></small><strong id="geo-angular-drift"></strong></div>
+        <div><small data-i18n="geodesic.normalizationResidual"></small><strong id="geo-normalization"></strong></div>
+        <div><small data-i18n="geodesic.substeps"></small><strong id="geo-substeps"></strong></div>
       </div></section>` : ""}
       <p class="scientific-note"><strong data-i18n="model.scope"></strong> <span data-i18n="model.scopeDescription"></span></p>
     `;
@@ -67,6 +111,7 @@ export class ControlPanel {
       this.root.querySelector("#runtime-state").textContent = t(this.runtimeView.paused ? "status.paused" : "status.running");
       this.root.querySelector("#runtime-time-scale").textContent = t("units.multiplier", { value: this.runtimeView.timeScale });
     }
+    if (this.runtime?.applyOrbit && this.geodesicView.snapshot) this.#writeGeodesic(this.geodesicView.snapshot);
     this.root.querySelector("#vertices").textContent = this.grid.segmentVertexCount.toLocaleString(getLocale());
   }
 
@@ -82,6 +127,21 @@ export class ControlPanel {
       this.root.querySelector("#time-scale").addEventListener("change", (event) => this.runtime.setTimeScale(Number(event.target.value)));
       this.root.querySelector("#reset-particle").addEventListener("click", this.runtime.resetParticle);
       this.root.querySelector("#reset-all").addEventListener("click", this.runtime.resetAll);
+      if (!this.runtime.applyOrbit) return;
+      const configuration = this.runtime.getOrbitConfiguration();
+      this.root.querySelector("#orbit-preset").value = configuration.preset;
+      this.root.querySelector("#black-hole-mass").value = configuration.massSolar;
+      this.root.querySelector("#orbit-radius").value = configuration.radius;
+      this.root.querySelector("#radial-beta").value = configuration.radialBeta;
+      this.root.querySelector("#tangential-beta").value = configuration.tangentialBeta;
+      this.root.querySelector("#specific-energy").value = configuration.energy;
+      this.root.querySelector("#specific-angular-momentum").value = configuration.angularMomentum;
+      this.root.querySelector("#radial-direction").value = configuration.radialDirection;
+      this.root.querySelector("#maximum-substeps").value = configuration.maximumSubsteps;
+      this.root.querySelector("#orbit-preset").addEventListener("change", () => this.#syncOrbitInputs());
+      this.root.querySelectorAll(".orbit-setup input").forEach((input) => input.addEventListener("input", () => this.#syncOrbitDerived()));
+      this.root.querySelector("#apply-orbit").addEventListener("click", () => this.#applyOrbit());
+      this.#syncOrbitInputs();
     }
   }
 
@@ -125,6 +185,80 @@ export class ControlPanel {
       this.runtimeView.simulationTime = simulationTime;
       this.root.querySelector("#simulation-time").textContent = `${simulationTime} s`;
     }
+  }
+
+  syncGeodesic(snapshot, runtimeState = null) {
+    if (!this.runtime?.applyOrbit || !snapshot || globalThis.performance.now() - this.geodesicView.lastRefresh < 100) return;
+    this.geodesicView.snapshot = snapshot;
+    this.geodesicView.paused = runtimeState?.paused ?? false;
+    this.geodesicView.lastRefresh = globalThis.performance.now();
+    this.#writeGeodesic(snapshot);
+  }
+
+  #syncOrbitInputs() {
+    const preset = this.root.querySelector("#orbit-preset").value;
+    this.root.querySelector(".orbit-local-inputs").hidden = preset !== "local";
+    this.root.querySelector(".orbit-constant-inputs").hidden = preset !== "constants";
+    this.#syncOrbitDerived();
+  }
+
+  #syncOrbitDerived() {
+    const massSolar = Number(this.root.querySelector("#black-hole-mass").value);
+    const radius = Number(this.root.querySelector("#orbit-radius").value);
+    const radiusKm = massSolar * 2.953339382066878 * radius;
+    const radial = Number(this.root.querySelector("#radial-beta").value);
+    const tangential = Number(this.root.querySelector("#tangential-beta").value);
+    const speed = Math.sqrt(radial * radial + tangential * tangential);
+    this.root.querySelector("#orbit-radius-km").textContent = t("orbit.radiusKmValue", { value: radiusKm.toExponential(4) });
+    this.root.querySelector("#orbit-speed").textContent = t("orbit.speedValue", {
+      kilometres: (speed * 299792.458).toFixed(2), fraction: speed.toFixed(5),
+    });
+  }
+
+  #applyOrbit() {
+    const error = this.root.querySelector("#orbit-error");
+    const configuration = {
+      preset: this.root.querySelector("#orbit-preset").value,
+      massSolar: Number(this.root.querySelector("#black-hole-mass").value),
+      radius: Number(this.root.querySelector("#orbit-radius").value),
+      radialBeta: Number(this.root.querySelector("#radial-beta").value),
+      tangentialBeta: Number(this.root.querySelector("#tangential-beta").value),
+      energy: Number(this.root.querySelector("#specific-energy").value),
+      angularMomentum: Number(this.root.querySelector("#specific-angular-momentum").value),
+      radialDirection: Number(this.root.querySelector("#radial-direction").value),
+      maximumSubsteps: Number(this.root.querySelector("#maximum-substeps").value),
+    };
+    const errorKey = validateOrbitConfiguration(configuration);
+    if (errorKey) {
+      error.textContent = t(errorKey);
+      error.hidden = false;
+      return;
+    }
+    try {
+      this.runtime.applyOrbit(configuration);
+      error.hidden = true;
+    } catch {
+      error.textContent = t("orbit.errorInitialCondition");
+      error.hidden = false;
+    }
+  }
+
+  #writeGeodesic(snapshot) {
+    const format = (value, digits = 4) => Number(value).toExponential(digits);
+    this.root.querySelector("#geo-mass").textContent = `${format(snapshot.massSolar)} M☉ / ${format(snapshot.massKg)} kg`;
+    this.root.querySelector("#geo-rs").textContent = `${format(snapshot.schwarzschildRadiusMetres / 1000)} km`;
+    this.root.querySelector("#geo-radius").textContent = `${snapshot.radiusRs.toFixed(6)} rₛ / ${format(snapshot.radiusMetres / 1000)} km`;
+    this.root.querySelector("#geo-speed").textContent = `${format(snapshot.localSpeedMetresPerSecond / 1000)} km/s / ${snapshot.localSpeedFraction.toFixed(6)} c`;
+    this.root.querySelector("#geo-coordinate-time").textContent = `${format(snapshot.coordinateTime)} s`;
+    this.root.querySelector("#geo-proper-time").textContent = `${format(snapshot.properTime)} s`;
+    this.root.querySelector("#geo-energy").textContent = snapshot.energy.toFixed(10);
+    this.root.querySelector("#geo-angular-momentum").textContent = `${snapshot.angularMomentum.toFixed(8)} / ${format(snapshot.angularMomentumSI)} m²/s`;
+    this.root.querySelector("#geo-classification").textContent = t(`orbit.classification.${snapshot.orbitClassification}`);
+    this.root.querySelector("#geo-status").textContent = t(`orbit.status.${this.geodesicView.paused ? "Paused" : snapshot.geodesicStatus}`);
+    this.root.querySelector("#geo-energy-drift").textContent = format(snapshot.energyDrift);
+    this.root.querySelector("#geo-angular-drift").textContent = format(snapshot.angularMomentumDrift);
+    this.root.querySelector("#geo-normalization").textContent = format(snapshot.normalizationResidual);
+    this.root.querySelector("#geo-substeps").textContent = snapshot.integrationSubsteps.toLocaleString(getLocale());
   }
 
   dispose() { this.unsubscribe?.(); this.unsubscribeLocale?.(); }

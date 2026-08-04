@@ -1,5 +1,21 @@
 # Changelog
 
+## [0.7.0] - 2026-08-05
+
+### Added
+
+- SI conversion boundary and a documented `r_s=2GM/c²`, `t_s=r_s/c` normalized convention.
+- Equatorial massive-particle Schwarzschild geodesics with reusable RK4 storage, analytic initial-condition presets, capture/domain states, orbit classification, and conservation diagnostics.
+- Particle/runtime/snapshot integration, bilingual orbit controls, scientific HUD, deterministic physics validation, and a solver microbenchmark.
+
+### Changed
+
+- The production default particle now follows the geodesic engine instead of legacy straight-line diagnostic motion.
+
+### Scientific scope
+
+- The simulator evaluates test-particle geodesics in a fixed analytic Schwarzschild spacetime. It does not solve the Einstein field equations and does not add Kerr, photons, self-gravity, radiation reaction, lensing, or arbitrary inclined planes.
+
 ## [0.6.2] - 2026-08-04
 
 ### Added

@@ -57,3 +57,7 @@ Neither the raw proxy nor its color legend is curvature, proper distance, an orb
 The effective-radius equation, raw displacement equation, softening, and `asinh` normalization are unchanged. Uniform grid topology, native fixed-chunk frustum testing, proximity opacity, and the blue-cyan-red palette are presentation decisions. Distance-based topology changes and render-distance omission are not used inside the supported domain.
 
 The black central sphere is a presentation silhouette. The green translucent shell is tied to the existing visual event-horizon radius but its rim brightness is not physical emission. Neither presentation object adds an observable or changes the Schwarzschild radius.
+
+## v0.7 analytic spacetime solver
+
+The legacy grid deformation proxy remains unchanged and is separate from the new particle solver. Production particle motion uses conserved specific energy and angular momentum in a fixed analytic Schwarzschild metric, restricted to massive equatorial test particles. Equations, conventions, and coordinate limitations are defined in `SCHWARZSCHILD_GEODESICS.md`; the SI boundary is defined in `UNIT_SYSTEM.md`.

@@ -1,6 +1,6 @@
 # GR-4D Simulator
 
-A browser-based General Relativity visualization laboratory built with Three.js. Version 0.6.2 presents the existing Schwarzschild spatial-slice and particle runtime through a responsive scientific dashboard.
+A browser-based General Relativity visualization laboratory built with Three.js. Version 0.7.0 adds SI-facing, equatorial timelike geodesics in a fixed analytic Schwarzschild spacetime while preserving the existing visualization dashboard.
 
 > This project is not yet a numerical Einstein field equation solver. The current implementation combines quantities derived from the Schwarzschild metric with explicitly documented weak-field visualization approximations.
 
@@ -138,3 +138,9 @@ The long-term goal is a reproducible, testable, performance-oriented GR simulati
 ## License
 
 [MIT](LICENSE)
+
+## v0.7 Schwarzschild physics
+
+The default test particle is evolved by the fixed-step runtime through an equatorial timelike Schwarzschild geodesic subsystem. The orbit panel supports analytic circular data, local static-observer velocity components, and advanced conserved quantities. Draft values take effect only after validation and Apply. Live SI and normalized diagnostics are read from immutable snapshots.
+
+Use `npm run test:physics` for analytic and long-orbit regression tests and `npm run benchmark:physics` for the solver-only scaling sample. See [Unit System](docs/UNIT_SYSTEM.md), [Geodesics](docs/SCHWARZSCHILD_GEODESICS.md), [Numerical Integration](docs/NUMERICAL_INTEGRATION.md), [Classification](docs/ORBIT_CLASSIFICATION.md), and [Validation](docs/VALIDATION.md).

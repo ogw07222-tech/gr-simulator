@@ -107,3 +107,7 @@ Heap start / peak / post-GC:
 GC count / total duration:
 Notes and trace location:
 ```
+
+## v0.7 geodesic baseline
+
+RK4 state and all stage/candidate storage are fixed `Float64Array` buffers owned by each solver. No object, vector, or array is created in an integration substep. The live production configuration uses one scientific solver; a Node 24.14.0 sample measured mean costs of 0.0155 ms, 0.1386 ms, and 0.5756 ms per 240 Hz update for 1, 100, and 1000 solver instances respectively. See `VALIDATION.md` for the method and limitations. DOM diagnostics are throttled to 10 Hz independently of physics.
