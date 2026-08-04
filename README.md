@@ -55,13 +55,15 @@ The first browser-smoke run requires `npx playwright install chromium`. Unit tes
 
 ## Localization
 
-Korean (`ko`) is the default interface language. The language selector restores a valid previous choice from the `gr4d.locale` localStorage key and updates the document language, metadata, visible labels, and accessibility text without reloading the page.
+English (`en`) is the default interface language. Korean (`ko`) remains fully supported. The language selector restores a valid previous choice from the `gr4d.locale` localStorage key; invalid values fall back to English. Locale dictionaries live in `src/ui/i18n/en.js` and `src/ui/i18n/ko.js`, while `src/ui/i18n.js` provides the stable runtime API. Switching language updates document metadata, visible labels, and accessibility text without reloading or resetting simulation state.
 
 Translations use stable keys in `src/ui/i18n.js`. To add a language, add a complete dictionary matching the existing `ko` and `en` keys, register its locale code in `SUPPORTED_LOCALES`, and add the selector label. Project name, FPS, GR, GPU, scientific units, and mathematical symbols remain untranslated where appropriate.
 
 ## Scientific dashboard
 
-The v0.6 interface uses an original mission-control-inspired design language: compact telemetry, restrained cyan/blue accents, a viewport-first layout, and separate simulation and presentation controls. Desktop uses persistent side panels; tablet and mobile use keyboard- and touch-accessible drawers.
+The v0.6.1 interface uses an original scientific-dashboard design language: compact telemetry, restrained holographic blue-green accents, a viewport-first layout, and separate simulation and presentation controls. Grid deformation and trail speed include explicit legends. Desktop uses persistent side panels; tablet and mobile use keyboard- and touch-accessible drawers.
+
+The grid spans a larger adaptive world-space domain. Its dense central region preserves detail while geometrically increasing far-field spacing keeps geometry bounded. Raw model displacement is retained unchanged; a documented `asinh` transfer is applied only to display magnitude. Particle trails use a fixed configurable capacity, resize only when the setting changes, and are colored only by measured particle speed.
 
 Screenshots are maintained in `docs/screenshots/` for desktop, tablet, and mobile verification. See [UI architecture](docs/UI_ARCHITECTURE.md) for theme tokens, supported visual settings, responsive behavior, and intentionally unsupported controls.
 

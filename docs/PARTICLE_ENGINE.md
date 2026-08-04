@@ -54,11 +54,15 @@ ParticleRenderer uses one BufferGeometry and one PointsMaterial for the entire p
 ## Performance assumptions
 
 - Default capacity: 1,000 particles.
-- Default trail capacity: 256 positions per particle.
-- Trail position storage: approximately 3.07 MB (`1000 × 256 × 3 × 4` bytes).
+- Desktop trail capacity: 1,024 positions per particle by default; selectable capacities are 256, 512, and 1,024.
+- Mobile trail capacity: 512 positions per particle by default; selectable capacities are 256 and 512.
+- At the 240 Hz fixed step, these capacities retain about 4.27 seconds and 2.13 seconds respectively. They are storage durations, not orbital-period guarantees.
+- Total fixed trail storage, including manager positions and renderer position/color segment buffers, is approximately 58.55 MiB on desktop and 29.25 MiB on mobile at 1,000-particle capacity.
 - Particle render position/color storage: approximately 24 KB.
 - No objects, vectors, arrays, or buffers are created inside ParticleManager.update, Particle.update, ParticleTrail.push, or ParticleRenderer.sync.
 - Active slots are dense, so update and buffer sync scale with active count rather than maximum capacity.
+- Trail capacity changes replace typed buffers once and preserve the newest available samples. No resizing occurs in the animation loop.
+- Trail color is a monotonic blue-green mapping of current velocity magnitude in simulation world units per second. It does not represent energy, redshift, proper velocity, or a fraction of light speed.
 - A 60 FPS target with 1,000 active particles assumes four 240 Hz fixed updates per normal frame; final budgets require browser profiling on target hardware.
 
 ## Known limitations and extension points

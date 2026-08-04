@@ -1,14 +1,14 @@
 :root {
   color-scheme: dark;
   font-family: Pretendard, "Noto Sans KR", Inter, system-ui, sans-serif;
-  --app-bg: #07090f;
-  --panel-bg: rgba(12, 17, 26, .92);
-  --panel-solid: #0c111a;
-  --panel-border: rgba(90, 160, 255, .18);
-  --panel-border-strong: rgba(57, 189, 248, .42);
-  --cyan: #39bdf8;
-  --blue: #4d7cff;
-  --green: #35d07f;
+  --app-bg: #030811;
+  --panel-bg: rgba(7, 17, 27, .94);
+  --panel-solid: #07111b;
+  --panel-border: rgba(51, 177, 183, .22);
+  --panel-border-strong: rgba(52, 210, 218, .48);
+  --cyan: #34d2da;
+  --blue: #3288d6;
+  --green: #46d68c;
   --orange: #ff9f43;
   --danger: #ff5d66;
   --text: #eaf2ff;
@@ -41,7 +41,7 @@ button:disabled { cursor: default; opacity: .42; }
   padding: 8px;
   overflow: hidden;
   background:
-    radial-gradient(circle at 50% -30%, rgba(36, 105, 178, .18), transparent 42%),
+    radial-gradient(circle at 50% -30%, rgba(24, 139, 148, .15), transparent 42%),
     var(--app-bg);
 }
 
@@ -113,6 +113,14 @@ select { min-width: 94px; padding: 7px 28px 7px 9px; border: 1px solid var(--pan
 .switch { display: inline-flex; align-items: center; gap: 6px; color: var(--muted); font-size: .68rem; }
 .switch input { width: 16px; height: 16px; }
 .control-description { min-height: 30px; margin: 8px 0 0; color: var(--subtle); font-size: .65rem; line-height: 1.45; }
+.scientific-legend { margin-top: 12px; padding: 9px; border: 1px solid rgba(52, 210, 218, .16); border-radius: 8px; background: rgba(2, 10, 17, .58); }
+.legend-heading { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
+.legend-heading strong { color: var(--text); font-size: .65rem; }
+.legend-heading small { color: var(--subtle); font-size: .57rem; text-align: right; }
+.legend-gradient { height: 7px; margin-top: 7px; border: 1px solid rgba(255, 255, 255, .08); border-radius: 999px; }
+.speed-gradient, .grid-gradient { background: linear-gradient(90deg, #143d66 0%, #24d7ff 50%, #35d07f 100%); }
+.legend-values { display: flex; justify-content: space-between; margin-top: 4px; color: var(--muted); font: 500 .57rem ui-monospace, monospace; }
+.scientific-legend p { margin: 7px 0 0; color: var(--subtle); font-size: .58rem; line-height: 1.4; }
 
 .metrics, .runtime-status { display: grid; grid-template-columns: 1fr 1fr; gap: 7px; }
 .metrics div, .runtime-status div { min-width: 0; padding: 9px; border: 1px solid rgba(143, 163, 189, .08); border-radius: 8px; background: rgba(255, 255, 255, .025); }

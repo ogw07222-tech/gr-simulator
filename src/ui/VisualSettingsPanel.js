@@ -8,7 +8,8 @@ const DEFAULTS = Object.freeze({
   trailOpacity: 0.88,
   trailBrightness: 1,
   trailFade: 0.82,
-  trailColorMode: "single",
+  trailColorMode: "speed",
+  trailSpeedMaximum: 2,
   gridVisible: true,
   gridOpacity: 0.52,
   gridBrightness: 0.82,
@@ -17,11 +18,16 @@ const DEFAULTS = Object.freeze({
 });
 
 export class VisualSettingsPanel {
-  constructor(root, { particleRenderer, grid, massObject }) {
+  constructor(root, { particleRenderer, grid, massObject, trailCapacity = null }) {
     this.root = root;
     this.particleRenderer = particleRenderer;
     this.grid = grid;
     this.massObject = massObject;
+    this.trailCapacity = trailCapacity ?? {
+      current: particleRenderer.maxTrailLength,
+      options: [particleRenderer.maxTrailLength],
+      resize: () => false,
+    };
     this.values = { ...DEFAULTS };
     this.render();
     this.bind();
@@ -48,15 +54,26 @@ export class VisualSettingsPanel {
         ${this.renderRange("trail-opacity", "visual.opacity", 0.1, 1, 0.05)}
         ${this.renderRange("trail-brightness", "visual.brightness", 0.4, 1.5, 0.05)}
         ${this.renderRange("trail-fade", "visual.ageFade", 0, 1, 0.05)}
-        <label class="select-control" for="trail-color-mode"><span data-i18n="visual.colorMode"></span><select id="trail-color-mode">
-          <option value="single" data-i18n="visual.singleColor"></option><option value="speed" data-i18n="visual.speed"></option>
-          <option value="distance" data-i18n="visual.distance"></option><option value="age" data-i18n="visual.age"></option>
+        <p class="control-description" data-i18n="visual.trailSpeedDescription"></p>
+        <div class="scientific-legend" aria-live="polite">
+          <div class="legend-heading"><strong data-i18n="legend.speedTitle"></strong><small data-i18n="legend.speedUnit"></small></div>
+          <div class="legend-gradient speed-gradient" aria-hidden="true"></div>
+          <div class="legend-values"><span id="speed-legend-min"></span><span id="speed-legend-mid"></span><span id="speed-legend-max"></span></div>
+        </div>
+        <label class="select-control" for="trail-capacity"><span data-i18n="visual.trailCapacity"></span><select id="trail-capacity">
+          ${this.trailCapacity.options.map((capacity) => `<option value="${capacity}" data-capacity="${capacity}"></option>`).join("")}
         </select></label>
-        <p id="trail-mode-description" class="control-description"></p>
+        <p class="control-description" data-i18n="visual.trailCapacityNote"></p>
       </section>
       <section class="panel-section"><div class="section-title-row"><h3 data-i18n="visual.spacetimeGrid"></h3><label class="switch"><input id="grid-visible" type="checkbox" /><span data-i18n="visual.visible"></span></label></div>
         ${this.renderRange("grid-opacity", "visual.opacity", 0.08, 0.9, 0.02)}
         ${this.renderRange("grid-brightness", "visual.brightness", 0.3, 1.2, 0.05)}
+        <div class="scientific-legend" aria-live="polite">
+          <div class="legend-heading"><strong data-i18n="legend.gridTitle"></strong><small data-i18n="legend.gridUnit"></small></div>
+          <div class="legend-gradient grid-gradient" aria-hidden="true"></div>
+          <div class="legend-values"><span id="grid-legend-min"></span><span id="grid-legend-mid"></span><span id="grid-legend-max"></span></div>
+          <p data-i18n="legend.gridScale"></p>
+        </div>
       </section>
       <section class="panel-section"><h3 data-i18n="visual.massRendering"></h3>
         ${this.renderRange("horizon-glow", "visual.horizonIntensity", 0.08, 0.8, 0.02)}
@@ -72,11 +89,10 @@ export class VisualSettingsPanel {
       element.setAttribute("aria-label", t(element.dataset.i18nAria));
     });
     this.root.setAttribute("aria-label", t("panels.visualSettings"));
-    this.syncTrailDescription();
-  }
-
-  syncTrailDescription() {
-    this.root.querySelector("#trail-mode-description").textContent = t(`visual.trail.${this.values.trailColorMode}`);
+    this.root.querySelectorAll("[data-capacity]").forEach((option) => {
+      option.textContent = t("visual.trailCapacitySamples", { value: option.dataset.capacity });
+    });
+    this.updateLegends();
   }
 
   bind() {
@@ -101,9 +117,11 @@ export class VisualSettingsPanel {
       this.values.gridVisible = event.target.checked;
       this.apply();
     });
-    this.root.querySelector("#trail-color-mode").addEventListener("change", (event) => {
-      this.values.trailColorMode = event.target.value;
-      this.apply();
+    this.root.querySelector("#trail-capacity").addEventListener("change", (event) => {
+      const capacity = Number(event.target.value);
+      this.trailCapacity.resize(capacity);
+      this.trailCapacity.current = capacity;
+      this.sync();
     });
     this.root.querySelector("#reset-visuals").addEventListener("click", () => this.reset());
   }
@@ -137,8 +155,20 @@ export class VisualSettingsPanel {
     });
     this.root.querySelector("#trail-visible").checked = values.trailVisible;
     this.root.querySelector("#grid-visible").checked = values.gridVisible;
-    this.root.querySelector("#trail-color-mode").value = values.trailColorMode;
-    this.syncTrailDescription();
+    this.root.querySelector("#trail-capacity").value = this.trailCapacity.current;
+    this.updateLegends();
+  }
+
+  updateLegends() {
+    const speed = this.particleRenderer.getSpeedLegend();
+    this.root.querySelector("#speed-legend-min").textContent = speed.minimum.toFixed(1);
+    this.root.querySelector("#speed-legend-mid").textContent = speed.midpoint.toFixed(1);
+    this.root.querySelector("#speed-legend-max").textContent = speed.maximum.toFixed(1);
+    const grid = this.grid.getLegend();
+    const format = (value) => value === 0 ? "0" : value.toExponential(2);
+    this.root.querySelector("#grid-legend-min").textContent = format(grid.rawMinimum);
+    this.root.querySelector("#grid-legend-mid").textContent = format(grid.rawMidpoint);
+    this.root.querySelector("#grid-legend-max").textContent = format(grid.rawMaximum);
   }
 
   reset() {

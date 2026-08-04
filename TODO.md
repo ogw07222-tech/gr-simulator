@@ -1,5 +1,15 @@
 # TODO
 
+## v0.6.1 visualization corrections
+
+- [x] Separate raw grid-model output from the nonlinear display transfer.
+- [x] Add grid-deformation and speed legends with units and localized labels.
+- [x] Expand the world-space grid with bounded adaptive far-field spacing.
+- [x] Make trail capacity configurable without per-frame reallocation.
+- [x] Split English and Korean dictionaries and make English the default fallback.
+- [x] Add mapping, far-field, localization-parity, and source-policy tests.
+- [ ] Keep orbit classification and geodesics outside this correction release.
+
 This backlog describes future work; this architecture PR does not implement new simulator features.
 
 ## P0 — Regression safety

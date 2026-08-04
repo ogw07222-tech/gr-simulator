@@ -210,6 +210,21 @@ describe("ParticleTrail", () => {
     trail.clear();
     expect(trail.length).toBe(0);
   });
+
+  it("resizes only on request and preserves the newest samples", () => {
+    const trail = new ParticleTrail(4);
+    const input = new THREE.Vector3();
+    const output = new THREE.Vector3();
+    for (let value = 1; value <= 4; value += 1) trail.push(input.set(value, 0, 0));
+    const previous = trail.positions;
+    expect(trail.resize(2)).toBe(true);
+    expect(trail.positions).not.toBe(previous);
+    expect(trail.read(0, output).x).toBe(3);
+    expect(trail.read(1, output).x).toBe(4);
+    const resized = trail.positions;
+    expect(trail.resize(2)).toBe(false);
+    expect(trail.positions).toBe(resized);
+  });
 });
 
 describe("ParticleRenderer", () => {
@@ -294,5 +309,34 @@ describe("ParticleRenderer", () => {
     expect(renderer.trailMaterial.opacity).toBe(0.5);
     expect(renderer.positions).toBe(positions);
     expect(renderer.trailPositions).toBe(trailPositions);
+  });
+
+  it("uses deterministic monotonic current-speed coloring", () => {
+    const manager = new ParticleManager({ maxParticles: 1, maxTrailLength: 3 });
+    const particle = manager.create({ velocity: [0.5, 0, 0] });
+    const renderer = new ParticleRenderer({ maxParticles: 1, maxTrailLength: 3 });
+    renderer.setAppearance({ trailColorMode: "speed", trailSpeedMaximum: 2, trailFade: 0 });
+    manager.update(1);
+    manager.update(1);
+    renderer.sync(manager);
+    const slowGreen = renderer.trailColors[1];
+    particle.velocity.set(2, 0, 0);
+    manager.update(1);
+    renderer.sync(manager);
+    expect(renderer.trailColors[1]).toBeGreaterThan(slowGreen);
+    expect(renderer.getSpeedLegend()).toEqual({ minimum: 0, midpoint: 1, maximum: 2 });
+  });
+
+  it("resizes manager and renderer trail buffers outside update loops", () => {
+    const manager = new ParticleManager({ maxParticles: 2, maxTrailLength: 4 });
+    const renderer = new ParticleRenderer({ maxParticles: 2, maxTrailLength: 4 });
+    const oldManagerBuffer = manager.particles[0].trail.positions;
+    const oldRendererBuffer = renderer.trailPositions;
+    expect(manager.resizeTrailCapacity(8)).toBe(true);
+    expect(renderer.resizeTrailCapacity(8)).toBe(true);
+    expect(manager.particles[0].trail.positions).not.toBe(oldManagerBuffer);
+    expect(renderer.trailPositions).not.toBe(oldRendererBuffer);
+    expect(manager.maxTrailLength).toBe(8);
+    expect(renderer.maxTrailLength).toBe(8);
   });
 });

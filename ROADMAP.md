@@ -45,6 +45,14 @@ Exit criterion: rendering, HUD, UI, and future particles consume stable snapshot
 
 Exit criterion: new numerical models can be integrated behind tested contracts without breaking v0.1 behavior.
 
+### v0.6.1 correction gate
+
+- [x] Separate raw model values from documented display transforms.
+- [x] Add explicit legends and units for grid deformation and trail speed.
+- [x] Use a bounded adaptive grid and fixed configurable trail storage.
+- [x] Make English the default locale while retaining complete Korean support.
+- [ ] Keep orbit classification and Schwarzschild geodesics deferred to separately reviewed physics milestones.
+
 ## Beyond v0.6
 
 Candidate research features include multiple bodies, geodesic integration, field sampling, heatmaps, and data export. Each requires an independent physical model specification and validation plan.

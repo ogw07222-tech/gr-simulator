@@ -162,7 +162,26 @@ Completed: default particle startup, runtime controls, GPU trail rendering, and 
 
 Completed: responsive viewport-first dashboard, separate simulation and rendering-preference panels, live runtime telemetry, accessible mobile drawers, and rendering-only presentation settings. This milestone introduces no new physics behavior.
 
-Localization: Korean is the default interface language, English is available from the top-bar selector, and the selected locale is restored from `gr4d.locale`. Locale changes update only interface text and accessibility metadata; runtime, physics, particles, camera, and rendering state remain untouched.
+Localization: English is the default interface language, Korean is available from the top-bar selector, and a valid selected locale is restored from `gr4d.locale`. Invalid saved values fall back to English. Locale changes update only interface text and accessibility metadata; runtime, physics, particles, camera, and rendering state remain untouched.
+
+## Scientific Integrity and Change Management
+
+Every scientific or scientific-looking change is governed by these permanent rules:
+
+1. State the governing equation before implementation.
+2. Document assumptions, coordinate conventions, units, and valid domains.
+3. Preserve raw model outputs; display transforms must be separate and explicit.
+4. Label proxies and educational approximations as non-observables where applicable.
+5. Add reference cases, boundary cases, and asymptotic tests before merge.
+6. Never tune physics equations merely to improve appearance or pass a visual test.
+7. Keep simulation state independent from rendering and UI preferences.
+8. Bound memory and per-frame work; update loops must reuse allocated storage.
+9. Record performance and numerical impact before and after material changes.
+10. Version all visible scientific meaning changes and document migrations.
+11. Require dedicated review for new metrics, solvers, integrators, and orbit classifications.
+12. Do not claim scientific capability that is not implemented and validated.
+
+The v0.6.1 correction follows these rules: the Schwarzschild proxy is unchanged, raw displacements remain inspectable, and the nonlinear `asinh` mapping exists only in rendering.
 
 ---
 

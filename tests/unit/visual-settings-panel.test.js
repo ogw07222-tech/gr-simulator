@@ -10,8 +10,8 @@ describe("VisualSettingsPanel", () => {
   beforeEach(() => {
     document.body.innerHTML = '<aside id="visuals"></aside>';
     root = document.querySelector("#visuals");
-    particleRenderer = { setAppearance: vi.fn() };
-    grid = { setAppearance: vi.fn() };
+    particleRenderer = { setAppearance: vi.fn(), getSpeedLegend: () => ({ minimum: 0, midpoint: 1, maximum: 2 }) };
+    grid = { setAppearance: vi.fn(), getLegend: () => ({ rawMinimum: 0, rawMidpoint: 0.25, rawMaximum: 1 }) };
     massObject = { setAppearance: vi.fn() };
   });
 
@@ -35,7 +35,20 @@ describe("VisualSettingsPanel", () => {
 
     expect(root.querySelector("#particle-size").value).toBe("0.36");
     expect(root.querySelector("#trail-opacity").value).toBe("0.88");
-    expect(root.querySelector("#trail-color-mode").value).toBe("single");
+    expect(root.querySelector("#trail-color-mode")).toBeNull();
+    expect(root.textContent).toContain("Current particle speed");
     expect(trailVisible.checked).toBe(true);
+  });
+
+  it("resizes fixed trail buffers only when capacity changes", () => {
+    const resize = vi.fn();
+    new VisualSettingsPanel(root, {
+      particleRenderer, grid, massObject,
+      trailCapacity: { current: 512, options: [256, 512, 1024], resize },
+    });
+    root.querySelector("#trail-capacity").value = "1024";
+    root.querySelector("#trail-capacity").dispatchEvent(new Event("change", { bubbles: true }));
+    expect(resize).toHaveBeenCalledOnce();
+    expect(resize).toHaveBeenCalledWith(1024);
   });
 });

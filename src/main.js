@@ -1,5 +1,5 @@
 import "./ui/main.css";
-import { PHYSICS_DEFAULTS, SIMULATION_DEFAULTS, Store } from "./core/index.js";
+import { PHYSICS_DEFAULTS, SIMULATION_DEFAULTS, TRAIL_CAPACITY, Store } from "./core/index.js";
 import { SchwarzschildModel } from "./physics/index.js";
 import { MassObject, Renderer, VolumetricGrid } from "./rendering/index.js";
 import {
@@ -42,11 +42,16 @@ const renderer = resources.register(new Renderer(document.querySelector("#viewpo
 const grid = resources.register(new VolumetricGrid({
   size: SIMULATION_DEFAULTS.gridSize,
   divisions: SIMULATION_DEFAULTS.gridDivisions,
+  nearExtent: SIMULATION_DEFAULTS.gridNearExtent,
+  farSpacingRatio: SIMULATION_DEFAULTS.gridFarSpacingRatio,
 }));
 const massObject = resources.register(new MassObject());
+const mobileLayout = window.matchMedia("(max-width: 820px)").matches;
+const trailCapacityOptions = mobileLayout ? TRAIL_CAPACITY.mobileOptions : TRAIL_CAPACITY.desktopOptions;
+const initialTrailCapacity = mobileLayout ? TRAIL_CAPACITY.mobile : TRAIL_CAPACITY.desktop;
 const particles = resources.register(new ParticleManager({
   maxParticles: 1000,
-  maxTrailLength: 256,
+  maxTrailLength: initialTrailCapacity,
 }));
 const particleRenderer = resources.register(new ParticleRenderer({
   maxParticles: particles.maxParticles,
@@ -86,9 +91,21 @@ const controlPanel = resources.register(new ControlPanel(
   grid,
   runtimeControls,
 ));
-resources.register(new VisualSettingsPanel(
+const visualSettings = resources.register(new VisualSettingsPanel(
   document.querySelector("#visual-settings-panel"),
-  { particleRenderer, grid, massObject },
+  {
+    particleRenderer,
+    grid,
+    massObject,
+    trailCapacity: {
+      current: initialTrailCapacity,
+      options: trailCapacityOptions,
+      resize: (capacity) => {
+        particles.resizeTrailCapacity(capacity);
+        particleRenderer.resizeTrailCapacity(capacity);
+      },
+    },
+  },
 ));
 const appShell = resources.register(new AppShell(
   document.querySelector("#app"),
@@ -100,6 +117,7 @@ let state = store.getState();
 const applyState = (nextState) => {
   state = nextState;
   grid.update(model, state);
+  visualSettings.updateLegends();
   snapshotSource.mass = state.mass;
   snapshotSource.schwarzschildRadius = model.schwarzschildRadius(state.mass);
   snapshots.publish(snapshotSource);
