@@ -1,5 +1,25 @@
 # Changelog
 
+## [0.6.1] - 2026-08-04
+
+### Added
+
+- Explicit grid-deformation and particle-speed legends with localized labels.
+- Separate English and Korean locale modules with key-parity tests.
+- Configurable fixed trail capacities with allocation only when the setting changes.
+- Visualization-transfer, far-field, source-policy, and version-consistency tests.
+
+### Changed
+
+- Made English the default locale while preserving valid saved locale choices.
+- Expanded the grid from 24 to 240 world units with bounded adaptive far-field spacing.
+- Applied a documented monotonic `asinh` display transfer without changing raw model values.
+- Restricted trail coloring to measured speed and adopted a restrained blue-green scientific palette.
+
+### Scientific scope
+
+- No physics equation, runtime timing, particle dynamics, orbit model, or geodesic behavior was added or changed.
+
 All notable changes to this project will be documented in this file. The format follows Keep a Changelog principles and the project intends to use semantic versioning as its public API matures.
 
 ## [Unreleased]

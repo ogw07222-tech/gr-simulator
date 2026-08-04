@@ -29,7 +29,7 @@ No frontend framework or secondary runtime state store is introduced.
 
 ## Localization
 
-`src/ui/i18n.js` owns the supported `ko` and `en` dictionaries and exposes `getLocale()`, `setLocale(locale)`, `t(key)`, and `subscribeLocale(listener)`. Korean is the default. A supported previous choice is restored from localStorage key `gr4d.locale`; invalid values fall back to Korean.
+`src/ui/i18n.js` is the locale facade and exposes `getLocale()`, `setLocale(locale)`, `t(key)`, and `subscribeLocale(listener)`. The complete dictionaries are isolated in `src/ui/i18n/en.js` and `src/ui/i18n/ko.js`. English is the default. A supported previous choice is restored from localStorage key `gr4d.locale`; invalid values fall back to English.
 
 Components render and bind events once, then subscribe to locale changes. Switching language updates text nodes, option labels, document metadata, and ARIA attributes in place. It does not rebuild the application or modify runtime, particle, camera, physics, or rendering state.
 
@@ -38,11 +38,13 @@ Translation keys are grouped by stable domains such as `app.*`, `status.*`, `con
 ## Supported visual settings
 
 - particle point size, opacity, and material brightness;
-- trail visibility, opacity, brightness, age fade, and deterministic color mode;
+- trail visibility, opacity, brightness, age fade, speed legend, and fixed capacity;
 - grid visibility, opacity, and brightness;
 - event-horizon opacity and core emissive intensity.
 
-Trail color modes use only available runtime data: Single Color, Speed, Distance, and Age. All trail positions and colors use fixed typed arrays. No per-frame arrays, meshes, or materials are created.
+Trail color communicates only current speed in simulation world units per second through a monotonic blue-green scale and an explicit legend. Capacity choices are bounded typed buffers: desktop defaults to 1,024 samples and mobile defaults to 512. A capacity change reallocates once through the manager and renderer; animation-loop updates allocate nothing.
+
+Grid deformation uses a separate raw-value legend and identifies the `asinh` display transfer. The restrained near-black, cyan, and blue-green palette improves contrast without implying additional physical quantities.
 
 ## Responsive behavior
 
@@ -50,4 +52,4 @@ Desktop displays both side panels. Tablet and mobile convert them into slide-ove
 
 ## Unsupported future controls
 
-The UI intentionally omits arbitrary thick 3D lines, fake bloom without post-processing, runtime trail-capacity resizing, Energy/Proper Time/Curvature coloring, orbit analytics, and scientific particle inspection. These controls require corresponding tested engine data or rendering capabilities.
+The UI intentionally omits arbitrary thick 3D lines, fake bloom without post-processing, Energy/Proper Time/Curvature coloring, orbit analytics, and scientific particle inspection. These controls require corresponding tested engine data or rendering capabilities.

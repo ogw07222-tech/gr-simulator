@@ -158,6 +158,19 @@ export class ParticleManager {
     this.selectedId = null;
   }
 
+  resizeTrailCapacity(maxTrailLength) {
+    if (!Number.isInteger(maxTrailLength) || maxTrailLength < 1) {
+      throw new RangeError("maxTrailLength must be a positive integer.");
+    }
+    if (maxTrailLength === this.maxTrailLength) return false;
+    for (let slot = 0; slot < this.maxParticles; slot += 1) {
+      this.particles[slot].trail.resize(maxTrailLength);
+    }
+    this.maxTrailLength = maxTrailLength;
+    this.currentRevision += 1;
+    return true;
+  }
+
   revision() {
     return this.currentRevision;
   }

@@ -1,12 +1,29 @@
 # Performance Baseline
 
-This document defines repeatable measurements; it does not claim target values yet. Record browser version, operating system, hardware, viewport, device-pixel ratio, commit SHA, simulation mode, mass, W distance, grid size, grid divisions, and sampling duration with every result.
+This document defines repeatable measurements. Record browser version, operating system, hardware, viewport, device-pixel ratio, commit SHA, simulation mode, mass, W distance, grid parameters, trail capacity, and sampling duration with every result.
+
+## v0.6.1 structural comparison
+
+| Metric | Before v0.6.1 | v0.6.1 | Interpretation |
+| --- | ---: | ---: | --- |
+| Grid world-space width | 24 | 240 | 10× observable domain |
+| Nominal near spacing | 2 | 3 | 1.5× spacing, with sparse far field |
+| Grid line vertices | 12,168 | 69,828 | bounded below 70,000 |
+| Grid topology vertices | 2,197 object vectors | 12,167 typed entries | raw/display/topology data are reusable typed buffers |
+| Grid GPU position + color | ~0.28 MiB | ~1.60 MiB | larger domain with one grid draw call |
+| Total grid typed storage | object-backed, not directly comparable | ~2.28 MiB | includes raw values, topology, indices, positions, and colors |
+| Trail samples per particle | 256 | 1,024 desktop / 512 mobile | explicit bounded retention |
+| Total trail fixed storage at 1,000 particles | ~14.60 MiB | ~58.55 MiB desktop / ~29.25 MiB mobile | allocated at initialization or explicit capacity change only |
+
+The increased fixed memory is an intentional visibility correction and remains bounded. Update, rendering, trail push, and color mapping reuse buffers. Re-run browser frame measurements on representative GPU hardware; geometry counts alone are not an FPS claim.
+
+Production build observed on 2026-08-04 for this branch: HTML 1.80 kB raw / 0.69 kB gzip, CSS 11.55 kB / 3.37 kB, and JavaScript 554.63 kB / 139.66 kB. The earlier recorded JavaScript baseline was approximately 506 kB / 127 kB. The increase includes the bilingual dictionary split, legends, adaptive-grid logic, and correction tests do not ship in the bundle. Vite's existing 500 kB chunk warning remains a known optimization item; this correction does not add code splitting.
 
 ## Reference scenario
 
 - Production build served locally with `npm run preview`.
 - Desktop viewport: 1920 × 1080 at device-pixel ratio 1.
-- Default v0.1 state: GR + W, mass 120, W distance 1.5, grid size 24, divisions 12.
+- Default state: GR + W, mass 120, W distance 1.5, adaptive grid width 240, near extent 12, nominal spacing 3, far-spacing ratio 1.5.
 - Camera remains stationary after controls settle.
 - Warm up for 10 seconds, then measure for at least 30 seconds.
 - Repeat three times and report median plus range.

@@ -1,4 +1,5 @@
 import * as THREE from "three";
+import { DEFAULT_TRAIL_SPEED_MAX, normalizeSpeed, writeBlueGreenColor } from "../../rendering/VisualizationScale.js";
 
 export class ParticleRenderer {
   constructor({ maxParticles = 1000, maxTrailLength = 256, pointSize = 0.36 } = {}) {
@@ -68,8 +69,10 @@ export class ParticleRenderer {
       trailOpacity: 0.88,
       trailBrightness: 1,
       trailFade: 0.82,
-      trailColorMode: "single",
+      trailColorMode: "speed",
+      trailSpeedMaximum: DEFAULT_TRAIL_SPEED_MAX,
     };
+    this.speedLegend = { minimum: 0, midpoint: DEFAULT_TRAIL_SPEED_MAX / 2, maximum: DEFAULT_TRAIL_SPEED_MAX };
     this.lastRevision = -1;
   }
 
@@ -82,8 +85,34 @@ export class ParticleRenderer {
     this.haloMaterial.opacity = this.appearance.particleOpacity * 0.22;
     this.trailMaterial.opacity = this.appearance.trailOpacity;
     this.trailObject.visible = this.appearance.trailVisible;
+    this.speedLegend.midpoint = this.appearance.trailSpeedMaximum / 2;
+    this.speedLegend.maximum = this.appearance.trailSpeedMaximum;
     this.lastRevision = -1;
   }
+
+  resizeTrailCapacity(maxTrailLength) {
+    if (!Number.isInteger(maxTrailLength) || maxTrailLength < 1) {
+      throw new RangeError("ParticleRenderer maxTrailLength must be a positive integer.");
+    }
+    if (maxTrailLength === this.maxTrailLength) return false;
+    this.maxTrailLength = maxTrailLength;
+    this.trailPositions = new Float32Array(this.maxParticles * Math.max(0, maxTrailLength - 1) * 6);
+    this.trailColors = new Float32Array(this.maxParticles * Math.max(0, maxTrailLength - 1) * 6);
+    this.trailGeometry.dispose();
+    this.trailGeometry = new THREE.BufferGeometry();
+    this.trailPositionAttribute = new THREE.BufferAttribute(this.trailPositions, 3);
+    this.trailColorAttribute = new THREE.BufferAttribute(this.trailColors, 3);
+    this.trailPositionAttribute.setUsage(THREE.DynamicDrawUsage);
+    this.trailColorAttribute.setUsage(THREE.DynamicDrawUsage);
+    this.trailGeometry.setAttribute("position", this.trailPositionAttribute);
+    this.trailGeometry.setAttribute("color", this.trailColorAttribute);
+    this.trailGeometry.setDrawRange(0, 0);
+    this.trailObject.geometry = this.trailGeometry;
+    this.lastRevision = -1;
+    return true;
+  }
+
+  getSpeedLegend() { return this.speedLegend; }
 
   sync(manager) {
     const revision = manager.revision();
@@ -137,12 +166,12 @@ export class ParticleRenderer {
     let green = 0.48;
     let blue = 0.12;
     if (this.appearance.trailColorMode === "speed") {
-      const speed = Math.min(Math.sqrt(
+      const speed = Math.sqrt(
         particle.velocity.x ** 2 + particle.velocity.y ** 2 + particle.velocity.z ** 2,
-      ) / 2, 1);
-      red = speed;
-      green = 0.75;
-      blue = 1 - speed * 0.75;
+      );
+      const normalized = normalizeSpeed(speed, this.appearance.trailSpeedMaximum);
+      writeBlueGreenColor(this.trailColors, vertexIndex * 3, normalized, intensity);
+      return;
     } else if (this.appearance.trailColorMode === "distance") {
       const offset = ((trail.head - trail.count + sampleIndex + trail.maxLength) % trail.maxLength) * 3;
       const distance = Math.sqrt(

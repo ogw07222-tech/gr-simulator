@@ -24,6 +24,30 @@ export class ParticleTrail {
     this.count = 0;
   }
 
+  resize(maxLength) {
+    if (!Number.isInteger(maxLength) || maxLength < 1) {
+      throw new RangeError("ParticleTrail maxLength must be a positive integer.");
+    }
+    if (maxLength === this.maxLength) return false;
+    const previous = this.positions;
+    const previousLength = this.maxLength;
+    const preserved = Math.min(this.count, maxLength);
+    const next = new Float32Array(maxLength * 3);
+    const first = (this.head - preserved + previousLength) % previousLength;
+    for (let index = 0; index < preserved; index += 1) {
+      const source = ((first + index) % previousLength) * 3;
+      const target = index * 3;
+      next[target] = previous[source];
+      next[target + 1] = previous[source + 1];
+      next[target + 2] = previous[source + 2];
+    }
+    this.positions = next;
+    this.maxLength = maxLength;
+    this.count = preserved;
+    this.head = preserved % maxLength;
+    return true;
+  }
+
   get length() {
     return this.count;
   }

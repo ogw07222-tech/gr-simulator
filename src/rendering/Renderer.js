@@ -23,7 +23,7 @@ export class Renderer {
     this.controls.enableDamping = true;
     this.controls.dampingFactor = 0.06;
     this.controls.minDistance = 8;
-    this.controls.maxDistance = 80;
+    this.controls.maxDistance = 300;
 
     this.scene.add(new THREE.AmbientLight(0xffffff, 0.42));
     const key = new THREE.PointLight(0x66e6ff, 22, 90);

@@ -33,3 +33,21 @@ Grid points move toward the mass using the visualization approximation:
 `displacement = scale * r_s / R_eff²`
 
 Softening and maximum displacement prevent divergence and visual topology collapse. This displacement is a rendering proxy, not a physical observable.
+
+## v0.6.1 visualization mapping
+
+The model evaluation is unchanged. At every topology vertex, the renderer stores the raw scalar
+
+`d_raw = displacementMagnitude(x, y, z)`
+
+before presentation. The valid numerical domain uses finite coordinates and the model's existing non-negative mass and softening rules. Evaluation at the source is made deterministic by the existing effective-radius boundary; no singular value is passed to the display mapping.
+
+Only the displayed magnitude is normalized:
+
+`d_display = asinh(d_raw / (d_max * s)) / asinh(1 / s)`
+
+where `d_max` is the maximum raw displacement for the current sample and `s = 0.04` is a rendering softness constant. The function is monotonic, finite, maps zero to zero and the sampled maximum to one. Changing a rendering displacement scale therefore changes geometry appearance but not `d_raw`.
+
+The adaptive grid covers 240 world units with nominal 3-unit near-field spacing. Far-field spacing expands geometrically by 1.5 until the boundary. The current model remains evaluated at every retained vertex; the far field is not fabricated or clamped to zero. Tests verify finite source behavior, decreasing far-field magnitude, and approach toward the model's flat asymptote.
+
+Neither the raw proxy nor its color legend is curvature, proper distance, an orbit solution, or a numerical-relativity result.
