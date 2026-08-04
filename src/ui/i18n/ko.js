@@ -38,7 +38,6 @@ export const ko = Object.freeze({
     trailCapacityNote: "향후 궤도를 위한 고정 준비 용량이며, 이 설정을 바꿀 때만 버퍼를 재할당합니다.",
     trailSpeedDescription: "현재 속도는 시뮬레이션 월드 단위/초이며, 빠를수록 흰색에 가까워집니다.",
     spacetimeGrid: "시공간 격자", massRendering: "질량체 표현", horizonIntensity: "사건지평선 강도",
-    gridNearFade: "카메라 근접 격자 감쇠", gridNearFadeDistance: "근접 감쇠 거리",
     coreEmissive: "사건지평선 테두리 강도", reset: "시각 설정 초기화",
   },
   legend: {

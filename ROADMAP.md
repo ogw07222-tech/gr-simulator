@@ -63,7 +63,7 @@ Exit criterion: new numerical models can be integrated behind tested contracts w
 
 - [x] Define the finite domain from maximum mass, `10 r_s` orbital support, and a 1.25 safety margin.
 - [x] Use one uniform five-unit grid without distance LOD, sparse far-field topology, or render-distance omission.
-- [x] Retain native whole-object frustum culling, close-camera fade, and a guided camera range.
+- [x] Retain native fixed-chunk frustum culling and a guided camera range.
 - [x] Classify domain exit independently from capture while preserving last valid particle state.
 - [x] Keep render FPS caps independent from the fixed simulation timestep.
 - [x] Bound dynamic particle/trail GPU uploads to used ranges.

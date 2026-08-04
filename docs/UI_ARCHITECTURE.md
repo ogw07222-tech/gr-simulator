@@ -40,7 +40,7 @@ Translation keys are grouped by stable domains such as `app.*`, `status.*`, `con
 - particle point size, opacity, and material brightness;
 - trail visibility, opacity, brightness, age fade, speed legend, and fixed capacity;
 - grid visibility, opacity, and brightness;
-- maximum rendering FPS and close-camera grid fade;
+- maximum rendering FPS;
 - event-horizon opacity and rim intensity.
 
 Trail and particle color communicate only current speed in simulation world units per second through monotonically increasing brightness from subdued blue-gray to white. Capacity choices are bounded typed buffers: desktop defaults to 1,024 samples and mobile defaults to 512. A capacity change reallocates once through the manager and renderer; animation-loop updates allocate nothing.
@@ -49,7 +49,7 @@ Grid deformation uses a separate raw-value legend and identifies the `asinh` dis
 
 The FPS selector persists under `gr4d.maxFps`; `0` means unlimited. It schedules rendering from requestAnimationFrame timestamps while SimulationClock continues to own the fixed 1/240-second physics step. Hidden tabs discard elapsed render/simulation backlog before restoration.
 
-Near fade is a presentation setting with a default distance of 10 simulation world units. Reset Visuals restores 60 FPS and enabled proximity fade without resetting simulation, particles, trails, camera, or locale. Grid render-distance controls are intentionally absent because the complete supported domain retains uniform quality.
+Reset Visuals restores the 60 FPS rendering cap without resetting simulation, particles, trails, camera, or locale. The complete supported grid domain retains uniform visibility and quality.
 
 ## Responsive behavior
 

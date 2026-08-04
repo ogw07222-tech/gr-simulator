@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { PHYSICS_DEFAULTS, SIMULATION_DEFAULTS } from "../../src/core/index.js";
 import { SchwarzschildModel } from "../../src/physics/index.js";
 import * as THREE from "three";
-import { VolumetricGrid, normalizeAsinh, normalizeNearFade, normalizeSpeed, writeGridDeformationColor, writeSpeedToWhiteColor } from "../../src/rendering/index.js";
+import { VolumetricGrid, normalizeAsinh, normalizeSpeed, writeGridDeformationColor, writeSpeedToWhiteColor } from "../../src/rendering/index.js";
 
 const state = { ...SIMULATION_DEFAULTS };
 
@@ -71,7 +71,6 @@ describe("scientific visualization mappings", () => {
     camera.position.set(22, 18, 22);
     camera.lookAt(0, 0, 0);
     camera.updateProjectionMatrix();
-    grid.setViewSettings({ nearFadeEnabled: false, nearFadeDistance: 10 });
     const diagnostics = grid.updateView(camera);
     camera.position.set(100, 100, 100);
     grid.updateView(camera);
@@ -87,23 +86,16 @@ describe("scientific visualization mappings", () => {
     expect(diagnostics.bufferUploads).toBe(uploads);
   });
 
-  it("applies smooth near-camera fade endpoints without changing raw values", () => {
-    expect(normalizeNearFade(0, 10)).toBe(0);
-    expect(normalizeNearFade(5, 10)).toBeGreaterThan(0);
-    expect(normalizeNearFade(5, 10)).toBeLessThan(1);
-    expect(normalizeNearFade(10, 10)).toBe(1);
+  it("keeps configured grid opacity when the camera is at the mesh origin", () => {
     const grid = new VolumetricGrid();
-    const model = new SchwarzschildModel(PHYSICS_DEFAULTS);
-    grid.update(model, state);
-    const raw = Float64Array.from(grid.rawDisplacements);
+    grid.setAppearance({ visible: true, opacity: 0.52, brightness: 0.82 });
     const camera = new THREE.PerspectiveCamera(58, 1, 0.1, 500);
-    camera.position.set(5, 0, 0);
-    camera.lookAt(0, 0, 0);
+    camera.position.set(0, 0, 0);
+    camera.lookAt(1, 0, 0);
     camera.updateProjectionMatrix();
-    grid.setViewSettings({ nearFadeEnabled: true, nearFadeDistance: 20 });
     grid.updateView(camera);
-    expect(grid.material.opacity).toBeLessThan(grid.baseOpacity);
-    expect(Array.from(grid.rawDisplacements)).toEqual(Array.from(raw));
+    expect(grid.object.visible).toBe(true);
+    expect(grid.material.opacity).toBe(0.52);
   });
 
   it("preserves finite raw model values independently of display extent", () => {

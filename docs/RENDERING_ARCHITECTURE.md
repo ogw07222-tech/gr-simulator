@@ -16,11 +16,9 @@ The entire supported domain uses uniform five-unit spacing. Thirty-one points pe
 
 Native frustum culling skips a fixed chunk only when its complete bounds are outside the view. When it re-enters, every original segment returns with identical topology. Distance-based LOD, sparse far-field geometry, render-distance omission, and distance-driven chunk switching are intentionally rejected because they degraded visual continuity.
 
-Raw deformation is evaluated only when mass, W distance, mode, warp scale, or maximum display displacement changes. Identical inputs do not recompute or upload attributes. Camera movement changes only the smooth proximity opacity and cannot dirty model or GPU buffers.
+Raw deformation is evaluated only when mass, W distance, mode, warp scale, or maximum display displacement changes. Identical inputs do not recompute or upload attributes. Camera movement cannot change grid opacity or dirty model or GPU buffers.
 
-## Close-camera fade and camera range
-
-Camera distance from the origin drives a cubic smoothstep. The fade is transparent within 35% of the configured distance and reaches normal opacity at its outer distance. This visibility aid changes one material opacity without changing topology or raw values.
+## Camera range
 
 OrbitControls permits free orbit, pan, and zoom while limiting maximum camera distance to `120` units, 1.6 times the supported half extent. This leaves useful context around the finite world without encouraging inspection of an unmodelled infinite far field.
 

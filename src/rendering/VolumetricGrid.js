@@ -1,18 +1,6 @@
 import * as THREE from "three";
 import { GRID_ASINH_SOFTNESS, normalizeAsinh, writeGridDeformationColor } from "./VisualizationScale.js";
 
-function smoothstep(inner, outer, value) {
-  if (value <= inner) return 0;
-  if (value >= outer) return 1;
-  const normalized = (value - inner) / (outer - inner);
-  return normalized * normalized * (3 - 2 * normalized);
-}
-
-export function normalizeNearFade(distance, outerDistance) {
-  const outer = Math.max(1, outerDistance);
-  return smoothstep(outer * 0.35, outer, Math.max(0, distance));
-}
-
 export class VolumetricGrid {
   constructor({ size = 150, spacing = 5, chunkDivisions = 4 } = {}) {
     if (!Number.isFinite(size) || size <= 0) throw new RangeError("Grid size must be positive and finite.");
@@ -48,10 +36,7 @@ export class VolumetricGrid {
     this.frustum = new THREE.Frustum();
 
     this.visible = true;
-    this.baseOpacity = 0.68;
     this.brightness = 1;
-    this.nearFadeEnabled = true;
-    this.nearFadeDistance = 10;
     this.lastInputSignature = "";
     this.legend = { rawMinimum: 0, rawMidpoint: 0, rawMaximum: 0, farFieldValue: 0, softness: GRID_ASINH_SOFTNESS };
     this.diagnostics = {
@@ -195,13 +180,10 @@ export class VolumetricGrid {
   }
 
   updateView(camera) {
-    const distance = camera.position.distanceTo(this.object.position);
-    const fade = this.nearFadeEnabled ? normalizeNearFade(distance, this.nearFadeDistance) : 1;
     camera.updateMatrixWorld();
     this.viewProjection.multiplyMatrices(camera.projectionMatrix, camera.matrixWorldInverse);
     this.frustum.setFromProjectionMatrix(this.viewProjection);
-    this.object.visible = this.visible && fade > 0.01;
-    this.material.opacity = this.baseOpacity * fade;
+    this.object.visible = this.visible;
     let visibleChunks = 0;
     let visibleVertices = 0;
     for (let index = 0; index < this.chunks.length; index += 1) {
@@ -214,11 +196,6 @@ export class VolumetricGrid {
     this.diagnostics.visibleChunks = visibleChunks;
     this.diagnostics.visibleVertices = visibleVertices;
     return this.diagnostics;
-  }
-
-  setViewSettings({ nearFadeEnabled, nearFadeDistance }) {
-    if (typeof nearFadeEnabled === "boolean") this.nearFadeEnabled = nearFadeEnabled;
-    if (Number.isFinite(nearFadeDistance)) this.nearFadeDistance = Math.max(1, nearFadeDistance);
   }
 
   get segmentVertexCount() { return this.indices.length; }
@@ -235,7 +212,7 @@ export class VolumetricGrid {
 
   setAppearance({ visible, opacity, brightness }) {
     this.visible = visible;
-    this.baseOpacity = opacity;
+    this.material.opacity = opacity;
     this.brightness = brightness;
     this.material.color.setRGB(brightness, brightness, brightness);
   }
