@@ -13,7 +13,6 @@ const DEFAULTS = Object.freeze({
   gridVisible: true,
   gridOpacity: 0.52,
   gridBrightness: 0.82,
-  gridMaxRenderDistance: 140,
   gridNearFadeEnabled: true,
   gridNearFadeDistance: 10,
   maxFps: 60,
@@ -80,8 +79,6 @@ export class VisualSettingsPanel {
       <section class="panel-section"><div class="section-title-row"><h3 data-i18n="visual.spacetimeGrid"></h3><label class="switch"><input id="grid-visible" type="checkbox" /><span data-i18n="visual.visible"></span></label></div>
         ${this.renderRange("grid-opacity", "visual.opacity", 0.08, 0.9, 0.02)}
         ${this.renderRange("grid-brightness", "visual.brightness", 0.3, 1.2, 0.05)}
-        ${this.renderRange("grid-render-distance", "visual.gridRenderDistance", 40, 260, 10)}
-        <p class="control-description" data-i18n="visual.worldUnits"></p>
         <label class="switch"><input id="grid-near-fade" type="checkbox" /><span data-i18n="visual.gridNearFade"></span></label>
         ${this.renderRange("grid-near-fade-distance", "visual.gridNearFadeDistance", 2, 30, 1)}
         <div class="scientific-legend" aria-live="polite">
@@ -117,7 +114,7 @@ export class VisualSettingsPanel {
       ["particle-opacity", "particleOpacity"], ["trail-opacity", "trailOpacity"],
       ["trail-brightness", "trailBrightness"], ["trail-fade", "trailFade"],
       ["grid-opacity", "gridOpacity"], ["grid-brightness", "gridBrightness"],
-      ["grid-render-distance", "gridMaxRenderDistance"], ["grid-near-fade-distance", "gridNearFadeDistance"],
+      ["grid-near-fade-distance", "gridNearFadeDistance"],
       ["horizon-glow", "horizonGlow"], ["mass-brightness", "massBrightness"],
     ];
     bindings.forEach(([id, key]) => {
@@ -159,7 +156,6 @@ export class VisualSettingsPanel {
       brightness: this.values.gridBrightness,
     });
     this.grid.setViewSettings({
-      maxRenderDistance: this.values.gridMaxRenderDistance,
       nearFadeEnabled: this.values.gridNearFadeEnabled,
       nearFadeDistance: this.values.gridNearFadeDistance,
     });
@@ -178,7 +174,7 @@ export class VisualSettingsPanel {
       "particle-opacity": values.particleOpacity, "trail-opacity": values.trailOpacity,
       "trail-brightness": values.trailBrightness, "trail-fade": values.trailFade,
       "grid-opacity": values.gridOpacity, "grid-brightness": values.gridBrightness,
-      "grid-render-distance": values.gridMaxRenderDistance, "grid-near-fade-distance": values.gridNearFadeDistance,
+      "grid-near-fade-distance": values.gridNearFadeDistance,
       "horizon-glow": values.horizonGlow, "mass-brightness": values.massBrightness,
     };
     Object.entries(pairs).forEach(([id, value]) => {

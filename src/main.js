@@ -1,5 +1,5 @@
 import "./ui/main.css";
-import { PHYSICS_DEFAULTS, SIMULATION_DEFAULTS, TRAIL_CAPACITY, Store } from "./core/index.js";
+import { PHYSICS_DEFAULTS, SIMULATION_DEFAULTS, SIMULATION_DOMAIN, TRAIL_CAPACITY, Store } from "./core/index.js";
 import { SchwarzschildModel } from "./physics/index.js";
 import { MassObject, Renderer, VolumetricGrid } from "./rendering/index.js";
 import {
@@ -43,9 +43,7 @@ const model = new SchwarzschildModel(PHYSICS_DEFAULTS);
 const renderer = resources.register(new Renderer(document.querySelector("#viewport")));
 const grid = resources.register(new VolumetricGrid({
   size: SIMULATION_DEFAULTS.gridSize,
-  divisions: SIMULATION_DEFAULTS.gridDivisions,
-  nearExtent: SIMULATION_DEFAULTS.gridNearExtent,
-  farSpacingRatio: SIMULATION_DEFAULTS.gridFarSpacingRatio,
+  spacing: SIMULATION_DEFAULTS.gridSpacing,
 }));
 const massObject = resources.register(new MassObject());
 const mobileLayout = window.matchMedia("(max-width: 820px)").matches;
@@ -54,6 +52,7 @@ const initialTrailCapacity = mobileLayout ? TRAIL_CAPACITY.mobile : TRAIL_CAPACI
 const particles = resources.register(new ParticleManager({
   maxParticles: 1000,
   maxTrailLength: initialTrailCapacity,
+  domainHalfExtent: SIMULATION_DOMAIN.halfExtent,
 }));
 const particleRenderer = resources.register(new ParticleRenderer({
   maxParticles: particles.maxParticles,

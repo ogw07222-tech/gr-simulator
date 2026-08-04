@@ -7,7 +7,9 @@
 - Environment-aware Vite base-path configuration for GitHub Pages.
 - Validated Pages artifact build and automatic deployment workflow.
 - Deployment operations, local preview, repository setting, and custom-domain documentation.
-- Fixed grid chunking with frustum, render-distance, and hysteretic LOD selection.
+- A finite simulation-domain contract derived from maximum mass 300, `10 r_s` orbital support, and a 1.25 safety margin.
+- Uniform five-unit grid topology across the complete `[-75, 75]³` domain.
+- Explicit `OutOfDomain` particle state with preserved last valid diagnostics and reset support.
 - Independent 30/45/60/90/120/unlimited rendering-FPS control with persistence.
 - Close-camera grid fade and bounded development/soak diagnostics.
 
@@ -17,7 +19,8 @@
 
 ### Changed
 
-- Reduced default far-field grid submission while preserving the 240-unit evaluated model domain.
+- Replaced rejected distance-based LOD, sparse far-field topology, and render-distance omission with fixed uniform-topology chunks using frustum-only visibility.
+- Limited maximum camera distance to 120 units while preserving free interaction in the useful domain.
 - Restricted particle/trail GPU uploads to used ranges and mapped speed brightness toward white.
 - Changed the grid proxy palette from blue through cyan to red.
 - Presented the event horizon as a translucent green rim shader and the body as an unlit black sphere.

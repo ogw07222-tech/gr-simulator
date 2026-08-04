@@ -55,13 +55,13 @@ describe("VisualSettingsPanel", () => {
     expect(resize).toHaveBeenCalledWith(1024);
   });
 
-  it("applies FPS and grid-view settings without touching simulation state", () => {
+  it("applies FPS and near-fade settings without touching simulation state", () => {
     new VisualSettingsPanel(root, { particleRenderer, grid, massObject, frameRateController });
     root.querySelector("#max-fps").value = "30";
     root.querySelector("#max-fps").dispatchEvent(new Event("change", { bubbles: true }));
     expect(frameRateController.setMaxFps).toHaveBeenLastCalledWith(30);
-    root.querySelector("#grid-render-distance").value = "80";
-    root.querySelector("#grid-render-distance").dispatchEvent(new Event("input", { bubbles: true }));
-    expect(grid.setViewSettings).toHaveBeenLastCalledWith(expect.objectContaining({ maxRenderDistance: 80 }));
+    root.querySelector("#grid-near-fade-distance").value = "20";
+    root.querySelector("#grid-near-fade-distance").dispatchEvent(new Event("input", { bubbles: true }));
+    expect(grid.setViewSettings).toHaveBeenLastCalledWith(expect.objectContaining({ nearFadeDistance: 20 }));
   });
 });

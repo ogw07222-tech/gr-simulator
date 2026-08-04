@@ -23,6 +23,7 @@ export const en = Object.freeze({
     curvatureProxy: "Curvature proxy", gridVertices: "Grid vertices",
   },
   runtime: { title: "Runtime Status", state: "State", simulationTime: "Simulation time", timeScale: "Time scale", particleCount: "Particle count" },
+  particle: { outOfDomain: "Outside supported domain" },
   model: {
     scope: "Model scope", scopeDescription: "Educational Schwarzschild metric visualization; not a numerical 3+1D Einstein solver.",
     active: "ACTIVE MODEL", name: "Schwarzschild · Educational",
@@ -37,8 +38,7 @@ export const en = Object.freeze({
     trailCapacityNote: "Fixed preparatory capacity; resizing occurs only when this setting changes.",
     trailSpeedDescription: "Current speed in simulation world units per second; brighter values approach white.",
     spacetimeGrid: "Spacetime Grid", massRendering: "Mass Rendering", horizonIntensity: "Horizon intensity",
-    gridRenderDistance: "Maximum grid render distance", gridNearFade: "Grid near-camera fade",
-    gridNearFadeDistance: "Near fade distance", worldUnits: "Distance in simulation world units.",
+    gridNearFade: "Grid near-camera fade", gridNearFadeDistance: "Near fade distance",
     coreEmissive: "Horizon rim intensity", reset: "Reset Visuals",
   },
   legend: {

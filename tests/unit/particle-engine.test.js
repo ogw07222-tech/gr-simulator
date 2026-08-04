@@ -139,6 +139,46 @@ describe("ParticleManager", () => {
     expect(particle.trail.length).toBe(1);
   });
 
+  it("rejects initial conditions outside the supported domain", () => {
+    const manager = new ParticleManager({ domainHalfExtent: 75 });
+    expect(() => manager.create({ position: [75.01, 0, 0] })).toThrow("outside the supported domain");
+    expect(manager.count()).toBe(0);
+  });
+
+  it("classifies domain exit separately and preserves the last valid state", () => {
+    const manager = new ParticleManager({ domainHalfExtent: 75 });
+    const particle = manager.create({
+      position: [74, 2, 3],
+      velocity: [2, 0, 0],
+      state: ParticleState.MOVING,
+    });
+    const position = particle.position;
+    const velocity = particle.velocity;
+    manager.update(1);
+
+    expect(particle.state).toBe(ParticleState.OUT_OF_DOMAIN);
+    expect(particle.position).toBe(position);
+    expect(particle.position.toArray()).toEqual([74, 2, 3]);
+    expect(particle.velocity).toBe(velocity);
+    expect(particle.velocity.toArray()).toEqual([2, 0, 0]);
+    expect(particle.coordinateTime).toBe(0);
+    expect(particle.trail.length).toBe(0);
+    expect(particle.outOfDomain.attemptedPosition.toArray()).toEqual([76, 2, 3]);
+    expect(particle.outOfDomain.previousState).toBe(ParticleState.MOVING);
+    expect(particle.state).not.toBe(ParticleState.CAPTURED);
+  });
+
+  it("restores an out-of-domain particle through the existing reset path", () => {
+    const manager = new ParticleManager({ domainHalfExtent: 75 });
+    const particle = manager.create({ position: [74, 0, 0], velocity: [2, 0, 0] });
+    manager.update(1);
+    expect(particle.state).toBe(ParticleState.OUT_OF_DOMAIN);
+    manager.reset(particle.id);
+    expect(particle.state).toBe(ParticleState.IDLE);
+    expect(particle.position.toArray()).toEqual([74, 0, 0]);
+    expect(particle.outOfDomain.attemptedPosition.toArray()).toEqual([0, 0, 0]);
+  });
+
   it("clears all particles and selection", () => {
     const manager = new ParticleManager();
     const particles = manager.spawnBatch([{ id: 1 }, { id: 2 }]);

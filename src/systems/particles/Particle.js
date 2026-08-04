@@ -41,6 +41,12 @@ export class Particle {
     this.state = ParticleState.IDLE;
     this.trail = new ParticleTrail(maxTrailLength);
     this.userData = Object.create(null);
+    this.outOfDomain = {
+      attemptedPosition: new THREE.Vector3(),
+      attemptedVelocity: new THREE.Vector3(),
+      coordinateTime: 0,
+      previousState: ParticleState.IDLE,
+    };
 
     this.initial = {
       position: new THREE.Vector3(),
@@ -80,6 +86,7 @@ export class Particle {
     this.trail.clear();
     if (options.trailEnabled === false) this.trail.disable();
     else this.trail.enable();
+    this.#clearOutOfDomain();
 
     this.#captureInitial();
     return this;
@@ -103,18 +110,31 @@ export class Particle {
     this.trail.clear();
     if (this.initial.trailEnabled) this.trail.enable();
     else this.trail.disable();
+    this.#clearOutOfDomain();
     return this;
   }
 
-  update(delta) {
-    this.velocity.x += this.acceleration.x * delta;
-    this.velocity.y += this.acceleration.y * delta;
-    this.velocity.z += this.acceleration.z * delta;
-    this.position.x += this.velocity.x * delta;
-    this.position.y += this.velocity.y * delta;
-    this.position.z += this.velocity.z * delta;
+  update(delta, domainHalfExtent = Infinity) {
+    if (this.state === ParticleState.OUT_OF_DOMAIN) return false;
+    const velocityX = this.velocity.x + this.acceleration.x * delta;
+    const velocityY = this.velocity.y + this.acceleration.y * delta;
+    const velocityZ = this.velocity.z + this.acceleration.z * delta;
+    const positionX = this.position.x + velocityX * delta;
+    const positionY = this.position.y + velocityY * delta;
+    const positionZ = this.position.z + velocityZ * delta;
+    if (Math.abs(positionX) > domainHalfExtent || Math.abs(positionY) > domainHalfExtent || Math.abs(positionZ) > domainHalfExtent) {
+      this.outOfDomain.attemptedPosition.set(positionX, positionY, positionZ);
+      this.outOfDomain.attemptedVelocity.set(velocityX, velocityY, velocityZ);
+      this.outOfDomain.coordinateTime = this.coordinateTime + delta;
+      this.outOfDomain.previousState = this.state;
+      this.state = ParticleState.OUT_OF_DOMAIN;
+      return false;
+    }
+    this.velocity.set(velocityX, velocityY, velocityZ);
+    this.position.set(positionX, positionY, positionZ);
     this.coordinateTime += delta;
     this.trail.push(this.position);
+    return true;
   }
 
   deactivate() {
@@ -122,6 +142,7 @@ export class Particle {
     this.state = ParticleState.IDLE;
     this.trail.clear();
     clearObject(this.userData);
+    this.#clearOutOfDomain();
   }
 
   #captureInitial() {
@@ -138,5 +159,12 @@ export class Particle {
     this.initial.state = this.state;
     this.initial.trailEnabled = this.trail.enabled;
     copyObject(this.initial.userData, this.userData);
+  }
+
+  #clearOutOfDomain() {
+    this.outOfDomain.attemptedPosition.set(0, 0, 0);
+    this.outOfDomain.attemptedVelocity.set(0, 0, 0);
+    this.outOfDomain.coordinateTime = 0;
+    this.outOfDomain.previousState = ParticleState.IDLE;
   }
 }

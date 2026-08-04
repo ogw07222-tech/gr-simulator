@@ -7,14 +7,21 @@ export const PHYSICS_DEFAULTS = Object.freeze({
   softening: 0.45,
 });
 
+export const SIMULATION_DOMAIN = Object.freeze({
+  maximumMass: 300,
+  maximumOrbitRadiusInSchwarzschildRadii: 10,
+  safetyMargin: 1.25,
+  halfExtent: 75,
+  width: 150,
+  gridSpacing: 5,
+});
+
 export const SIMULATION_DEFAULTS = Object.freeze({
   mode: "GR_W",
   mass: 120,
   w: 1.5,
-  gridSize: 240,
-  gridDivisions: 8,
-  gridNearExtent: 12,
-  gridFarSpacingRatio: 1.5,
+  gridSize: SIMULATION_DOMAIN.width,
+  gridSpacing: SIMULATION_DOMAIN.gridSpacing,
   warpScale: 12,
   maxDisplacement: 2.8,
 });

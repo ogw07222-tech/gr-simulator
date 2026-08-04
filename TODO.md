@@ -3,7 +3,9 @@
 ## v0.6.2 rendering performance correction
 
 - [x] Record the single-grid and full-trail-upload baseline.
-- [x] Add fixed chunk culling, LOD hysteresis, render distance, and near-camera fade.
+- [x] Replace rejected distance LOD and render-distance omission with the approved uniform finite domain.
+- [x] Add native whole-object frustum culling, near-camera fade, and a domain-guided camera limit.
+- [x] Validate particle initial positions and preserve last valid state on explicit domain exit.
 - [x] Add persistent rendering FPS caps without changing the 240 Hz fixed step.
 - [x] Map speed to white and the educational grid proxy from blue to red.
 - [x] Separate the black presentation body from the green event-horizon shell.

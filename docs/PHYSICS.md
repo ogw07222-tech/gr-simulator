@@ -48,12 +48,12 @@ Only the displayed magnitude is normalized:
 
 where `d_max` is the maximum raw displacement for the current sample and `s = 0.04` is a rendering softness constant. The function is monotonic, finite, maps zero to zero and the sampled maximum to one. Changing a rendering displacement scale therefore changes geometry appearance but not `d_raw`.
 
-The adaptive grid covers 240 world units with nominal 3-unit near-field spacing. Far-field spacing expands geometrically by 1.5 until the boundary. The current model remains evaluated at every retained vertex; the far field is not fabricated or clamped to zero. Tests verify finite source behavior, decreasing far-field magnitude, and approach toward the model's flat asymptote.
+The finite supported domain covers 150 world units, from -75 to +75 on each axis, with uniform 5-unit spacing. It is derived from maximum mass 300, maximum Schwarzschild radius 6, an approved orbital initial-condition range through `10 r_s`, and a 1.25 safety margin. The model is evaluated at every one of the 29,791 topology vertices. Arbitrarily distant bound or escape orbits are not claimed to fit this domain.
 
 Neither the raw proxy nor its color legend is curvature, proper distance, an orbit solution, or a numerical-relativity result.
 
 ## v0.6.2 rendering boundary
 
-The evaluated coordinates, effective-radius domain, raw displacement equation, softening, and `asinh` normalization are unchanged. Chunk membership, camera-frustum tests, render distance, LOD draw ranges, proximity opacity, and the blue-cyan-red palette are presentation decisions applied after evaluation. A culled vertex still has the same mathematically evaluated raw value in the reusable model buffer.
+The effective-radius equation, raw displacement equation, softening, and `asinh` normalization are unchanged. Uniform grid topology, native fixed-chunk frustum testing, proximity opacity, and the blue-cyan-red palette are presentation decisions. Distance-based topology changes and render-distance omission are not used inside the supported domain.
 
 The black central sphere is a presentation silhouette. The green translucent shell is tied to the existing visual event-horizon radius but its rim brightness is not physical emission. Neither presentation object adds an observable or changes the Schwarzschild radius.

@@ -1,28 +1,39 @@
 # Rendering performance architecture
 
-## Fixed spatial grid chunks
+## Supported simulation domain
 
-The evaluated 240-unit grid remains unchanged. Its line topology is partitioned once at construction into near, middle, and far bands across eight octants, yielding at most 24 reusable LineSegments objects. Geometry, attributes, materials, bounding volumes, and LOD ordering are never rebuilt while the camera moves.
+The renderer and particle runtime share one finite domain derived from the approved future orbit-engine contract:
 
-Each chunk stores low, middle, and high cumulative draw ranges. Low contains one quarter of its line segments, middle one half, and high all retained segments. Camera-to-chunk-center thresholds select the range at 50 and 110 simulation world units with a five-unit hysteresis band. The default maximum render distance is 140 units. Native Three.js frustum testing and the explicit distance test suppress non-visible chunks.
+`domainHalfExtent = maximumOrbitRadiusAtMaximumMass × safetyMargin`
 
-Raw deformation is evaluated for every topology vertex whenever mass, W distance, mode, warp scale, or maximum display displacement changes. Identical inputs return without recomputation or GPU upload. Camera movement cannot dirty these buffers.
+The UI supports mass through `M = 300`. With the existing model constants `G = 1` and `c = 10`, the maximum Schwarzschild radius is `r_s = 6` simulation units. The formally supported initial-condition range is limited to `10 r_s`, or radius `60`, at maximum mass. A `1.25` safety margin produces a half extent of `75` and a full grid width of `150`.
 
-## Close-camera fade
+This contract does not claim support for every mathematically possible bound or escape orbit. Future orbit initial conditions must remain inside `[-75, 75]` on every axis. Particles that attempt to leave are classified `OutOfDomain`, independently of `Captured`, and retain their last valid position, velocity, time, and trail for diagnostics and reset.
 
-Distance from the camera to each chunk bounds drives a cubic smoothstep. At 35% of the configured distance the chunk is transparent; at the configured outer distance normal opacity is restored. Materials are fixed per chunk, so opacity changes do not allocate or rebuild geometry. The mass body, event horizon, particle, and trail are independent objects and do not fade with the grid.
+## Uniform grid topology
+
+The entire supported domain uses uniform five-unit spacing. Thirty-one points per axis produce 29,791 unique model vertices and 86,490 line segments. Construction partitions the unchanged index topology into 64 fixed spatial chunks that share the same position and color attributes. Camera distance never changes draw ranges, spacing, or connectivity.
+
+Native frustum culling skips a fixed chunk only when its complete bounds are outside the view. When it re-enters, every original segment returns with identical topology. Distance-based LOD, sparse far-field geometry, render-distance omission, and distance-driven chunk switching are intentionally rejected because they degraded visual continuity.
+
+Raw deformation is evaluated only when mass, W distance, mode, warp scale, or maximum display displacement changes. Identical inputs do not recompute or upload attributes. Camera movement changes only the smooth proximity opacity and cannot dirty model or GPU buffers.
+
+## Close-camera fade and camera range
+
+Camera distance from the origin drives a cubic smoothstep. The fade is transparent within 35% of the configured distance and reaches normal opacity at its outer distance. This visibility aid changes one material opacity without changing topology or raw values.
+
+OrbitControls permits free orbit, pan, and zoom while limiting maximum camera distance to `120` units, 1.6 times the supported half extent. This leaves useful context around the finite world without encouraging inspection of an unmodelled infinite far field.
 
 ## Frame scheduling
 
-FrameRateController supports 30, 45, 60, 90, 120 FPS and unlimited rendering. It carries sub-frame remainder forward and never blocks or spins. SimulationClock still ticks from requestAnimationFrame and integrates at exactly 1/240 second regardless of render selection. Hidden tabs synchronize both clocks and discard backlog, preventing a restoration burst.
+FrameRateController supports 30, 45, 60, 90, 120 FPS and unlimited rendering. It carries sub-frame remainder forward and never blocks or spins. SimulationClock integrates at exactly 1/240 second regardless of render selection. Hidden tabs synchronize both clocks and discard backlog.
 
 ## Presentation mappings
 
-- Speed: actual velocity magnitude → normalized display speed → increasing brightness from blue-gray through pale cyan to white.
-- Grid: preserved `asinh` display normalization → blue, cyan, red educational-proxy palette.
-- Horizon: existing visual horizon radius → translucent green Fresnel-style shader. Rim light is not emission.
-- Body: fixed presentation sphere → unlit black silhouette. It is distinct from the horizon definition.
+- Speed uses actual velocity magnitude and increasing brightness from blue-gray through pale cyan to white.
+- Grid color retains the documented `asinh` normalization and blue-cyan-red educational-proxy palette.
+- The translucent green horizon rim and black body are presentation objects, not new observables.
 
 ## Diagnostics
 
-`window.__GR4D_DIAGNOSTICS__.getSnapshot()` returns a newly copied snapshot only when explicitly requested. Counters themselves update allocation-free and include animation/render frames, fixed timestep, FPS cap, grid recomputations/uploads/visibility, draw calls, lines, points, triangles, geometries, and textures.
+`window.__GR4D_DIAGNOSTICS__.getSnapshot()` reports animation/render frames, fixed timestep, FPS cap, grid recomputations/uploads, uniform-grid capacity, draw calls, primitives, geometries, and textures. Snapshots allocate only when explicitly requested; animation-loop counters do not.
