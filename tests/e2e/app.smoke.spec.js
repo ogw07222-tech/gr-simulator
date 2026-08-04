@@ -44,8 +44,6 @@ test("preserves simulation behavior while switching scientific UI locales", asyn
   await expect(page.locator("#grid-legend-max")).not.toBeEmpty();
   await expect(page.locator("#trail-capacity")).toHaveValue("1024");
   await expect(page.locator("#max-fps")).toHaveValue("60");
-  await expect(page.locator("#grid-near-fade")).toBeChecked();
-  await expect(page.locator("#grid-near-fade-distance")).toHaveValue("10");
   await page.locator("#max-fps").selectOption("30");
   await page.locator("#trail-capacity").selectOption("512");
   await expect(page.locator("#trail-capacity")).toHaveValue("512");

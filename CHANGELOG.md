@@ -11,7 +11,7 @@
 - Uniform five-unit grid topology across the complete `[-75, 75]³` domain.
 - Explicit `OutOfDomain` particle state with preserved last valid diagnostics and reset support.
 - Independent 30/45/60/90/120/unlimited rendering-FPS control with persistence.
-- Close-camera grid fade and bounded development/soak diagnostics.
+- Bounded development and soak diagnostics.
 
 ### Deployment scope
 
@@ -24,6 +24,10 @@
 - Restricted particle/trail GPU uploads to used ranges and mapped speed brightness toward white.
 - Changed the grid proxy palette from blue through cyan to red.
 - Presented the event horizon as a translucent green rim shader and the body as an unlit black sphere.
+
+### Removed
+
+- Near-camera grid fading, including camera-distance opacity calculations and its visual controls.
 
 ### Scientific scope
 

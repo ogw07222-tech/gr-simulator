@@ -13,8 +13,6 @@ const DEFAULTS = Object.freeze({
   gridVisible: true,
   gridOpacity: 0.52,
   gridBrightness: 0.82,
-  gridNearFadeEnabled: true,
-  gridNearFadeDistance: 10,
   maxFps: 60,
   horizonGlow: 0.42,
   massBrightness: 1,
@@ -79,8 +77,6 @@ export class VisualSettingsPanel {
       <section class="panel-section"><div class="section-title-row"><h3 data-i18n="visual.spacetimeGrid"></h3><label class="switch"><input id="grid-visible" type="checkbox" /><span data-i18n="visual.visible"></span></label></div>
         ${this.renderRange("grid-opacity", "visual.opacity", 0.08, 0.9, 0.02)}
         ${this.renderRange("grid-brightness", "visual.brightness", 0.3, 1.2, 0.05)}
-        <label class="switch"><input id="grid-near-fade" type="checkbox" /><span data-i18n="visual.gridNearFade"></span></label>
-        ${this.renderRange("grid-near-fade-distance", "visual.gridNearFadeDistance", 2, 30, 1)}
         <div class="scientific-legend" aria-live="polite">
           <div class="legend-heading"><strong data-i18n="legend.gridTitle"></strong><small data-i18n="legend.gridUnit"></small></div>
           <div class="legend-gradient grid-gradient" aria-hidden="true"></div>
@@ -114,7 +110,6 @@ export class VisualSettingsPanel {
       ["particle-opacity", "particleOpacity"], ["trail-opacity", "trailOpacity"],
       ["trail-brightness", "trailBrightness"], ["trail-fade", "trailFade"],
       ["grid-opacity", "gridOpacity"], ["grid-brightness", "gridBrightness"],
-      ["grid-near-fade-distance", "gridNearFadeDistance"],
       ["horizon-glow", "horizonGlow"], ["mass-brightness", "massBrightness"],
     ];
     bindings.forEach(([id, key]) => {
@@ -129,10 +124,6 @@ export class VisualSettingsPanel {
     });
     this.root.querySelector("#grid-visible").addEventListener("change", (event) => {
       this.values.gridVisible = event.target.checked;
-      this.apply();
-    });
-    this.root.querySelector("#grid-near-fade").addEventListener("change", (event) => {
-      this.values.gridNearFadeEnabled = event.target.checked;
       this.apply();
     });
     this.root.querySelector("#max-fps").addEventListener("change", (event) => {
@@ -155,10 +146,6 @@ export class VisualSettingsPanel {
       opacity: this.values.gridOpacity,
       brightness: this.values.gridBrightness,
     });
-    this.grid.setViewSettings({
-      nearFadeEnabled: this.values.gridNearFadeEnabled,
-      nearFadeDistance: this.values.gridNearFadeDistance,
-    });
     this.frameRateController.setMaxFps(this.values.maxFps);
     this.massObject.setAppearance({
       horizonOpacity: this.values.horizonGlow,
@@ -174,7 +161,6 @@ export class VisualSettingsPanel {
       "particle-opacity": values.particleOpacity, "trail-opacity": values.trailOpacity,
       "trail-brightness": values.trailBrightness, "trail-fade": values.trailFade,
       "grid-opacity": values.gridOpacity, "grid-brightness": values.gridBrightness,
-      "grid-near-fade-distance": values.gridNearFadeDistance,
       "horizon-glow": values.horizonGlow, "mass-brightness": values.massBrightness,
     };
     Object.entries(pairs).forEach(([id, value]) => {
@@ -183,7 +169,6 @@ export class VisualSettingsPanel {
     });
     this.root.querySelector("#trail-visible").checked = values.trailVisible;
     this.root.querySelector("#grid-visible").checked = values.gridVisible;
-    this.root.querySelector("#grid-near-fade").checked = values.gridNearFadeEnabled;
     this.root.querySelector("#max-fps").value = values.maxFps;
     this.root.querySelector("#trail-capacity").value = this.trailCapacity.current;
     this.updateLegends();

@@ -12,7 +12,7 @@ describe("VisualSettingsPanel", () => {
     document.body.innerHTML = '<aside id="visuals"></aside>';
     root = document.querySelector("#visuals");
     particleRenderer = { setAppearance: vi.fn(), getSpeedLegend: () => ({ minimum: 0, midpoint: 1, maximum: 2 }) };
-    grid = { setAppearance: vi.fn(), setViewSettings: vi.fn(), getLegend: () => ({ rawMinimum: 0, rawMidpoint: 0.25, rawMaximum: 1 }) };
+    grid = { setAppearance: vi.fn(), getLegend: () => ({ rawMinimum: 0, rawMidpoint: 0.25, rawMaximum: 1 }) };
     massObject = { setAppearance: vi.fn() };
     frameRateController = { maxFps: 60, setMaxFps: vi.fn() };
   });
@@ -55,13 +55,10 @@ describe("VisualSettingsPanel", () => {
     expect(resize).toHaveBeenCalledWith(1024);
   });
 
-  it("applies FPS and near-fade settings without touching simulation state", () => {
+  it("applies FPS settings without touching simulation state", () => {
     new VisualSettingsPanel(root, { particleRenderer, grid, massObject, frameRateController });
     root.querySelector("#max-fps").value = "30";
     root.querySelector("#max-fps").dispatchEvent(new Event("change", { bubbles: true }));
     expect(frameRateController.setMaxFps).toHaveBeenLastCalledWith(30);
-    root.querySelector("#grid-near-fade-distance").value = "20";
-    root.querySelector("#grid-near-fade-distance").dispatchEvent(new Event("input", { bubbles: true }));
-    expect(grid.setViewSettings).toHaveBeenLastCalledWith(expect.objectContaining({ nearFadeDistance: 20 }));
   });
 });

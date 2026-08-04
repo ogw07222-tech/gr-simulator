@@ -38,7 +38,6 @@ export const en = Object.freeze({
     trailCapacityNote: "Fixed preparatory capacity; resizing occurs only when this setting changes.",
     trailSpeedDescription: "Current speed in simulation world units per second; brighter values approach white.",
     spacetimeGrid: "Spacetime Grid", massRendering: "Mass Rendering", horizonIntensity: "Horizon intensity",
-    gridNearFade: "Grid near-camera fade", gridNearFadeDistance: "Near fade distance",
     coreEmissive: "Horizon rim intensity", reset: "Reset Visuals",
   },
   legend: {
