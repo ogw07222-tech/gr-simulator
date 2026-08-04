@@ -1,5 +1,12 @@
 # TODO
 
+## v0.7.2 scientific UX
+
+- [x] Categorize dense controls with accessible disclosures.
+- [x] Add bilingual user guidance and contextual terminology.
+- [x] Separate orbit drafts from atomic application and expose solver defaults.
+- [ ] Extend the glossary only when new scientific measurements are introduced.
+
 ## v0.6.2 rendering performance correction
 
 - [x] Record the single-grid and full-trail-upload baseline.

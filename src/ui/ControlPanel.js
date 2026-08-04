@@ -1,5 +1,6 @@
 import { getLocale, subscribeLocale, t } from "./i18n.js";
 import { validateOrbitConfiguration } from "./OrbitInputValidation.js";
+import { helpButton } from "./ScientificHelp.js";
 
 export class ControlPanel {
   constructor(root, store, model, grid, runtime = null) {
@@ -22,7 +23,7 @@ export class ControlPanel {
     this.root.innerHTML = `
       <div class="panel-heading"><div><span class="section-index">01</span><h2 data-i18n="panels.simulation"></h2></div><button class="panel-close" data-close-panel type="button" data-i18n="panels.close" data-i18n-aria="panels.closeSimulation"></button></div>
       <p class="panel-intro" data-i18n="controls.runtimeIntro"></p>
-      ${this.runtime ? `<section class="panel-section" data-i18n-aria="controls.runtime"><h3 data-i18n="controls.runtime"></h3>
+      ${this.runtime ? `<details class="panel-section control-disclosure" open><summary><span data-i18n="controls.runtime"></span></summary><div class="disclosure-body">
         <div class="runtime-actions">
           <button id="play" class="primary-action" type="button" data-i18n="controls.play"></button>
           <button id="pause" type="button" data-i18n="controls.pause"></button>
@@ -32,68 +33,75 @@ export class ControlPanel {
         <label class="select-control" for="time-scale"><span data-i18n="controls.timeScale"></span><select id="time-scale" data-i18n-aria="controls.timeScale">
           ${this.runtime.timeScales.map((scale) => `<option value="${scale}" data-scale="${scale}"></option>`).join("")}
         </select></label>
-      </section>` : ""}
-      <section class="panel-section"><h3 data-i18n="controls.physicsInputs"></h3>
+      </div></details>` : ""}
+      <details class="panel-section control-disclosure" open><summary><span data-i18n="controls.centralBody"></span></summary><div class="disclosure-body"><h3 data-i18n="controls.physicsInputs"></h3>
         <div class="mode-switch" role="group" data-i18n-aria="controls.distanceMode">
           <button data-mode="GR" type="button">GR 3D</button><button data-mode="GR_W" type="button">GR + W</button>
         </div>
-        <label class="range-control" for="mass"><span data-i18n="controls.mass"></span><output id="mass-value"></output><input id="mass" type="range" min="10" max="300" step="5" /></label>
+        <label class="range-control" for="mass"><span><span data-i18n="controls.mass"></span>${helpButton("mass")}</span><output id="mass-value"></output><input id="mass" type="range" min="10" max="300" step="5" /></label>
         <label class="range-control" for="w"><span data-i18n="controls.wDistance"></span><output id="w-value"></output><input id="w" type="range" min="0" max="6" step="0.05" /></label>
-      </section>
+      </div></details>
       <section class="panel-section"><h3 data-i18n="metrics.title"></h3><div class="metrics">
         <div><small data-i18n="metrics.schwarzschildRadius"></small><strong id="rs"></strong></div>
         <div><small data-i18n="metrics.centralLapse"></small><strong id="lapse"></strong></div>
         <div><small data-i18n="metrics.curvatureProxy"></small><strong id="curvature"></strong></div>
         <div><small data-i18n="metrics.gridVertices"></small><strong id="vertices"></strong></div>
       </div></section>
-      ${this.runtime?.applyOrbit ? `<section class="panel-section orbit-setup"><h3 data-i18n="orbit.setup"></h3>
+      ${this.runtime?.applyOrbit ? `<details class="panel-section control-disclosure orbit-setup" open><summary><span data-i18n="orbit.setup"></span></summary><div class="disclosure-body">
+        <h3 data-i18n="orbit.step1"></h3><p class="control-description" data-i18n="orbit.step1Description"></p>
         <label class="select-control" for="orbit-preset"><span data-i18n="orbit.preset"></span><select id="orbit-preset">
           <option value="circular" data-i18n="orbit.circular"></option>
           <option value="local" data-i18n="orbit.localVelocity"></option>
           <option value="constants" data-i18n="orbit.constants"></option>
         </select></label>
-        <label class="numeric-control" for="black-hole-mass"><span data-i18n="orbit.massSolar"></span><input id="black-hole-mass" type="number" min="1" max="10000000000" step="1" /></label>
-        <label class="numeric-control" for="orbit-radius"><span data-i18n="orbit.radiusRs"></span><input id="orbit-radius" type="number" min="1.000001" max="10" step="0.01" /></label>
+        <h3 data-i18n="orbit.step2"></h3>
+        <label class="numeric-control" for="black-hole-mass"><span><span data-i18n="orbit.massSolar"></span>${helpButton("mass")}</span><input id="black-hole-mass" type="number" min="1" max="10000000000" step="1" /></label>
+        <label class="numeric-control" for="orbit-radius"><span><span data-i18n="orbit.radiusRs"></span>${helpButton("schwarzschildRadius")}</span><input id="orbit-radius" type="number" min="1.000001" max="10" step="0.01" /></label>
         <output id="orbit-radius-km" class="derived-value"></output>
         <div class="orbit-local-inputs">
-          <label class="numeric-control" for="radial-beta"><span data-i18n="orbit.radialVelocity"></span><input id="radial-beta" type="number" min="-0.999" max="0.999" step="0.001" /></label>
+          <label class="numeric-control" for="radial-beta"><span><span data-i18n="orbit.radialVelocity"></span>${helpButton("localVelocity")}</span><input id="radial-beta" type="number" min="-0.999" max="0.999" step="0.001" /></label>
           <label class="numeric-control" for="tangential-beta"><span data-i18n="orbit.tangentialVelocity"></span><input id="tangential-beta" type="number" min="-0.999" max="0.999" step="0.001" /></label>
           <output id="orbit-speed" class="derived-value"></output>
         </div>
-        <details class="advanced-controls"><summary data-i18n="orbit.advanced"></summary>
+        <div class="advanced-controls orbit-conserved-inputs">
           <div class="orbit-constant-inputs">
-            <label class="numeric-control" for="specific-energy"><span data-i18n="orbit.specificEnergy"></span><input id="specific-energy" type="number" min="0.001" step="0.001" /></label>
-            <label class="numeric-control" for="specific-angular-momentum"><span data-i18n="orbit.specificAngularMomentum"></span><input id="specific-angular-momentum" type="number" step="0.001" /></label>
+            <label class="numeric-control" for="specific-energy"><span><span data-i18n="orbit.specificEnergy"></span>${helpButton("specificEnergy")}</span><input id="specific-energy" type="number" min="0.001" step="0.001" /></label>
+            <label class="numeric-control" for="specific-angular-momentum"><span><span data-i18n="orbit.specificAngularMomentum"></span>${helpButton("angularMomentum")}</span><input id="specific-angular-momentum" type="number" step="0.001" /></label>
             <label class="select-control" for="radial-direction"><span data-i18n="orbit.radialDirection"></span><select id="radial-direction"><option value="1" data-i18n="orbit.outward"></option><option value="-1" data-i18n="orbit.inward"></option></select></label>
           </div>
-          <label class="numeric-control" for="maximum-substeps"><span data-i18n="orbit.maximumSubsteps"></span><input id="maximum-substeps" type="number" min="1" max="4096" step="1" /></label>
-          <p class="scientific-note" data-i18n="orbit.integrator"></p>
-        </details>
+        </div>
+        <h3 data-i18n="orbit.step3"></h3><p class="control-description" data-i18n="orbit.step3Description"></p>
         <button id="apply-orbit" class="primary-action" type="button" data-i18n="orbit.apply"></button>
         <p id="orbit-error" class="input-error" role="alert" hidden></p>
-      </section>` : ""}
+        <output id="orbit-result" class="apply-result" role="status" aria-live="polite" hidden></output>
+      </div></details>
+      <details class="panel-section control-disclosure"><summary><span data-i18n="orbit.numericalIntegration"></span></summary><div class="disclosure-body">
+        <label class="numeric-control" for="maximum-substeps"><span data-i18n="orbit.maximumSubsteps"></span><input id="maximum-substeps" type="number" min="1" max="4096" step="1" /></label>
+        <dl class="solver-facts"><div><dt data-i18n="orbit.fixedTimestep"></dt><dd data-i18n="orbit.fixedTimestepValue"></dd></div><div><dt data-i18n="orbit.normalizedStep"></dt><dd data-i18n="orbit.normalizedStepValue"></dd></div></dl>
+        <p class="scientific-note"><span data-i18n="orbit.integrator"></span>${helpButton("integrator")}</p><button id="restore-integrator" class="secondary-action" type="button" data-i18n="orbit.restoreDefaults"></button>
+      </div></details>` : ""}
       ${this.runtime ? `<section class="panel-section"><h3 data-i18n="runtime.title"></h3><div class="runtime-status" aria-live="polite">
         <div><small data-i18n="runtime.state"></small><strong id="runtime-state"></strong></div>
         <div><small data-i18n="runtime.simulationTime"></small><strong id="simulation-time"></strong></div>
         <div><small data-i18n="runtime.timeScale"></small><strong id="runtime-time-scale"></strong></div>
         <div><small data-i18n="runtime.particleCount"></small><strong id="particle-count"></strong></div>
       </div></section>` : ""}
-      ${this.runtime?.applyOrbit ? `<section class="panel-section"><h3 data-i18n="geodesic.title"></h3><div class="runtime-status geodesic-status" aria-live="polite">
+      ${this.runtime?.applyOrbit ? `<details class="panel-section control-disclosure scientific-measurements"><summary><span data-i18n="geodesic.title"></span></summary><div class="disclosure-body"><div class="runtime-status geodesic-status" aria-live="polite">
         <div><small data-i18n="geodesic.mass"></small><strong id="geo-mass"></strong></div>
         <div><small data-i18n="geodesic.schwarzschildRadius"></small><strong id="geo-rs"></strong></div>
         <div><small data-i18n="geodesic.radius"></small><strong id="geo-radius"></strong></div>
         <div><small data-i18n="geodesic.localSpeed"></small><strong id="geo-speed"></strong></div>
-        <div><small data-i18n="geodesic.coordinateTime"></small><strong id="geo-coordinate-time"></strong></div>
-        <div><small data-i18n="geodesic.properTime"></small><strong id="geo-proper-time"></strong></div>
-        <div><small data-i18n="geodesic.energy"></small><strong id="geo-energy"></strong></div>
-        <div><small data-i18n="geodesic.angularMomentum"></small><strong id="geo-angular-momentum"></strong></div>
-        <div><small data-i18n="geodesic.classification"></small><strong id="geo-classification"></strong></div>
+        <div><small><span data-i18n="geodesic.coordinateTime"></span>${helpButton("coordinateTime")}</small><strong id="geo-coordinate-time"></strong></div>
+        <div><small><span data-i18n="geodesic.properTime"></span>${helpButton("properTime")}</small><strong id="geo-proper-time"></strong></div>
+        <div><small><span data-i18n="geodesic.energy"></span>${helpButton("specificEnergy")}</small><strong id="geo-energy"></strong></div>
+        <div><small><span data-i18n="geodesic.angularMomentum"></span>${helpButton("angularMomentum")}</small><strong id="geo-angular-momentum"></strong></div>
+        <div><small><span data-i18n="geodesic.classification"></span>${helpButton("classification")}</small><strong id="geo-classification"></strong></div>
         <div><small data-i18n="geodesic.status"></small><strong id="geo-status"></strong></div>
         <div><small data-i18n="geodesic.energyDrift"></small><strong id="geo-energy-drift"></strong></div>
         <div><small data-i18n="geodesic.angularMomentumDrift"></small><strong id="geo-angular-drift"></strong></div>
-        <div><small data-i18n="geodesic.normalizationResidual"></small><strong id="geo-normalization"></strong></div>
+        <div><small><span data-i18n="geodesic.normalizationResidual"></span>${helpButton("residual")}</small><strong id="geo-normalization"></strong></div>
         <div><small data-i18n="geodesic.substeps"></small><strong id="geo-substeps"></strong></div>
-      </div></section>` : ""}
+      </div></div></details>` : ""}
       <p class="scientific-note"><strong data-i18n="model.scope"></strong> <span data-i18n="model.scopeDescription"></span></p>
     `;
   }
@@ -141,6 +149,7 @@ export class ControlPanel {
       this.root.querySelector("#orbit-preset").addEventListener("change", () => this.#syncOrbitInputs());
       this.root.querySelectorAll(".orbit-setup input").forEach((input) => input.addEventListener("input", () => this.#syncOrbitDerived()));
       this.root.querySelector("#apply-orbit").addEventListener("click", () => this.#applyOrbit());
+      this.root.querySelector("#restore-integrator").addEventListener("click", () => { this.root.querySelector("#maximum-substeps").value = 128; });
       this.#syncOrbitInputs();
     }
   }
@@ -237,6 +246,9 @@ export class ControlPanel {
     try {
       this.runtime.applyOrbit(configuration);
       error.hidden = true;
+      const result = this.root.querySelector("#orbit-result");
+      result.textContent = t("orbit.applied");
+      result.hidden = false;
     } catch {
       error.textContent = t("orbit.errorInitialCondition");
       error.hidden = false;

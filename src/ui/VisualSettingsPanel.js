@@ -48,18 +48,18 @@ export class VisualSettingsPanel {
     this.root.innerHTML = `
       <div class="panel-heading"><div><span class="section-index">02</span><h2 data-i18n="panels.visualSettings"></h2></div><button class="panel-close" data-close-panel type="button" data-i18n="panels.close" data-i18n-aria="panels.closeVisuals"></button></div>
       <p class="panel-intro" data-i18n="visual.intro"></p>
-      <section class="panel-section"><h3 data-i18n="visual.performance"></h3>
+      <details class="panel-section control-disclosure" open><summary><span data-i18n="visual.performance"></span></summary><div class="disclosure-body">
         <label class="select-control" for="max-fps"><span data-i18n="visual.maximumFps"></span><select id="max-fps">
           <option value="30">30 FPS</option><option value="45">45 FPS</option><option value="60">60 FPS</option><option value="90">90 FPS</option><option value="120">120 FPS</option><option value="0" data-i18n="visual.unlimited"></option>
         </select></label>
         <p class="control-description" data-i18n="visual.fpsNote"></p>
-      </section>
-      <section class="panel-section"><h3 data-i18n="visual.particle"></h3>
+      </div></details>
+      <details class="panel-section control-disclosure" open><summary><span data-i18n="visual.particle"></span></summary><div class="disclosure-body">
         ${this.renderRange("particle-size", "visual.particleSize", 0.18, 0.72, 0.02)}
         ${this.renderRange("particle-brightness", "visual.brightness", 0.5, 1.5, 0.05)}
         ${this.renderRange("particle-opacity", "visual.opacity", 0.2, 1, 0.05)}
-      </section>
-      <section class="panel-section"><div class="section-title-row"><h3 data-i18n="visual.trail"></h3><label class="switch"><input id="trail-visible" type="checkbox" /><span data-i18n="visual.visible"></span></label></div>
+      </div></details>
+      <details class="panel-section control-disclosure" open><summary><span data-i18n="visual.trail"></span></summary><div class="disclosure-body"><div class="section-title-row"><span></span><label class="switch"><input id="trail-visible" type="checkbox" /><span data-i18n="visual.visible"></span></label></div>
         ${this.renderRange("trail-opacity", "visual.opacity", 0.1, 1, 0.05)}
         ${this.renderRange("trail-brightness", "visual.brightness", 0.4, 1.5, 0.05)}
         ${this.renderRange("trail-fade", "visual.ageFade", 0, 1, 0.05)}
@@ -73,8 +73,8 @@ export class VisualSettingsPanel {
           ${this.trailCapacity.options.map((capacity) => `<option value="${capacity}" data-capacity="${capacity}"></option>`).join("")}
         </select></label>
         <p class="control-description" data-i18n="visual.trailCapacityNote"></p>
-      </section>
-      <section class="panel-section"><div class="section-title-row"><h3 data-i18n="visual.spacetimeGrid"></h3><label class="switch"><input id="grid-visible" type="checkbox" /><span data-i18n="visual.visible"></span></label></div>
+      </div></details>
+      <details class="panel-section control-disclosure" open><summary><span data-i18n="visual.spacetimeGrid"></span></summary><div class="disclosure-body"><div class="section-title-row"><span></span><label class="switch"><input id="grid-visible" type="checkbox" /><span data-i18n="visual.visible"></span></label></div>
         ${this.renderRange("grid-opacity", "visual.opacity", 0.08, 0.9, 0.02)}
         ${this.renderRange("grid-brightness", "visual.brightness", 0.3, 1.2, 0.05)}
         <div class="scientific-legend" aria-live="polite">
@@ -83,11 +83,11 @@ export class VisualSettingsPanel {
           <div class="legend-values"><span id="grid-legend-min"></span><span id="grid-legend-mid"></span><span id="grid-legend-max"></span></div>
           <p data-i18n="legend.gridScale"></p>
         </div>
-      </section>
-      <section class="panel-section"><h3 data-i18n="visual.massRendering"></h3>
+      </div></details>
+      <details class="panel-section control-disclosure"><summary><span data-i18n="visual.massRendering"></span></summary><div class="disclosure-body">
         ${this.renderRange("horizon-glow", "visual.horizonIntensity", 0.08, 0.8, 0.02)}
         ${this.renderRange("mass-brightness", "visual.coreEmissive", 0.5, 3, 0.1)}
-      </section>
+      </div></details>
       <button id="reset-visuals" class="secondary-action" type="button" data-i18n="visual.reset"></button>
     `;
   }
