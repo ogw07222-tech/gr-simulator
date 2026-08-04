@@ -1,6 +1,6 @@
-// 한국어 UI 문구는 이 파일에서 수정합니다. 키 구조는 en.js와 동일하게 유지하세요.
+// 한국어 UI 문구는 이 파일에서 관리합니다. 키 구조를 en.js와 동일하게 유지하세요.
 export const ko = Object.freeze({
-  app: { title: "GR-4D Simulator v0.6.1", description: "브라우저 기반 일반상대성이론 시뮬레이션 및 과학 시각화 실험실", eyebrow: "일반상대성이론 연구 콘솔" },
+  app: { title: "GR-4D Simulator v0.6.2", description: "브라우저 기반 일반상대성이론 시뮬레이션 및 과학 시각화 실험실", eyebrow: "일반상대성이론 연구 콘솔" },
   language: { label: "언어 선택", ko: "한국어", en: "English" },
   status: {
     running: "실행 중", paused: "일시정지", frame: "프레임", rendererOnline: "렌더러 정상",
@@ -29,18 +29,22 @@ export const ko = Object.freeze({
   },
   visual: {
     intro: "표시 설정은 GPU 재질에만 적용되며 시뮬레이션 상태는 바뀌지 않습니다.",
+    performance: "렌더링 성능", maximumFps: "최대 렌더링 FPS", unlimited: "제한 없음",
+    fpsNote: "렌더링 간격만 바뀌며 고정 1/240초 시뮬레이션 간격은 유지됩니다.",
     particle: "입자", particleSize: "입자 크기", brightness: "밝기", opacity: "투명도",
     trail: "궤적", visible: "표시", ageFade: "시간 경과 감쇠", speed: "속도",
     trailCapacity: "궤적 용량", trailCapacitySamples: "{value}개 표본",
     trailCapacityNote: "향후 궤도를 위한 고정 준비 용량이며, 이 설정을 바꿀 때만 버퍼를 재할당합니다.",
-    trailSpeedDescription: "현재 월드 공간 속도이며 단위는 시뮬레이션 단위/초입니다.",
+    trailSpeedDescription: "현재 속도는 시뮬레이션 월드 단위/초이며, 빠를수록 흰색에 가까워집니다.",
     spacetimeGrid: "시공간 격자", massRendering: "질량체 표현", horizonIntensity: "사건지평선 강도",
-    coreEmissive: "중심 발광", reset: "시각 설정 초기화",
+    gridRenderDistance: "최대 격자 렌더 거리", gridNearFade: "카메라 근접 격자 감쇠",
+    gridNearFadeDistance: "근접 감쇠 거리", worldUnits: "거리는 시뮬레이션 월드 단위입니다.",
+    coreEmissive: "사건지평선 테두리 강도", reset: "시각 설정 초기화",
   },
   legend: {
-    speedTitle: "현재 입자 속도", speedUnit: "시뮬레이션 단위/초",
+    speedTitle: "현재 입자 속도", speedUnit: "시뮬레이션 월드 단위/초",
     gridTitle: "격자 변형 프록시", gridUnit: "모델 공간 표시 프록시",
-    gridScale: "색상과 기하 변형에는 asinh 시각화 배율을 사용하며 원시값은 바꾸지 않습니다.",
+    gridScale: "교육용 변형 프록시에 파랑-빨강 색상과 asinh 표시 배율을 사용하며 원시값은 바꾸지 않습니다.",
     minimum: "최소", midpoint: "중간", maximum: "최대",
   },
   camera: {

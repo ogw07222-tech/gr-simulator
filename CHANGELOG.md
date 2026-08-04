@@ -1,16 +1,31 @@
 # Changelog
 
-## [Unreleased]
+## [0.6.2] - 2026-08-04
 
 ### Added
 
 - Environment-aware Vite base-path configuration for GitHub Pages.
 - Validated Pages artifact build and automatic deployment workflow.
 - Deployment operations, local preview, repository setting, and custom-domain documentation.
+- Fixed grid chunking with frustum, render-distance, and hysteretic LOD selection.
+- Independent 30/45/60/90/120/unlimited rendering-FPS control with persistence.
+- Close-camera grid fade and bounded development/soak diagnostics.
 
 ### Deployment scope
 
 - No physics, particle, runtime, rendering, UI, or localization behavior changed.
+
+### Changed
+
+- Reduced default far-field grid submission while preserving the 240-unit evaluated model domain.
+- Restricted particle/trail GPU uploads to used ranges and mapped speed brightness toward white.
+- Changed the grid proxy palette from blue through cyan to red.
+- Presented the event horizon as a translucent green rim shader and the body as an unlit black sphere.
+
+### Scientific scope
+
+- Raw displacement and speed values, the fixed 1/240-second simulation step, and all physics equations remain unchanged.
+- No orbit classification or Schwarzschild geodesic behavior is implemented.
 
 ## [0.6.1] - 2026-08-04
 

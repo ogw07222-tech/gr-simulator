@@ -62,7 +62,8 @@ ParticleRenderer uses one BufferGeometry and one PointsMaterial for the entire p
 - No objects, vectors, arrays, or buffers are created inside ParticleManager.update, Particle.update, ParticleTrail.push, or ParticleRenderer.sync.
 - Active slots are dense, so update and buffer sync scale with active count rather than maximum capacity.
 - Trail capacity changes replace typed buffers once and preserve the newest available samples. No resizing occurs in the animation loop.
-- Trail color is a monotonic blue-green mapping of current velocity magnitude in simulation world units per second. It does not represent energy, redshift, proper velocity, or a fraction of light speed.
+- Particle and trail color use the current velocity magnitude in simulation world units per second. Brightness rises monotonically from a visible desaturated blue-gray to white. It does not represent energy, redshift, proper velocity, or a fraction of light speed.
+- Dynamic BufferAttribute update ranges cover only active particle components and currently drawn trail components. Unused fixed capacity is not uploaded on every rendered frame.
 - A 60 FPS target with 1,000 active particles assumes four 240 Hz fixed updates per normal frame; final budgets require browser profiling on target hardware.
 
 ## Known limitations and extension points

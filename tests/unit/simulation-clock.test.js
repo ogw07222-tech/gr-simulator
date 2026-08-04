@@ -97,6 +97,16 @@ describe("SimulationClock", () => {
     expect(clock.renderDelta).toBe(0.1);
     expect(state.simulationTime).toBeCloseTo(5 / 240);
   });
+
+  it("synchronizes after a hidden interval without catch-up work", () => {
+    const clock = new SimulationClock();
+    const update = vi.fn();
+    clock.start(0);
+    clock.tick(10, update);
+    clock.synchronize(10_000);
+    expect(clock.tick(10_016, update)).toBeLessThanOrEqual(4);
+    expect(clock.renderDelta).toBeCloseTo(0.016);
+  });
 });
 
 describe("SimulationState", () => {

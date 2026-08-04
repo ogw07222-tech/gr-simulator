@@ -1,6 +1,6 @@
 # GR-4D Simulator
 
-A browser-based General Relativity visualization laboratory built with Three.js. Version 0.6 presents the existing Schwarzschild spatial-slice and particle runtime through a responsive scientific dashboard.
+A browser-based General Relativity visualization laboratory built with Three.js. Version 0.6.2 presents the existing Schwarzschild spatial-slice and particle runtime through a responsive scientific dashboard.
 
 > This project is not yet a numerical Einstein field equation solver. The current implementation combines quantities derived from the Schwarzschild metric with explicitly documented weak-field visualization approximations.
 
@@ -18,6 +18,7 @@ A browser-based General Relativity visualization laboratory built with Three.js.
 - Presentation-only particle, trail, grid, and mass-rendering controls
 - Live Korean/English interface switching with persisted language preference
 - Explicit cleanup of renderer, controls, geometry, material, and subscriptions
+- Chunked grid culling, close-camera fade, and independent maximum-render-FPS controls
 
 ## Quick start
 
@@ -78,9 +79,11 @@ Translations use stable keys in `src/ui/i18n.js`. To add a language, add a compl
 
 ## Scientific dashboard
 
-The v0.6.1 interface uses an original scientific-dashboard design language: compact telemetry, restrained holographic blue-green accents, a viewport-first layout, and separate simulation and presentation controls. Grid deformation and trail speed include explicit legends. Desktop uses persistent side panels; tablet and mobile use keyboard- and touch-accessible drawers.
+The v0.6.2 interface uses an original scientific-dashboard design language: compact telemetry, restrained accents, a viewport-first layout, and separate simulation and presentation controls. Grid deformation and trail speed include explicit legends. Desktop uses persistent side panels; tablet and mobile use keyboard- and touch-accessible drawers.
 
 The grid spans a larger adaptive world-space domain. Its dense central region preserves detail while geometrically increasing far-field spacing keeps geometry bounded. Raw model displacement is retained unchanged; a documented `asinh` transfer is applied only to display magnitude. Particle trails use a fixed configurable capacity, resize only when the setting changes, and are colored only by measured particle speed.
+
+The grid is rendered as 24 fixed near/middle/far octant chunks. Camera frustum, maximum render distance, and hysteretic high/middle/low draw ranges determine only what is submitted to the GPU; they never alter model samples. A smooth near-camera fade keeps the black body, green horizon, particle, and trail readable. The maximum FPS selector caps rendering at 30, 45, 60, 90, 120 FPS or leaves it unlimited while the simulation remains fixed at 240 Hz.
 
 Screenshots are maintained in `docs/screenshots/` for desktop, tablet, and mobile verification. See [UI architecture](docs/UI_ARCHITECTURE.md) for theme tokens, supported visual settings, responsive behavior, and intentionally unsupported controls.
 
@@ -116,6 +119,7 @@ The long-term goal is a reproducible, testable, performance-oriented GR simulati
 - [Runtime engine](docs/RUNTIME_ENGINE.md)
 - [Particle engine](docs/PARTICLE_ENGINE.md)
 - [UI architecture](docs/UI_ARCHITECTURE.md)
+- [Rendering performance architecture](docs/RENDERING_ARCHITECTURE.md)
 - [Deployment](docs/DEPLOYMENT.md)
 - [Contributing](CONTRIBUTING.md)
 - [Roadmap](ROADMAP.md)

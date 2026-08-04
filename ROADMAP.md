@@ -59,6 +59,15 @@ Exit criterion: new numerical models can be integrated behind tested contracts w
 - [x] Gate production artifact upload and deployment behind lint, unit tests, and build validation.
 - [ ] Confirm the first live deployment only after the GitHub Pages workflow succeeds on `main`.
 
+### v0.6.2 render-performance correction
+
+- [x] Partition the grid into fixed near/middle/far spatial chunks.
+- [x] Add frustum, render-distance, hysteretic LOD, and close-camera fade policies.
+- [x] Keep render FPS caps independent from the fixed simulation timestep.
+- [x] Bound dynamic particle/trail GPU uploads to used ranges.
+- [x] Add repeatable resource-growth soak diagnostics.
+- [ ] Orbit classification and Schwarzschild geodesics remain deferred.
+
 ## Beyond v0.6
 
 Candidate research features include multiple bodies, geodesic integration, field sampling, heatmaps, and data export. Each requires an independent physical model specification and validation plan.

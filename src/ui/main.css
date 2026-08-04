@@ -118,7 +118,8 @@ select { min-width: 94px; padding: 7px 28px 7px 9px; border: 1px solid var(--pan
 .legend-heading strong { color: var(--text); font-size: .65rem; }
 .legend-heading small { color: var(--subtle); font-size: .57rem; text-align: right; }
 .legend-gradient { height: 7px; margin-top: 7px; border: 1px solid rgba(255, 255, 255, .08); border-radius: 999px; }
-.speed-gradient, .grid-gradient { background: linear-gradient(90deg, #143d66 0%, #24d7ff 50%, #35d07f 100%); }
+.speed-gradient { background: linear-gradient(90deg, #1f3d47 0%, #8cebee 50%, #ffffff 100%); }
+.grid-gradient { background: linear-gradient(90deg, #0d2edb 0%, #14d9ee 50%, #ff1808 100%); }
 .legend-values { display: flex; justify-content: space-between; margin-top: 4px; color: var(--muted); font: 500 .57rem ui-monospace, monospace; }
 .scientific-legend p { margin: 7px 0 0; color: var(--subtle); font-size: .58rem; line-height: 1.4; }
 

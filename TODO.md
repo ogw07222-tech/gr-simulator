@@ -1,5 +1,15 @@
 # TODO
 
+## v0.6.2 rendering performance correction
+
+- [x] Record the single-grid and full-trail-upload baseline.
+- [x] Add fixed chunk culling, LOD hysteresis, render distance, and near-camera fade.
+- [x] Add persistent rendering FPS caps without changing the 240 Hz fixed step.
+- [x] Map speed to white and the educational grid proxy from blue to red.
+- [x] Separate the black presentation body from the green event-horizon shell.
+- [x] Add renderer counters and a repeatable 10-minute soak harness.
+- [ ] Keep the orbit engine and new physical equations outside this release.
+
 ## v0.6.1 visualization corrections
 
 - [x] Separate raw grid-model output from the nonlinear display transfer.

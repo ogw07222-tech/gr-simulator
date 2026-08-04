@@ -325,6 +325,23 @@ describe("ParticleRenderer", () => {
     renderer.sync(manager);
     expect(renderer.trailColors[1]).toBeGreaterThan(slowGreen);
     expect(renderer.getSpeedLegend()).toEqual({ minimum: 0, midpoint: 1, maximum: 2 });
+    expect(renderer.colors[0]).toBe(1);
+    expect(renderer.colors[1]).toBe(1);
+    expect(renderer.colors[2]).toBe(1);
+  });
+
+  it("limits dynamic GPU update ranges to used particle and trail data", () => {
+    const manager = new ParticleManager({ maxParticles: 1000, maxTrailLength: 1024 });
+    manager.create({ velocity: [1, 0, 0] });
+    manager.update(1 / 240);
+    manager.update(1 / 240);
+    const renderer = new ParticleRenderer({ maxParticles: 1000, maxTrailLength: 1024 });
+    renderer.sync(manager);
+    expect(renderer.positionUpdateRange.count).toBe(3);
+    expect(renderer.colorUpdateRange.count).toBe(3);
+    expect(renderer.trailPositionUpdateRange.count).toBe(6);
+    expect(renderer.trailColorUpdateRange.count).toBe(6);
+    expect(renderer.trailPositionUpdateRange.count).toBeLessThan(renderer.trailPositions.length);
   });
 
   it("resizes manager and renderer trail buffers outside update loops", () => {

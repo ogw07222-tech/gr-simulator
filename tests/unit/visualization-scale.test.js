@@ -1,7 +1,8 @@
 import { describe, expect, it } from "vitest";
 import { PHYSICS_DEFAULTS, SIMULATION_DEFAULTS } from "../../src/core/index.js";
 import { SchwarzschildModel } from "../../src/physics/index.js";
-import { VolumetricGrid, normalizeAsinh, normalizeSpeed } from "../../src/rendering/index.js";
+import * as THREE from "three";
+import { VolumetricGrid, normalizeAsinh, normalizeNearFade, normalizeSpeed, writeGridDeformationColor, writeSpeedToWhiteColor } from "../../src/rendering/index.js";
 
 const state = { ...SIMULATION_DEFAULTS };
 
@@ -22,6 +23,29 @@ describe("scientific visualization mappings", () => {
     expect(normalizeSpeed(4, 2)).toBe(1);
   });
 
+  it("maps speed to monotonic brightness and white at the endpoint", () => {
+    const colors = new Float32Array(9);
+    writeSpeedToWhiteColor(colors, 0, 0);
+    writeSpeedToWhiteColor(colors, 3, 0.5);
+    writeSpeedToWhiteColor(colors, 6, 1);
+    const luminance = (offset) => colors[offset] * 0.2126 + colors[offset + 1] * 0.7152 + colors[offset + 2] * 0.0722;
+    expect(luminance(3)).toBeGreaterThan(luminance(0));
+    expect(luminance(6)).toBeGreaterThan(luminance(3));
+    expect(Array.from(colors.slice(6))).toEqual([1, 1, 1]);
+    expect(Array.from(colors).every(Number.isFinite)).toBe(true);
+  });
+
+  it("maps deformation from blue through cyan to red", () => {
+    const colors = new Float32Array(9);
+    writeGridDeformationColor(colors, 0, 0);
+    writeGridDeformationColor(colors, 3, 0.5);
+    writeGridDeformationColor(colors, 6, 1);
+    expect(colors[2]).toBeGreaterThan(colors[0]);
+    expect(colors[4]).toBeGreaterThan(colors[3]);
+    expect(colors[6]).toBeGreaterThan(colors[8]);
+    expect(Array.from(colors).every(Number.isFinite)).toBe(true);
+  });
+
   it("builds a ten-times-wider adaptive grid with bounded topology", () => {
     const grid = new VolumetricGrid({
       size: state.gridSize,
@@ -35,6 +59,68 @@ describe("scientific visualization mappings", () => {
     expect(grid.segmentVertexCount).toBe(69828);
     expect(grid.topologyVertexCount).toBe(12167);
     expect(grid.segmentVertexCount).toBeLessThan(70000);
+    expect(new Set(grid.chunks.map((chunk) => chunk.region))).toEqual(new Set(["near", "middle", "far"]));
+    expect(grid.chunks.length).toBeLessThanOrEqual(24);
+  });
+
+  it("culls chunks by view and distance with bounded LOD hysteresis", () => {
+    const grid = new VolumetricGrid();
+    const model = new SchwarzschildModel(PHYSICS_DEFAULTS);
+    grid.update(model, state);
+    const camera = new THREE.PerspectiveCamera(58, 1, 0.1, 500);
+    camera.position.set(22, 18, 22);
+    camera.lookAt(0, 0, 0);
+    camera.updateProjectionMatrix();
+    grid.setViewSettings({ maxRenderDistance: 40, nearFadeEnabled: false, nearFadeDistance: 10 });
+    const diagnostics = grid.updateView(camera);
+    expect(diagnostics.visibleChunks).toBeGreaterThan(0);
+    expect(diagnostics.visibleChunks).toBeLessThan(diagnostics.totalChunks);
+    expect(diagnostics.visibleVertices).toBeLessThan(diagnostics.renderCapacityVertices);
+    const recomputations = diagnostics.recomputations;
+    const uploads = diagnostics.bufferUploads;
+    expect(grid.update(model, state)).toBe(false);
+    expect(diagnostics.recomputations).toBe(recomputations);
+    expect(diagnostics.bufferUploads).toBe(uploads);
+  });
+
+  it("applies smooth near-camera fade endpoints without changing raw values", () => {
+    expect(normalizeNearFade(0, 10)).toBe(0);
+    expect(normalizeNearFade(5, 10)).toBeGreaterThan(0);
+    expect(normalizeNearFade(5, 10)).toBeLessThan(1);
+    expect(normalizeNearFade(10, 10)).toBe(1);
+    const grid = new VolumetricGrid();
+    const model = new SchwarzschildModel(PHYSICS_DEFAULTS);
+    grid.update(model, state);
+    const raw = Float64Array.from(grid.rawDisplacements);
+    const camera = new THREE.PerspectiveCamera(58, 1, 0.1, 500);
+    camera.position.set(20, 20, 20);
+    camera.lookAt(0, 0, 0);
+    camera.updateProjectionMatrix();
+    grid.setViewSettings({ maxRenderDistance: 260, nearFadeEnabled: true, nearFadeDistance: 20 });
+    grid.updateView(camera);
+    expect(grid.chunks.some((chunk) => chunk.material.opacity < grid.baseOpacity)).toBe(true);
+    expect(Array.from(grid.rawDisplacements)).toEqual(Array.from(raw));
+  });
+
+  it("keeps LOD stable inside hysteresis thresholds", () => {
+    const grid = new VolumetricGrid();
+    const model = new SchwarzschildModel(PHYSICS_DEFAULTS);
+    grid.update(model, state);
+    grid.setViewSettings({ maxRenderDistance: 260, nearFadeEnabled: false, nearFadeDistance: 10 });
+    const chunk = grid.chunks.find((entry) => entry.region === "far");
+    const camera = new THREE.PerspectiveCamera(58, 1, 0.1, 500);
+    const place = (distance) => {
+      camera.position.set(chunk.center.x + distance, chunk.center.y, chunk.center.z);
+      camera.lookAt(chunk.center);
+      camera.updateProjectionMatrix();
+      grid.updateView(camera);
+    };
+    place(56);
+    expect(chunk.lod).toBe("middle");
+    place(52);
+    expect(chunk.lod).toBe("middle");
+    place(44);
+    expect(chunk.lod).toBe("high");
   });
 
   it("preserves finite raw model values independently of display extent", () => {
