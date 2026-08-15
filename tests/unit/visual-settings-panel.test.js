@@ -106,6 +106,21 @@ describe("VisualSettingsPanel", () => {
     expect(scaleTransform.metresPerWorldUnit).toBe(DEFAULT_METRES_PER_WORLD_UNIT);
   });
 
+  it("offers bounded presentation-only grid deformation gains", () => {
+    const onGridDeformationGain = vi.fn();
+    new VisualSettingsPanel(root, {
+      particleRenderer, grid, massObject, frameRateController, onGridDeformationGain,
+    });
+    const gain = root.querySelector("#grid-deformation-gain");
+    expect([...gain.options].map((option) => option.value)).toEqual(["1", "2", "3", "5", "10"]);
+    expect(gain.value).toBe("1");
+    gain.value = "5";
+    gain.dispatchEvent(new Event("change", { bubbles: true }));
+    expect(onGridDeformationGain).toHaveBeenCalledOnce();
+    expect(onGridDeformationGain).toHaveBeenCalledWith(5);
+    expect(root.querySelector('[data-help-key="gridDeformationGain"]')).not.toBeNull();
+  });
+
   it("exposes localized particle focus and follow without duplicating camera state", () => {
     const particleCamera = { focus: vi.fn(() => true), setFollow: vi.fn(() => true) };
     const panel = new VisualSettingsPanel(root, {

@@ -10,7 +10,8 @@ export class Renderer {
     this.container = container;
     this.scene = new THREE.Scene();
     this.scene.background = new THREE.Color(0x03050b);
-    this.scene.fog = new THREE.FogExp2(0x03050b, 0.018);
+    this.baseFogDensity = 0.018;
+    this.scene.fog = new THREE.FogExp2(0x03050b, this.baseFogDensity);
 
     this.camera = new THREE.PerspectiveCamera(58, 1, 0.1, 500);
     this.camera.position.set(22, 18, 22);
@@ -96,8 +97,11 @@ export class Renderer {
       aspect: this.camera.aspect,
     })) return false;
     const { extent, distance } = this.fitDiagnostics;
-    this.fitDirection.copy(this.camera.position).sub(this.controls.target);
-    if (this.fitDirection.lengthSq() < Number.EPSILON) this.fitDirection.set(1, 0.8, 1);
+    const transformFinite = Number.isFinite(this.camera.position.x) && Number.isFinite(this.camera.position.y)
+      && Number.isFinite(this.camera.position.z) && Number.isFinite(this.controls.target.x)
+      && Number.isFinite(this.controls.target.y) && Number.isFinite(this.controls.target.z);
+    if (transformFinite) this.fitDirection.copy(this.camera.position).sub(this.controls.target);
+    if (!transformFinite || this.fitDirection.lengthSq() < Number.EPSILON) this.fitDirection.set(1, 0.8, 1);
     this.fitDirection.normalize();
     this.controls.target.set(0, 0, 0);
     this.camera.position.copy(this.fitDirection).multiplyScalar(distance);
@@ -109,6 +113,27 @@ export class Renderer {
     this.controls.update();
     this.fitDiagnostics.count += 1;
     return true;
+  }
+
+  updatePresentationScale(scaleFactor) {
+    if (!Number.isFinite(scaleFactor) || scaleFactor <= 0) return false;
+    this.scene.fog.density = this.baseFogDensity / scaleFactor;
+    return true;
+  }
+
+  ensureSceneVisible(sceneExtent, horizonRadius = 0) {
+    if (!Number.isFinite(sceneExtent) || sceneExtent <= 0) return false;
+    const transformFinite = Number.isFinite(this.camera.position.x) && Number.isFinite(this.camera.position.y)
+      && Number.isFinite(this.camera.position.z) && Number.isFinite(this.controls.target.x)
+      && Number.isFinite(this.controls.target.y) && Number.isFinite(this.controls.target.z);
+    const distance = transformFinite ? this.camera.position.distanceTo(this.controls.target) : Number.NaN;
+    const minimumDistance = Math.max(sceneExtent * 0.02, horizonRadius * 1.5);
+    const maximumDistance = sceneExtent * 20;
+    const projectionSafe = Number.isFinite(this.camera.near) && this.camera.near > 0
+      && Number.isFinite(this.camera.far) && this.camera.far > this.camera.near;
+    if (projectionSafe && Number.isFinite(distance)
+      && distance >= minimumDistance && distance <= maximumDistance) return false;
+    return this.fitPhysicalScene(sceneExtent, 1.25);
   }
 
   resize() {
@@ -131,6 +156,7 @@ export class Renderer {
     this.diagnostics.triangles = render.triangles;
     this.diagnostics.geometries = memory.geometries;
     this.diagnostics.textures = memory.textures;
+    this.diagnostics.fogDensity = this.scene.fog.density;
   }
 
   getDiagnostics() { return this.diagnostics; }

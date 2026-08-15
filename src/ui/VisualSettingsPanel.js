@@ -17,6 +17,7 @@ const DEFAULTS = Object.freeze({
   gridVisible: true,
   gridOpacity: 0.52,
   gridBrightness: 0.82,
+  visualDeformationGain: 1,
   maxFps: 60,
   horizonGlow: 0.42,
   massBrightness: 1,
@@ -30,7 +31,7 @@ export class VisualSettingsPanel {
   constructor(root, {
     particleRenderer, grid, massObject, frameRateController = null, trailCapacity = null,
     scaleTransform = null, fitPhysicalScene = () => {}, scaleIndicator = null,
-    onScaleChange = () => {}, unitFormatter = null, particleCamera = null,
+    onScaleChange = () => {}, onGridDeformationGain = () => {}, unitFormatter = null, particleCamera = null,
   }) {
     this.root = root;
     this.particleRenderer = particleRenderer;
@@ -41,6 +42,7 @@ export class VisualSettingsPanel {
     this.fitPhysicalScene = fitPhysicalScene;
     this.scaleIndicator = scaleIndicator;
     this.onScaleChange = onScaleChange;
+    this.onGridDeformationGain = onGridDeformationGain;
     this.unitFormatter = unitFormatter;
     this.particleCamera = particleCamera;
     this.particleTrackingAvailable = false;
@@ -119,6 +121,9 @@ export class VisualSettingsPanel {
       <details class="panel-section control-disclosure" open><summary><span data-i18n="visual.spacetimeGrid"></span></summary><div class="disclosure-body"><div class="section-title-row"><span></span><label class="switch"><input id="grid-visible" type="checkbox" /><span data-i18n="visual.visible"></span></label></div>
         ${this.renderRange("grid-opacity", "visual.opacity", 0.08, 0.9, 0.02)}
         ${this.renderRange("grid-brightness", "visual.brightness", 0.3, 1.2, 0.05)}
+        <label class="select-control" for="grid-deformation-gain"><span><span data-i18n="visual.gridDeformationGain"></span>${helpButton("gridDeformationGain")}</span><select id="grid-deformation-gain">
+          ${[1, 2, 3, 5, 10].map((gain) => `<option value="${gain}" data-gain="${gain}"></option>`).join("")}
+        </select></label>
         <div class="scientific-legend" aria-live="polite">
           <div class="legend-heading"><strong data-i18n="legend.gridTitle"></strong><small data-i18n="legend.gridUnit"></small></div>
           <div class="legend-gradient grid-gradient" aria-hidden="true"></div>
@@ -142,6 +147,9 @@ export class VisualSettingsPanel {
     this.root.setAttribute("aria-label", t("panels.visualSettings"));
     this.root.querySelectorAll("[data-capacity]").forEach((option) => {
       option.textContent = t("visual.trailCapacitySamples", { value: option.dataset.capacity });
+    });
+    this.root.querySelectorAll("[data-gain]").forEach((option) => {
+      option.textContent = t("units.multiplier", { value: option.dataset.gain });
     });
     this.updateLegends();
     if (this.scaleTransform) this.sync();
@@ -169,6 +177,12 @@ export class VisualSettingsPanel {
     this.root.querySelector("#grid-visible").addEventListener("change", (event) => {
       this.values.gridVisible = event.target.checked;
       this.apply();
+    });
+    this.root.querySelector("#grid-deformation-gain").addEventListener("change", (event) => {
+      const gain = Number(event.target.value);
+      if (gain === this.values.visualDeformationGain) return;
+      this.values.visualDeformationGain = gain;
+      this.onGridDeformationGain(gain);
     });
     this.root.querySelector("#max-fps").addEventListener("change", (event) => {
       this.values.maxFps = Number(event.target.value);
@@ -243,6 +257,7 @@ export class VisualSettingsPanel {
     });
     this.root.querySelector("#trail-visible").checked = values.trailVisible;
     this.root.querySelector("#grid-visible").checked = values.gridVisible;
+    this.root.querySelector("#grid-deformation-gain").value = values.visualDeformationGain;
     this.root.querySelector("#max-fps").value = values.maxFps;
     this.root.querySelector("#trail-capacity").value = this.trailCapacity.current;
     if (this.unitFormatter) this.root.querySelector("#display-unit-mode").value = this.unitFormatter.getMode();
@@ -284,8 +299,10 @@ export class VisualSettingsPanel {
   }
 
   reset() {
+    const previousGain = this.values.visualDeformationGain;
     Object.assign(this.values, DEFAULTS);
     this.apply();
+    if (previousGain !== this.values.visualDeformationGain) this.onGridDeformationGain(this.values.visualDeformationGain);
   }
 
   resetScale() {

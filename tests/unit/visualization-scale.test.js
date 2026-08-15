@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { PHYSICS_DEFAULTS, SIMULATION_DEFAULTS } from "../../src/core/index.js";
 import { SchwarzschildModel } from "../../src/physics/index.js";
 import * as THREE from "three";
@@ -188,6 +188,26 @@ describe("particle camera tracking", () => {
     expect(renderer.focusPoint(Number.NaN, 0, 0)).toBe(false);
   });
 
+  it("applies deformation gain only to grid-line displacement", () => {
+    const model = new SchwarzschildModel(PHYSICS_DEFAULTS);
+    const grid = new VolumetricGrid();
+    grid.update(model, { ...state, visualDeformationGain: 1 });
+    const base = Float32Array.from(grid.basePositions);
+    const gainOne = Float32Array.from(grid.positions);
+    const raw = Float64Array.from(grid.rawDisplacements);
+    const colors = Float32Array.from(grid.colors);
+    expect(grid.update(model, { ...state, visualDeformationGain: 1 })).toBe(false);
+    for (const gain of [2, 5]) {
+      grid.update(model, { ...state, visualDeformationGain: gain });
+      for (let index = 0; index < gainOne.length; index += 997) {
+        expect(grid.positions[index] - base[index]).toBeCloseTo((gainOne[index] - base[index]) * gain, 4);
+      }
+      expect(grid.rawDisplacements).toEqual(raw);
+      expect(grid.colors).toEqual(colors);
+    }
+    expect(grid.getDiagnostics().visualDeformationGain).toBe(5);
+  });
+
   it("translates camera and target equally, supports scale jumps, and stops when disabled", () => {
     const renderer = createCameraController();
     const initialOffset = renderer.camera.position.clone().sub(renderer.controls.target);
@@ -206,5 +226,22 @@ describe("particle camera tracking", () => {
     expect(renderer.updateParticleFollow(50, 50, 50)).toBe(false);
     expect(renderer.camera.position.toArray()).toEqual(stoppedPosition.toArray());
     expect(renderer.setParticleFollow(true, Infinity, 0, 0)).toBe(false);
+  });
+
+  it("scales fog with presentation coordinates and refits only unsafe camera states", () => {
+    const renderer = createCameraController();
+    renderer.baseFogDensity = 0.018;
+    renderer.scene = { fog: { density: 0.018 } };
+    renderer.camera.near = 0.1;
+    renderer.camera.far = 500;
+    renderer.fitPhysicalScene = vi.fn(() => true);
+    expect(renderer.updatePresentationScale(12)).toBe(true);
+    expect(renderer.scene.fog.density).toBeCloseTo(0.0015, 12);
+    expect(renderer.ensureSceneVisible(6, 1)).toBe(false);
+    renderer.camera.position.set(0.01, 0, 0);
+    expect(renderer.ensureSceneVisible(6, 1)).toBe(true);
+    expect(renderer.fitPhysicalScene).toHaveBeenCalledWith(6, 1.25);
+    renderer.camera.position.set(Number.NaN, 0, 0);
+    expect(renderer.ensureSceneVisible(6, 1)).toBe(true);
   });
 });

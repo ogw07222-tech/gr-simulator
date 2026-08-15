@@ -80,4 +80,14 @@ describe("physical scene fit", () => {
     expect(result.far).toBeGreaterThan(result.distance + result.extent);
     expect(Number.isFinite(result.far)).toBe(true);
   });
+
+  it("keeps clipping planes proportional at the smallest supported physical scale", () => {
+    const result = {};
+    expect(calculatePhysicalSceneFit(result, {
+      sceneExtent: 1e-10, verticalFovRadians: Math.PI / 3, aspect: 16 / 9,
+    })).toBe(true);
+    expect(result.near).toBeGreaterThan(0);
+    expect(result.near).toBeLessThan(result.extent);
+    expect(result.far).toBeGreaterThan(result.distance + result.extent);
+  });
 });

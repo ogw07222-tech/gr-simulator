@@ -141,7 +141,7 @@ const scaleIndicator = resources.register(new ScaleIndicator(
 
 const snapshotRenderPosition = { x: 0, y: 0, z: 0 };
 const snapshotSource = { mass: 0, schwarzschildRadius: 0 };
-const gridInputs = { ...SIMULATION_DEFAULTS, massSolar: 0, renderScale: 1 };
+const gridInputs = { ...SIMULATION_DEFAULTS, massSolar: 0, renderScale: 1, visualDeformationGain: 1 };
 let lastMassScaleRevision = -1;
 function refreshPresentationSnapshot(forceIndicator = false) {
   geodesicSubsystem.writeSnapshot(snapshotSource);
@@ -172,6 +172,17 @@ function fitPhysicalScene() {
   if (!snapshot || snapshot.schwarzschildRadiusMetres <= 0 || !scaleTransform.isPhysical()) return false;
   const normalizedExtent = Math.max(1, snapshot.radiusRs, snapshot.maximumRadiusRs);
   return renderer.fitPhysicalScene(scaleTransform.normalizedRadiusToRender(normalizedExtent), 1.25);
+}
+
+function ensureCurrentSceneVisible(snapshot) {
+  if (!snapshot?.schwarzschildRadiusMetres) return false;
+  const normalizedExtent = Math.max(1, snapshot.radiusRs, snapshot.maximumRadiusRs);
+  const renderScale = scaleTransform.isPhysical() ? scaleTransform.scaleFactor : 1;
+  renderer.updatePresentationScale(renderScale);
+  return renderer.ensureSceneVisible(
+    scaleTransform.isPhysical() ? scaleTransform.normalizedRadiusToRender(normalizedExtent) : normalizedExtent,
+    scaleTransform.isPhysical() ? scaleTransform.horizonRenderRadius() : 1,
+  );
 }
 
 const runtimeControls = {
@@ -231,7 +242,12 @@ const visualSettings = resources.register(new VisualSettingsPanel(
     onScaleChange: () => {
       const snapshot = refreshPresentationSnapshot(true);
       applyGridVisualization();
+      ensureCurrentSceneVisible(snapshot);
       if (isTrackableSnapshot(snapshot)) renderer.rebaseParticleFollow(snapshot.renderX, snapshot.renderY, snapshot.renderZ);
+    },
+    onGridDeformationGain: (gain) => {
+      gridInputs.visualDeformationGain = gain;
+      applyGridVisualization();
     },
     particleCamera: {
       focus: () => {
@@ -267,7 +283,7 @@ function applyGridVisualization(nextState = store.getState()) {
 }
 const applyState = (nextState) => applyGridVisualization(nextState);
 resources.register(store.subscribe(applyState));
-refreshPresentationSnapshot(true);
+ensureCurrentSceneVisible(refreshPresentationSnapshot(true));
 applyState(store.getState());
 if (scaleTransform.mode === RenderScaleMode.AUTO_FIT_PHYSICAL) fitPhysicalScene();
 
@@ -412,6 +428,7 @@ window.__GR4D_DIAGNOSTICS__ = Object.freeze({
       camera: {
         x: renderer.camera.position.x, y: renderer.camera.position.y, z: renderer.camera.position.z,
         targetX: renderer.controls.target.x, targetY: renderer.controls.target.y, targetZ: renderer.controls.target.z,
+        near: renderer.camera.near, far: renderer.camera.far,
         followingParticle: renderer.followingParticle,
       },
       renderer: { ...renderer.getDiagnostics() },

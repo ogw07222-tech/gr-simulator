@@ -140,8 +140,10 @@ export class VolumetricGrid {
     return chunks;
   }
 
-  update(model, { w, mode, warpScale, maxDisplacement, massSolar = 0, renderScale = 1 }) {
-    const signature = `${w}|${mode}|${warpScale}|${maxDisplacement}|${massSolar}|${renderScale}`;
+  update(model, {
+    w, mode, warpScale, maxDisplacement, massSolar = 0, renderScale = 1, visualDeformationGain = 1,
+  }) {
+    const signature = `${w}|${mode}|${warpScale}|${maxDisplacement}|${massSolar}|${renderScale}|${visualDeformationGain}`;
     if (signature === this.lastInputSignature) return false;
     this.lastInputSignature = signature;
     const useW = mode === "GR_W";
@@ -166,7 +168,7 @@ export class VolumetricGrid {
       this.rawDisplacements[vertex] = Number.isFinite(raw) ? raw : 0;
       this.displayValues[vertex] = normalized;
       const spatialRadius = Math.sqrt(x * x + y * y + z * z);
-      const ratio = spatialRadius > 0 ? maxDisplacement * normalized / spatialRadius : 0;
+      const ratio = spatialRadius > 0 ? maxDisplacement * visualDeformationGain * normalized / spatialRadius : 0;
       this.positions[offset] = x * (1 - ratio) * renderScale;
       this.positions[offset + 1] = y * (1 - ratio) * renderScale;
       this.positions[offset + 2] = z * (1 - ratio) * renderScale;
@@ -190,6 +192,7 @@ export class VolumetricGrid {
     this.diagnostics.centralDisplayDeformation = this.displayValues[center];
     this.diagnostics.appliedMassSolar = massSolar;
     this.diagnostics.renderScale = renderScale;
+    this.diagnostics.visualDeformationGain = visualDeformationGain;
     return true;
   }
 
