@@ -141,6 +141,7 @@ const scaleIndicator = resources.register(new ScaleIndicator(
 
 const snapshotRenderPosition = { x: 0, y: 0, z: 0 };
 const snapshotSource = { mass: 0, schwarzschildRadius: 0 };
+const gridInputs = { ...SIMULATION_DEFAULTS, massSolar: 0, renderScale: 1 };
 let lastMassScaleRevision = -1;
 function refreshPresentationSnapshot(forceIndicator = false) {
   geodesicSubsystem.writeSnapshot(snapshotSource);
@@ -188,6 +189,7 @@ const runtimeControls = {
     geodesicSubsystem.apply(configuration);
     clock.setHighSpeedDelta(geodesicSubsystem.maximumSafeAdvanceSeconds());
     const current = refreshPresentationSnapshot(true);
+    applyGridVisualization();
     scaleIndicator.recordApplied(previousValues, current);
     if (scaleTransform.mode === RenderScaleMode.AUTO_FIT_PHYSICAL) fitPhysicalScene();
   },
@@ -226,7 +228,22 @@ const visualSettings = resources.register(new VisualSettingsPanel(
     scaleTransform,
     scaleIndicator,
     fitPhysicalScene,
-    onScaleChange: () => refreshPresentationSnapshot(true),
+    onScaleChange: () => {
+      const snapshot = refreshPresentationSnapshot(true);
+      applyGridVisualization();
+      if (isTrackableSnapshot(snapshot)) renderer.rebaseParticleFollow(snapshot.renderX, snapshot.renderY, snapshot.renderZ);
+    },
+    particleCamera: {
+      focus: () => {
+        const snapshot = snapshots.latest();
+        return isTrackableSnapshot(snapshot) && renderer.focusPoint(snapshot.renderX, snapshot.renderY, snapshot.renderZ);
+      },
+      setFollow: (enabled) => {
+        const snapshot = snapshots.latest();
+        if (enabled && !isTrackableSnapshot(snapshot)) return false;
+        return renderer.setParticleFollow(enabled, snapshot?.renderX, snapshot?.renderY, snapshot?.renderZ);
+      },
+    },
     unitFormatter,
   },
 ));
@@ -235,10 +252,20 @@ const appShell = resources.register(new AppShell(
   { resetCamera: () => renderer.resetCamera() },
 ));
 
-const applyState = (nextState) => {
-  grid.update(model, nextState);
+function isTrackableSnapshot(snapshot) {
+  return snapshot?.geodesicStatus === "Active"
+    && Number.isFinite(snapshot.renderX) && Number.isFinite(snapshot.renderY) && Number.isFinite(snapshot.renderZ);
+}
+
+function applyGridVisualization(nextState = store.getState()) {
+  const snapshot = snapshots.latest();
+  Object.assign(gridInputs, nextState);
+  gridInputs.massSolar = snapshot?.massSolar ?? 0;
+  gridInputs.renderScale = scaleTransform.isPhysical() ? scaleTransform.scaleFactor : 1;
+  grid.update(model, gridInputs);
   visualSettings.updateLegends();
-};
+}
+const applyState = (nextState) => applyGridVisualization(nextState);
 resources.register(store.subscribe(applyState));
 refreshPresentationSnapshot(true);
 applyState(store.getState());
@@ -248,6 +275,9 @@ const renderingSubsystem = {
   order: 100,
   render(renderDelta) {
     const snapshot = snapshots.latest();
+    const trackable = isTrackableSnapshot(snapshot);
+    visualSettings.setParticleTrackingAvailable(trackable);
+    if (trackable) renderer.updateParticleFollow(snapshot.renderX, snapshot.renderY, snapshot.renderZ);
     renderer.render(prepareGridView);
     appShell.update(renderDelta, simulationState);
     scaleIndicator.update(snapshot);
@@ -379,6 +409,11 @@ window.__GR4D_DIAGNOSTICS__ = Object.freeze({
       },
       maxFps: frameRateController.maxFps,
       grid: { ...grid.getDiagnostics() },
+      camera: {
+        x: renderer.camera.position.x, y: renderer.camera.position.y, z: renderer.camera.position.z,
+        targetX: renderer.controls.target.x, targetY: renderer.controls.target.y, targetZ: renderer.controls.target.z,
+        followingParticle: renderer.followingParticle,
+      },
       renderer: { ...renderer.getDiagnostics() },
     };
   },

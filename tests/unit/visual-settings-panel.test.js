@@ -105,4 +105,21 @@ describe("VisualSettingsPanel", () => {
     expect(scaleTransform.mode).toBe(RenderScaleMode.NORMALIZED);
     expect(scaleTransform.metresPerWorldUnit).toBe(DEFAULT_METRES_PER_WORLD_UNIT);
   });
+
+  it("exposes localized particle focus and follow without duplicating camera state", () => {
+    const particleCamera = { focus: vi.fn(() => true), setFollow: vi.fn(() => true) };
+    const panel = new VisualSettingsPanel(root, {
+      particleRenderer, grid, massObject, frameRateController,
+      scaleTransform: new RenderScaleTransform(), scaleIndicator: { setVisible() {} }, particleCamera,
+    });
+    expect(root.querySelector("#focus-particle").textContent).toBe("Focus Particle");
+    panel.setParticleTrackingAvailable(true);
+    root.querySelector("#focus-particle").click();
+    root.querySelector("#follow-particle").click();
+    expect(particleCamera.focus).toHaveBeenCalledOnce();
+    expect(particleCamera.setFollow).toHaveBeenCalledWith(true);
+    panel.setParticleTrackingAvailable(false);
+    expect(particleCamera.setFollow).toHaveBeenLastCalledWith(false);
+    expect(root.querySelector("#focus-particle").disabled).toBe(true);
+  });
 });

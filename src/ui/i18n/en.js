@@ -1,6 +1,6 @@
 // Edit English interface copy here. Keep this key structure identical to ko.js.
 export const en = Object.freeze({
-  app: { title: "GR-4D Simulator v0.7.6", description: "Browser-based General Relativity simulation and scientific visualization laboratory", eyebrow: "RELATIVITY RESEARCH CONSOLE" },
+  app: { title: "GR-4D Simulator v0.7.7", description: "Browser-based General Relativity simulation and scientific visualization laboratory", eyebrow: "RELATIVITY RESEARCH CONSOLE" },
   language: { label: "Select language", ko: "한국어", en: "English" },
   status: {
     running: "Running", paused: "Paused", frame: "FRAME", rendererOnline: "Renderer online",
@@ -49,6 +49,7 @@ export const en = Object.freeze({
   },
   camera: {
     reset: "Reset Camera", fullscreen: "Fullscreen", toggleFullscreen: "Toggle fullscreen",
+    focusParticle: "Focus Particle", followParticle: "Follow Particle",
     viewportTools: "Viewport tools", viewport: "Interactive three-dimensional gravity simulation",
     orbitHint: "Drag to orbit", panHint: "Right-drag to pan", zoomHint: "Wheel to zoom",
   },

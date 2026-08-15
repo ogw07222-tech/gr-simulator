@@ -1,4 +1,4 @@
-export const VERSION = "0.7.6";
+export const VERSION = "0.7.7";
 
 // 시각화용 무차원 단위계. SI 단위 변환은 이후 버전에서 별도 계층으로 추가한다.
 export const PHYSICS_DEFAULTS = Object.freeze({

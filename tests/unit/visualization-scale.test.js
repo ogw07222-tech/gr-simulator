@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { PHYSICS_DEFAULTS, SIMULATION_DEFAULTS } from "../../src/core/index.js";
 import { SchwarzschildModel } from "../../src/physics/index.js";
 import * as THREE from "three";
-import { VolumetricGrid, normalizeAsinh, normalizeSpeed, writeGridDeformationColor, writeSpeedToWhiteColor } from "../../src/rendering/index.js";
+import { Renderer, VolumetricGrid, normalizeAsinh, normalizeSpeed, writeGridDeformationColor, writeSpeedToWhiteColor } from "../../src/rendering/index.js";
 
 const state = { ...SIMULATION_DEFAULTS };
 
@@ -103,6 +103,22 @@ describe("scientific visualization mappings", () => {
     expect(grid.getDiagnostics().centralRawDeformation).toBeCloseTo(atPositive, 12);
   });
 
+  it("invalidates once for applied mass or physical scale and preserves normalized shape", () => {
+    const grid = new VolumetricGrid();
+    const model = new SchwarzschildModel(PHYSICS_DEFAULTS);
+    const first = { ...state, massSolar: 4e6, renderScale: 1 };
+    grid.update(model, first);
+    const normalizedPositions = Float32Array.from(grid.positions);
+    const recomputations = grid.getDiagnostics().recomputations;
+    expect(grid.update(model, { ...first, massSolar: 8e6 })).toBe(true);
+    expect(grid.getDiagnostics().recomputations).toBe(recomputations + 1);
+    expect(grid.positions).toEqual(normalizedPositions);
+    expect(grid.update(model, { ...first, massSolar: 8e6 })).toBe(false);
+    expect(grid.update(model, { ...first, massSolar: 8e6, renderScale: 2 })).toBe(true);
+    expect(grid.positions[0]).toBeCloseTo(normalizedPositions[0] * 2, 5);
+    expect(grid.getDiagnostics()).toMatchObject({ appliedMassSolar: 8e6, renderScale: 2 });
+  });
+
   it("keeps configured grid opacity when the camera is at the mesh origin", () => {
     const grid = new VolumetricGrid();
     grid.setAppearance({ visible: true, opacity: 0.52, brightness: 0.82 });
@@ -147,5 +163,48 @@ describe("scientific visualization mappings", () => {
     grid.update(model, state);
     expect(grid.rawDisplacements[center]).toBe(first);
     expect(Number.isFinite(first)).toBe(true);
+  });
+});
+
+describe("particle camera tracking", () => {
+  function createCameraController() {
+    const renderer = Object.create(Renderer.prototype);
+    renderer.camera = { position: new THREE.Vector3(10, 5, 2) };
+    renderer.controls = { target: new THREE.Vector3(), update() {} };
+    renderer.initialCameraPosition = renderer.camera.position.clone();
+    renderer.trackingOffset = new THREE.Vector3();
+    renderer.trackingPosition = new THREE.Vector3();
+    renderer.trackingDelta = new THREE.Vector3();
+    renderer.followingParticle = false;
+    return renderer;
+  }
+
+  it("focuses on final render coordinates without changing the supplied snapshot", () => {
+    const renderer = createCameraController();
+    const snapshot = Object.freeze({ renderX: 3, renderY: 4, renderZ: 5, radiusRs: 6 });
+    expect(renderer.focusPoint(snapshot.renderX, snapshot.renderY, snapshot.renderZ)).toBe(true);
+    expect(renderer.controls.target.toArray()).toEqual([3, 4, 5]);
+    expect(snapshot.radiusRs).toBe(6);
+    expect(renderer.focusPoint(Number.NaN, 0, 0)).toBe(false);
+  });
+
+  it("translates camera and target equally, supports scale jumps, and stops when disabled", () => {
+    const renderer = createCameraController();
+    const initialOffset = renderer.camera.position.clone().sub(renderer.controls.target);
+    expect(renderer.setParticleFollow(true, 2, 0, 0)).toBe(true);
+    expect(renderer.updateParticleFollow(4, 3, 1)).toBe(true);
+    expect(renderer.controls.target.toArray()).toEqual([2, 3, 1]);
+    expect(renderer.camera.position.clone().sub(renderer.controls.target).toArray()).toEqual(initialOffset.toArray());
+    expect(renderer.updateParticleFollow(40, 30, 10)).toBe(true);
+    renderer.controls.target.set(0, 0, 0);
+    renderer.camera.position.set(20, 10, 4);
+    expect(renderer.rebaseParticleFollow(80, 60, 20)).toBe(true);
+    expect(renderer.controls.target.toArray()).toEqual([80, 60, 20]);
+    expect(renderer.camera.position.clone().sub(renderer.controls.target).toArray()).toEqual([20, 10, 4]);
+    const stoppedPosition = renderer.camera.position.clone();
+    renderer.setParticleFollow(false);
+    expect(renderer.updateParticleFollow(50, 50, 50)).toBe(false);
+    expect(renderer.camera.position.toArray()).toEqual(stoppedPosition.toArray());
+    expect(renderer.setParticleFollow(true, Infinity, 0, 0)).toBe(false);
   });
 });
