@@ -1,4 +1,6 @@
-export const TIME_SCALES = Object.freeze([0.25, 0.5, 1, 2, 5, 10, 50, 100]);
+export const TIME_SCALES = Object.freeze([0.25, 0.5, 1, 2, 5, 10, 50, 100, 1000, 10000, 100000]);
+export const MIN_TIME_SCALE = 0.01;
+export const MAX_TIME_SCALE = 100000;
 
 export class SimulationState {
   constructor({ timeScale = 1 } = {}) {
@@ -28,8 +30,8 @@ export class SimulationState {
   }
 
   setTimeScale(timeScale) {
-    if (!TIME_SCALES.includes(timeScale)) {
-      throw new RangeError(`Unsupported simulation time scale: ${timeScale}`);
+    if (!Number.isFinite(timeScale) || timeScale < MIN_TIME_SCALE || timeScale > MAX_TIME_SCALE) {
+      throw new RangeError(`Simulation time scale must be between ${MIN_TIME_SCALE} and ${MAX_TIME_SCALE}: ${timeScale}`);
     }
     this.timeScale = timeScale;
   }

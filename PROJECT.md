@@ -2,7 +2,7 @@
 
 > Browser-based General Relativity Simulation Engine
 
-Current release: **v0.7.3**. The rendering scale boundary is documented in [docs/RENDERING_ARCHITECTURE.md](docs/RENDERING_ARCHITECTURE.md); it does not alter the v0.7 physics model.
+Current release: **v0.7.4**. Configurable clock speed and presentation-only adaptive units build on the v0.7.3 rendering boundary without altering the v0.7 physics model or its SI interfaces.
 
 ---
 

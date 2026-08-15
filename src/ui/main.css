@@ -143,6 +143,7 @@ button:disabled { cursor: default; opacity: .42; }
 
 .range-control, .visual-control, .select-control, .numeric-control { display: grid; grid-template-columns: minmax(0, 1fr) minmax(76px, 42%); gap: 7px; align-items: center; margin-top: 12px; color: var(--muted); font-size: .7rem; }
 .numeric-control input { min-width: 0; width: 100%; padding: 7px; border: 1px solid rgba(48, 179, 255, .25); border-radius: 6px; background: rgba(4, 12, 21, .9); color: var(--text); font: 600 .68rem ui-monospace, monospace; }
+#custom-time-scale-controls[hidden] { display: none; }
 .derived-value { display: block; margin-top: 7px; color: var(--subtle); font: .62rem ui-monospace, monospace; overflow-wrap: anywhere; }
 .advanced-controls { margin-top: 12px; color: var(--muted); font-size: .68rem; }
 .advanced-controls summary { cursor: pointer; color: var(--cyan); }

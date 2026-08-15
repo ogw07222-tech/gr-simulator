@@ -1,5 +1,11 @@
 # Roadmap
 
+## v0.7.4 — Time scale and scientific display units
+
+- Configurable runtime clock multiplier with bounded custom input.
+- Central adaptive unit presentation with automatic, SI, and astronomical policies.
+- No changes to geodesic equations, canonical SI state, or renderer coordinates.
+
 Version targets describe dependency order, not delivery dates. Every milestone must preserve the v0.1 experience unless a separately reviewed migration says otherwise.
 
 ## v0.7.3 — Scale visualization

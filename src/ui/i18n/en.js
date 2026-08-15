@@ -1,6 +1,6 @@
 // Edit English interface copy here. Keep this key structure identical to ko.js.
 export const en = Object.freeze({
-  app: { title: "GR-4D Simulator v0.7.3", description: "Browser-based General Relativity simulation and scientific visualization laboratory", eyebrow: "RELATIVITY RESEARCH CONSOLE" },
+  app: { title: "GR-4D Simulator v0.7.4", description: "Browser-based General Relativity simulation and scientific visualization laboratory", eyebrow: "RELATIVITY RESEARCH CONSOLE" },
   language: { label: "Select language", ko: "한국어", en: "English" },
   status: {
     running: "Running", paused: "Paused", frame: "FRAME", rendererOnline: "Renderer online",
@@ -15,7 +15,7 @@ export const en = Object.freeze({
   controls: {
     runtime: "Runtime", runtimeIntro: "Runtime and Schwarzschild visualization controls.",
     play: "Play", pause: "Pause", resetParticle: "Reset Particle", resetAll: "Reset All",
-    timeScale: "Time Scale", centralBody: "Central Body", physicsInputs: "Visualization Proxy Inputs", distanceMode: "Distance mode",
+    timeScale: "Time Scale", customTimeScale: "Custom", applyTimeScale: "Apply", timeScaleError: "Enter a finite time scale from {minimum}x to {maximum}x.", centralBody: "Central Body", physicsInputs: "Visualization Proxy Inputs", distanceMode: "Distance mode",
     mass: "Mass M", wDistance: "W-axis distance",
   },
   metrics: {
@@ -23,6 +23,7 @@ export const en = Object.freeze({
     curvatureProxy: "Curvature proxy", gridVertices: "Grid vertices",
   },
   runtime: { title: "Runtime Status", state: "State", simulationTime: "Simulation time", timeScale: "Time scale", particleCount: "Particle count" },
+  displayUnits: { section: "Display Units", mode: "Unit system", automatic: "Automatic", si: "SI", astronomical: "Astronomical", note: "Display conversion only; physics always remains in SI units." },
   particle: { outOfDomain: "Outside supported domain" },
   model: {
     scope: "Model scope", scopeDescription: "Educational Schwarzschild metric visualization; not a numerical 3+1D Einstein solver.",
@@ -65,7 +66,7 @@ export const en = Object.freeze({
     numericalIntegration: "Numerical Integration", fixedTimestep: "Fixed simulation timestep", fixedTimestepValue: "1 / 240 s", normalizedStep: "Maximum normalized solver step", normalizedStepValue: "0.02",
     restoreDefaults: "Restore Integration Defaults", applied: "Initial condition accepted and applied.",
     integrator: "Classical RK4 · normalized step ≤ 0.02 · maximum 128 substeps per runtime update",
-    apply: "Apply Initial Condition", radiusKmValue: "Physical radius: {value} km",
+    apply: "Apply Initial Condition", radiusKmValue: "Physical radius: {value} km", radiusDisplayValue: "Physical radius: {value}",
     speedValue: "Local speed: {kilometres} km/s · {fraction} c",
     errorMass: "Mass must be between 1 and 10¹⁰ solar masses.",
     errorRadius: "Radius must be outside the horizon and no greater than 10 rₛ.",

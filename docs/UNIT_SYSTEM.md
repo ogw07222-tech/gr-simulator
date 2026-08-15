@@ -16,6 +16,12 @@ Internally `c = 1`, `r_s = 1`, `ρ = r/r_s`, and `s = cτ/r_s`. The mass paramet
 
 Public conversion APIs name SI explicitly. Radius conversions use metres, time conversions use seconds, velocity conversions use metres per second, and SI specific angular momentum uses square metres per second. One solar mass gives `r_s = 2953.339382066878 m`, preventing the common factor-of-two error.
 
+## Presentation units
+
+`src/ui/units/UnitFormatter.js` is the sole UI conversion boundary. Automatic mode chooses readable metric or astronomical units by magnitude; SI mode keeps metres, kilograms, seconds, metres per second, and joules; Astronomical mode prefers AU, solar masses, fractions of `c`, and Julian years. The selected policy is stored as `gr4d.displayUnits`.
+
+Formatting never mutates snapshots or solver values. The formatter caches unchanged value/mode/locale combinations and UI consumers update text only at their existing bounded refresh cadence. To add a display unit, extend this formatter and its boundary tests rather than converting values inside a panel.
+
 ## Rendering scale boundary
 
 Physics snapshots remain authoritative in normalized Schwarzschild coordinates. Normalized view uses `1 world unit = 1 r_s`. Physical views use the presentation-only conversion

@@ -1,10 +1,11 @@
-import { formatDistanceKilometres, formatMetresPerWorldUnit } from "../rendering/index.js";
 import { getLocale, subscribeLocale, t } from "./i18n.js";
+import { UnitFormatter } from "./units/index.js";
 
 export class ScaleIndicator {
-  constructor(root, transform) {
+  constructor(root, transform, unitFormatter = null) {
     this.root = root;
     this.transform = transform;
+    this.unitFormatter = unitFormatter ?? new UnitFormatter({ locale: getLocale });
     this.snapshot = null;
     this.lastRefresh = 0;
     this.visible = true;
@@ -19,6 +20,7 @@ export class ScaleIndicator {
     this.element.setAttribute("aria-live", "polite");
     root.append(this.element);
     this.unsubscribeLocale = subscribeLocale(() => this.render());
+    this.unsubscribeUnits = this.unitFormatter.subscribe(() => this.render());
     this.render();
   }
 
@@ -61,10 +63,10 @@ export class ScaleIndicator {
     const snapshot = this.snapshot;
     const physical = this.transform.isPhysical();
     const worldUnit = physical
-      ? formatMetresPerWorldUnit(this.transform.metresPerWorldUnit, locale)
+      ? this.unitFormatter.formatDistance(this.transform.metresPerWorldUnit)
       : t("scale.oneWorldUnitNormalized");
-    const horizonKm = formatDistanceKilometres(snapshot.schwarzschildRadiusMetres / 1000, locale);
-    const particleKm = formatDistanceKilometres(snapshot.radiusMetres / 1000, locale);
+    const horizonKm = this.unitFormatter.formatDistance(snapshot.schwarzschildRadiusMetres);
+    const particleKm = this.unitFormatter.formatDistance(snapshot.radiusMetres);
     this.element.innerHTML = `<strong data-scale-mode>${t(`scale.mode.${this.transform.mode}`)}</strong>
       <dl><div><dt>${t("scale.worldUnit")}</dt><dd>${worldUnit}</dd></div>
       <div><dt>${t("scale.schwarzschildRadius")}</dt><dd>${horizonKm}</dd></div>
@@ -80,10 +82,10 @@ export class ScaleIndicator {
     const language = locale === "ko" ? "ko-KR" : "en-US";
     return `<section class="scale-comparison"><header><strong>${t("scale.comparison")}</strong><button data-dismiss-comparison type="button" aria-label="${t("scale.dismissComparison")}">×</button></header>
       <p>${t("scale.massComparison", { previous: this.previousMass.toExponential(2), current: this.currentMass.toExponential(2) })}</p>
-      <p>${t("scale.radiusComparison", { previous: formatDistanceKilometres(this.previousRadius / 1000, locale), current: formatDistanceKilometres(this.currentRadius / 1000, locale) })}</p>
+      <p>${t("scale.radiusComparison", { previous: this.unitFormatter.formatDistance(this.previousRadius), current: this.unitFormatter.formatDistance(this.currentRadius) })}</p>
       <p>${t("scale.growthFactor", { value: growth.toLocaleString(language, { maximumFractionDigits: 3 }) })}</p>
       <p>${t("scale.normalizedOrbitValue", { value: this.normalizedOrbitRadius.toFixed(2) })}</p></section>`;
   }
 
-  dispose() { this.unsubscribeLocale?.(); this.element.remove(); }
+  dispose() { this.unsubscribeLocale?.(); this.unsubscribeUnits?.(); this.element.remove(); }
 }

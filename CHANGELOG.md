@@ -13,6 +13,10 @@
 
 ### Added
 
+- v0.7.4 preset and validated custom simulation time scales from `0.01×` through `100000×`.
+- Centralized automatic, SI, and astronomical display-unit formatting for distance, velocity, mass, energy, and time.
+- Persisted display-unit preference and boundary-focused unit/clock regression coverage.
+
 - v0.7.3 normalized, physical, and auto-fit physical view modes backed by one centralized render transform.
 - Persisted metres-per-world-unit controls, bilingual scale indicator, bounded mass comparison, and event-driven physical-scene fitting.
 - Scale-transform unit, integration, UI, resource-stability, and browser regression coverage.
@@ -22,6 +26,7 @@
 
 ### Changed
 
+- HUD, orbit setup, scale indicator, and measurements now share one cached presentation formatter; canonical physics values remain SI.
 - Particle, trail, and event-horizon presentation now share the exact same Schwarzschild-radius conversion; the geodesic solver and SI boundary are unchanged.
 - The grid remains normalized and is explicitly disclosed as an educational proxy in physical views.
 

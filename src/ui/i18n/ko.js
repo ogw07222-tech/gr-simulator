@@ -1,6 +1,6 @@
 // 한국어 UI 문구는 이 파일에서 관리합니다. 키 구조를 en.js와 동일하게 유지하세요.
 export const ko = Object.freeze({
-  app: { title: "GR-4D Simulator v0.7.3", description: "브라우저 기반 일반상대성이론 시뮬레이션 및 과학 시각화 실험실", eyebrow: "일반상대성이론 연구 콘솔" },
+  app: { title: "GR-4D Simulator v0.7.4", description: "브라우저 기반 일반상대성이론 시뮬레이션 및 과학 시각화 실험실", eyebrow: "일반상대성이론 연구 콘솔" },
   language: { label: "언어 선택", ko: "한국어", en: "English" },
   status: {
     running: "실행 중", paused: "일시정지", frame: "프레임", rendererOnline: "렌더러 정상",
@@ -15,7 +15,7 @@ export const ko = Object.freeze({
   controls: {
     runtime: "실행 제어", runtimeIntro: "실행 상태와 슈바르츠실트 시각화 설정을 조정합니다.",
     play: "재생", pause: "일시정지", resetParticle: "입자 초기화", resetAll: "전체 초기화",
-    timeScale: "시간 배속", centralBody: "중심 천체", physicsInputs: "시각화 프록시 입력", distanceMode: "거리 계산 모드",
+    timeScale: "시간 배속", customTimeScale: "사용자 지정", applyTimeScale: "적용", timeScaleError: "{minimum}배 이상 {maximum}배 이하의 유한한 배속을 입력하세요.", centralBody: "중심 천체", physicsInputs: "시각화 프록시 입력", distanceMode: "거리 계산 모드",
     mass: "질량 M", wDistance: "W축 거리",
   },
   metrics: {
@@ -23,6 +23,7 @@ export const ko = Object.freeze({
     curvatureProxy: "곡률 근사값", gridVertices: "격자 정점",
   },
   runtime: { title: "실행 상태", state: "상태", simulationTime: "시뮬레이션 시간", timeScale: "시간 배속", particleCount: "입자 수" },
+  displayUnits: { section: "표시 단위", mode: "단위 체계", automatic: "자동", si: "SI", astronomical: "천문학", note: "표시만 변환하며 물리 계산은 항상 SI 단위를 유지합니다." },
   particle: { outOfDomain: "지원 영역 이탈" },
   model: {
     scope: "모델 범위", scopeDescription: "교육용 슈바르츠실트 계량 시각화이며, 수치 3+1차원 아인슈타인 방정식 해석기가 아닙니다.",
@@ -65,7 +66,7 @@ export const ko = Object.freeze({
     numericalIntegration: "수치 적분", fixedTimestep: "고정 시뮬레이션 시간 간격", fixedTimestepValue: "1 / 240초", normalizedStep: "최대 정규화 솔버 스텝", normalizedStepValue: "0.02",
     restoreDefaults: "적분 기본값 복원", applied: "초기 조건이 검증되어 적용되었습니다.",
     integrator: "고전 RK4 · 정규화 스텝 ≤ 0.02 · 런타임 갱신당 최대 128 서브스텝",
-    apply: "초기 조건 적용", radiusKmValue: "물리 반지름: {value} km",
+    apply: "초기 조건 적용", radiusKmValue: "물리 반지름: {value} km", radiusDisplayValue: "물리 반지름: {value}",
     speedValue: "국소 속도: {kilometres} km/s · {fraction} c",
     errorMass: "질량은 태양 질량의 1배 이상 10¹⁰배 이하여야 합니다.",
     errorRadius: "반지름은 사건의 지평선 밖이며 10 rₛ 이하여야 합니다.",

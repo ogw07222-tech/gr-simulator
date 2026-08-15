@@ -30,7 +30,7 @@ export class VisualSettingsPanel {
   constructor(root, {
     particleRenderer, grid, massObject, frameRateController = null, trailCapacity = null,
     scaleTransform = null, fitPhysicalScene = () => {}, scaleIndicator = null,
-    onScaleChange = () => {},
+    onScaleChange = () => {}, unitFormatter = null,
   }) {
     this.root = root;
     this.particleRenderer = particleRenderer;
@@ -41,6 +41,7 @@ export class VisualSettingsPanel {
     this.fitPhysicalScene = fitPhysicalScene;
     this.scaleIndicator = scaleIndicator;
     this.onScaleChange = onScaleChange;
+    this.unitFormatter = unitFormatter;
     this.trailCapacity = trailCapacity ?? {
       current: particleRenderer.maxTrailLength,
       options: [particleRenderer.maxTrailLength],
@@ -52,6 +53,7 @@ export class VisualSettingsPanel {
     this.render();
     this.bind();
     this.unsubscribeLocale = subscribeLocale(() => this.localize());
+    this.unsubscribeUnits = unitFormatter?.subscribe(() => { this.sync(); this.onScaleChange(); });
     this.localize();
     this.apply();
   }
@@ -65,6 +67,11 @@ export class VisualSettingsPanel {
     this.root.innerHTML = `
       <div class="panel-heading"><div><span class="section-index">02</span><h2 data-i18n="panels.visualSettings"></h2></div><button class="panel-close" data-close-panel type="button" data-i18n="panels.close" data-i18n-aria="panels.closeVisuals"></button></div>
       <p class="panel-intro" data-i18n="visual.intro"></p>
+      ${this.unitFormatter ? `<details class="panel-section control-disclosure" open><summary><span data-i18n="displayUnits.section"></span></summary><div class="disclosure-body">
+        <label class="select-control" for="display-unit-mode"><span data-i18n="displayUnits.mode"></span><select id="display-unit-mode" data-i18n-aria="displayUnits.mode">
+          <option value="automatic" data-i18n="displayUnits.automatic"></option><option value="si" data-i18n="displayUnits.si"></option><option value="astronomical" data-i18n="displayUnits.astronomical"></option>
+        </select></label><p class="control-description" data-i18n="displayUnits.note"></p>
+      </div></details>` : ""}
       ${this.scaleTransform ? `<details class="panel-section control-disclosure" open><summary><span data-i18n="scale.section"></span></summary><div class="disclosure-body">
         <label class="select-control" for="scale-mode"><span><span data-i18n="scale.viewMode"></span>${helpButton("normalizedCoordinates")}</span><select id="scale-mode">
           <option value="normalized" data-i18n="scale.mode.normalized"></option>
@@ -137,6 +144,7 @@ export class VisualSettingsPanel {
   }
 
   bind() {
+    this.root.querySelector("#display-unit-mode")?.addEventListener("change", (event) => this.unitFormatter.setMode(event.target.value));
     const bindings = [
       ["particle-size", "particleSize"], ["particle-brightness", "particleBrightness"],
       ["particle-opacity", "particleOpacity"], ["trail-opacity", "trailOpacity"],
@@ -229,6 +237,7 @@ export class VisualSettingsPanel {
     this.root.querySelector("#grid-visible").checked = values.gridVisible;
     this.root.querySelector("#max-fps").value = values.maxFps;
     this.root.querySelector("#trail-capacity").value = this.trailCapacity.current;
+    if (this.unitFormatter) this.root.querySelector("#display-unit-mode").value = this.unitFormatter.getMode();
     if (this.scaleTransform) {
       this.root.querySelector("#scale-mode").value = values.scaleMode;
       this.root.querySelector("#physical-scale").value = values.metresPerWorldUnit;
@@ -309,5 +318,5 @@ export class VisualSettingsPanel {
     } catch { /* storage may be unavailable */ }
   }
 
-  dispose() { this.unsubscribeLocale?.(); }
+  dispose() { this.unsubscribeLocale?.(); this.unsubscribeUnits?.(); }
 }
