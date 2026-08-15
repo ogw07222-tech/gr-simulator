@@ -201,8 +201,13 @@ const runtimeControls = {
     clock.setHighSpeedDelta(geodesicSubsystem.maximumSafeAdvanceSeconds());
     const current = refreshPresentationSnapshot(true);
     applyGridVisualization();
+    particleRenderer.sync(particles);
     scaleIndicator.recordApplied(previousValues, current);
     if (scaleTransform.mode === RenderScaleMode.AUTO_FIT_PHYSICAL) fitPhysicalScene();
+    else ensureCurrentSceneVisible(current);
+    if (isTrackableSnapshot(current)) {
+      renderer.rebaseParticleFollow(current.renderX, current.renderY, current.renderZ);
+    }
   },
   getOrbitConfiguration: () => ({ ...geodesicSubsystem.configuration }),
   resetParticle: () => { geodesicSubsystem.reset(); refreshPresentationSnapshot(true); },
@@ -401,6 +406,7 @@ window.__GR4D_DIAGNOSTICS__ = Object.freeze({
       },
       snapshot: {
         revision: snapshots.revision(),
+        massSolar: snapshots.latest().massSolar,
         schwarzschildRadiusMetres: snapshots.latest().schwarzschildRadiusMetres,
         normalizedX: snapshots.latest().normalizedX,
         normalizedY: snapshots.latest().normalizedY,
@@ -415,6 +421,8 @@ window.__GR4D_DIAGNOSTICS__ = Object.freeze({
         x: particleRenderer.positions[0],
         y: particleRenderer.positions[1],
         z: particleRenderer.positions[2],
+        apparentSizeCssPixels: particleRenderer.material.size,
+        sizeAttenuation: particleRenderer.material.sizeAttenuation,
       },
       scale: {
         mode: scaleTransform.mode,

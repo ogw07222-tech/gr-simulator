@@ -22,10 +22,10 @@ describe("VisualSettingsPanel", () => {
   it("applies visual settings without simulation state", () => {
     new VisualSettingsPanel(root, { particleRenderer, grid, massObject, frameRateController });
     const size = root.querySelector("#particle-size");
-    size.value = "0.6";
+    size.value = "16";
     size.dispatchEvent(new Event("input", { bubbles: true }));
 
-    expect(particleRenderer.setAppearance).toHaveBeenLastCalledWith(expect.objectContaining({ particleSize: 0.6 }));
+    expect(particleRenderer.setAppearance).toHaveBeenLastCalledWith(expect.objectContaining({ particleSize: 16 }));
     expect(grid.setAppearance).toHaveBeenCalled();
     expect(massObject.setAppearance).toHaveBeenCalled();
   });
@@ -37,7 +37,9 @@ describe("VisualSettingsPanel", () => {
     trailVisible.dispatchEvent(new Event("change", { bubbles: true }));
     root.querySelector("#reset-visuals").click();
 
-    expect(root.querySelector("#particle-size").value).toBe("0.36");
+    expect(root.querySelector("#particle-size").value).toBe("10");
+    expect(root.querySelector("#particle-size").min).toBe("4");
+    expect(root.querySelector("#particle-size").max).toBe("24");
     expect(root.querySelector("#trail-opacity").value).toBe("0.88");
     expect(root.querySelector("#trail-color-mode")).toBeNull();
     expect(root.textContent).toContain("Current particle speed");

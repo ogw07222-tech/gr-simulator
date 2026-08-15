@@ -1,6 +1,6 @@
 // Edit English interface copy here. Keep this key structure identical to ko.js.
 export const en = Object.freeze({
-  app: { title: "GR-4D Simulator v0.7.8", description: "Browser-based General Relativity simulation and scientific visualization laboratory", eyebrow: "RELATIVITY RESEARCH CONSOLE" },
+  app: { title: "GR-4D Simulator v0.7.9", description: "Browser-based General Relativity simulation and scientific visualization laboratory", eyebrow: "RELATIVITY RESEARCH CONSOLE" },
   language: { label: "Select language", ko: "한국어", en: "English" },
   status: {
     running: "Running", paused: "Paused", frame: "FRAME", rendererOnline: "Renderer online",
@@ -33,7 +33,7 @@ export const en = Object.freeze({
     intro: "Presentation controls affect GPU materials only. Simulation state remains unchanged.",
     performance: "Render Performance", maximumFps: "Maximum rendering FPS", unlimited: "Unlimited",
     fpsNote: "Rendering cadence only; the fixed 1/240 s simulation step is unchanged.",
-    particle: "Particle", particleSize: "Particle Size", brightness: "Brightness", opacity: "Opacity",
+    particle: "Particle", particleSize: "Particle Size (px)", brightness: "Brightness", opacity: "Opacity",
     trail: "Trail", visible: "Visible", ageFade: "Age fade", speed: "Speed",
     trailCapacity: "Trail capacity", trailCapacitySamples: "{value} samples",
     trailCapacityNote: "Fixed preparatory capacity; resizing occurs only when this setting changes.",

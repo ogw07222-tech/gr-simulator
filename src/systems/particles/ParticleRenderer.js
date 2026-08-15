@@ -3,7 +3,7 @@ import { DEFAULT_TRAIL_SPEED_MAX, normalizeSpeed, writeSpeedToWhiteColor } from 
 import { RenderScaleTransform } from "../../rendering/scale/RenderScaleTransform.js";
 
 export class ParticleRenderer {
-  constructor({ maxParticles = 1000, maxTrailParticles = maxParticles, maxTrailLength = 256, pointSize = 0.36, scaleTransform = null } = {}) {
+  constructor({ maxParticles = 1000, maxTrailParticles = maxParticles, maxTrailLength = 256, pointSize = 10, scaleTransform = null } = {}) {
     if (!Number.isInteger(maxParticles) || maxParticles < 1) {
       throw new RangeError("ParticleRenderer maxParticles must be a positive integer.");
     }
@@ -31,7 +31,8 @@ export class ParticleRenderer {
     this.geometry.setDrawRange(0, 0);
     this.material = new THREE.PointsMaterial({
       size: pointSize,
-      sizeAttenuation: true,
+      // With attenuation disabled, Three.js treats size as CSS pixels and applies renderer DPR once.
+      sizeAttenuation: false,
       vertexColors: true,
       transparent: true,
       depthWrite: false,
@@ -41,7 +42,7 @@ export class ParticleRenderer {
     this.haloMaterial = new THREE.PointsMaterial({
       color: 0xc8ffff,
       size: pointSize * 2.35,
-      sizeAttenuation: true,
+      sizeAttenuation: false,
       transparent: true,
       opacity: 0.22,
       depthWrite: false,

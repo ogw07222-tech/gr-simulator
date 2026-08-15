@@ -1,6 +1,6 @@
 // 한국어 UI 문구는 이 파일에서 관리합니다. 키 구조를 en.js와 동일하게 유지하세요.
 export const ko = Object.freeze({
-  app: { title: "GR-4D Simulator v0.7.8", description: "브라우저 기반 일반상대성이론 시뮬레이션 및 과학 시각화 실험실", eyebrow: "일반상대성이론 연구 콘솔" },
+  app: { title: "GR-4D Simulator v0.7.9", description: "브라우저 기반 일반상대성이론 시뮬레이션 및 과학 시각화 실험실", eyebrow: "일반상대성이론 연구 콘솔" },
   language: { label: "언어 선택", ko: "한국어", en: "English" },
   status: {
     running: "실행 중", paused: "일시정지", frame: "프레임", rendererOnline: "렌더러 정상",
@@ -33,7 +33,7 @@ export const ko = Object.freeze({
     intro: "표시 설정은 GPU 재질에만 적용되며 시뮬레이션 상태는 바뀌지 않습니다.",
     performance: "렌더링 성능", maximumFps: "최대 렌더링 FPS", unlimited: "제한 없음",
     fpsNote: "렌더링 간격만 바뀌며 고정 1/240초 시뮬레이션 간격은 유지됩니다.",
-    particle: "입자", particleSize: "입자 크기", brightness: "밝기", opacity: "투명도",
+    particle: "입자", particleSize: "입자 크기 (px)", brightness: "밝기", opacity: "투명도",
     trail: "궤적", visible: "표시", ageFade: "시간 경과 감쇠", speed: "속도",
     trailCapacity: "궤적 용량", trailCapacitySamples: "{value}개 표본",
     trailCapacityNote: "향후 궤도를 위한 고정 준비 용량이며, 이 설정을 바꿀 때만 버퍼를 재할당합니다.",

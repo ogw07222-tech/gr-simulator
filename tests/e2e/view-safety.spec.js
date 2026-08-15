@@ -57,3 +57,37 @@ test("keeps the scientific scene visible through repeated scale-mode changes", a
   expect(fogTransmittance).toBeGreaterThan(0.02);
   expect(consoleErrors).toEqual([]);
 });
+
+test("keeps the camera outside the central body across representative mass changes", async ({ page }) => {
+  const consoleErrors = collectErrors(page);
+  await page.goto("/");
+  await page.locator("#locale-select").selectOption("en");
+  await page.waitForFunction(() => window.__GR4D_DIAGNOSTICS__?.getSnapshot().physicsUpdates > 0);
+  await page.getByRole("button", { name: "Pause", exact: true }).click();
+  await page.locator("#scale-mode").selectOption("physical");
+
+  for (const mass of [1e10, 1, 4e6, 8e9, 100]) {
+    await page.locator("#black-hole-mass").fill(String(mass));
+    await page.locator("#apply-orbit").click();
+    await page.waitForTimeout(50);
+    const snapshot = await page.evaluate(() => window.__GR4D_DIAGNOSTICS__.getSnapshot());
+    const cameraDistance = Math.hypot(
+      snapshot.camera.x - snapshot.camera.targetX,
+      snapshot.camera.y - snapshot.camera.targetY,
+      snapshot.camera.z - snapshot.camera.targetZ,
+    );
+    const fogTransmittance = Math.exp(-((snapshot.renderer.fogDensity * cameraDistance) ** 2));
+    expect(snapshot.snapshot.massSolar).toBe(mass);
+    expect(cameraDistance).toBeGreaterThan(snapshot.scale.horizonRenderRadius * 1.5);
+    expect(snapshot.camera.near).toBeGreaterThan(0);
+    expect(snapshot.camera.far).toBeGreaterThan(snapshot.camera.near);
+    expect(snapshot.renderer.drawCalls).toBeGreaterThan(0);
+    expect(snapshot.renderer.lines + snapshot.renderer.points).toBeGreaterThan(0);
+    expect(fogTransmittance).toBeGreaterThan(0.02);
+    expect([
+      snapshot.particleRenderer.x, snapshot.particleRenderer.y, snapshot.particleRenderer.z,
+      snapshot.scale.horizonRenderRadius,
+    ].every(Number.isFinite)).toBe(true);
+  }
+  expect(consoleErrors).toEqual([]);
+});

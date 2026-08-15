@@ -333,7 +333,7 @@ describe("ParticleRenderer", () => {
     const trailPositions = renderer.trailPositions;
 
     renderer.setAppearance({
-      particleSize: 0.6,
+      particleSize: 14,
       particleOpacity: 0.7,
       particleBrightness: 1.2,
       trailVisible: false,
@@ -343,13 +343,39 @@ describe("ParticleRenderer", () => {
       trailColorMode: "age",
     });
 
-    expect(renderer.material.size).toBe(0.6);
+    expect(renderer.material.size).toBe(14);
     expect(renderer.material.opacity).toBe(0.7);
-    expect(renderer.haloMaterial.size).toBeCloseTo(1.41);
+    expect(renderer.haloMaterial.size).toBeCloseTo(32.9);
     expect(renderer.trailObject.visible).toBe(false);
     expect(renderer.trailMaterial.opacity).toBe(0.5);
     expect(renderer.positions).toBe(positions);
     expect(renderer.trailPositions).toBe(trailPositions);
+  });
+
+  it("uses one CSS-pixel marker size across distance, FOV, DPR, and render scales", () => {
+    const transform = new RenderScaleTransform();
+    const manager = new ParticleManager({ maxParticles: 1 });
+    manager.create({ position: [6, 0, 0] });
+    const renderer = new ParticleRenderer({ maxParticles: 1, pointSize: 10, scaleTransform: transform });
+    const configuredPixels = renderer.material.size;
+
+    expect(renderer.material.sizeAttenuation).toBe(false);
+    expect(renderer.haloMaterial.sizeAttenuation).toBe(false);
+    for (const cameraDistance of [1, 10, 100]) {
+      for (const fieldOfView of [30, 58, 100]) {
+        for (const devicePixelRatio of [1, 2]) {
+          expect({ cameraDistance, fieldOfView, devicePixelRatio, pixels: renderer.material.size }).toMatchObject({
+            pixels: configuredPixels,
+          });
+        }
+      }
+    }
+    transform.setSchwarzschildRadiusMetres(12e9);
+    transform.setMode(RenderScaleMode.PHYSICAL);
+    renderer.sync(manager);
+    expect(renderer.positions[0]).toBe(72);
+    expect(renderer.material.size).toBe(configuredPixels);
+    expect(manager.particleAt(0).position.x).toBe(6);
   });
 
   it("uses deterministic monotonic current-speed coloring", () => {

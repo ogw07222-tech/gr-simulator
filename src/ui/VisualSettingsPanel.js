@@ -5,7 +5,7 @@ import { helpButton } from "./ScientificHelp.js";
 const SCALE_STORAGE_KEY = "gr4d.renderScale";
 
 const DEFAULTS = Object.freeze({
-  particleSize: 0.36,
+  particleSize: 10,
   particleOpacity: 1,
   particleBrightness: 1,
   trailVisible: true,
@@ -99,7 +99,7 @@ export class VisualSettingsPanel {
         <p class="control-description" data-i18n="visual.fpsNote"></p>
       </div></details>
       <details class="panel-section control-disclosure" open><summary><span data-i18n="visual.particle"></span></summary><div class="disclosure-body">
-        ${this.renderRange("particle-size", "visual.particleSize", 0.18, 0.72, 0.02)}
+        ${this.renderRange("particle-size", "visual.particleSize", 4, 24, 1)}
         ${this.renderRange("particle-brightness", "visual.brightness", 0.5, 1.5, 0.05)}
         ${this.renderRange("particle-opacity", "visual.opacity", 0.2, 1, 0.05)}
       </div></details>
