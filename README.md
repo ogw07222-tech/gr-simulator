@@ -127,6 +127,8 @@ The long-term goal is a reproducible, testable, performance-oriented GR simulati
 
 ## Project documentation
 
+Detailed, automatically generated repository metrics are available in [Project Statistics](PROJECT_STATS.md). Regenerate them with `npm run stats`.
+
 - [Physics model](docs/PHYSICS.md)
 - [Architecture](docs/ARCHITECTURE.md)
 - [Module boundaries](docs/MODULES.md)

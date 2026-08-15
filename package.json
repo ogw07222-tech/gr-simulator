@@ -8,6 +8,7 @@
     "dev": "vite",
     "build": "vite build && node scripts/validate-pages-build.mjs",
     "preview": "vite preview",
+    "stats": "node scripts/project-stats.mjs",
     "lint": "eslint .",
     "test": "vitest run",
     "test:physics": "vitest run tests/physics",
