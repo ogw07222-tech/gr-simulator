@@ -1,6 +1,6 @@
 // Edit English interface copy here. Keep this key structure identical to ko.js.
 export const en = Object.freeze({
-  app: { title: "GR-4D Simulator v0.7.7", description: "Browser-based General Relativity simulation and scientific visualization laboratory", eyebrow: "RELATIVITY RESEARCH CONSOLE" },
+  app: { title: "GR-4D Simulator v0.7.8", description: "Browser-based General Relativity simulation and scientific visualization laboratory", eyebrow: "RELATIVITY RESEARCH CONSOLE" },
   language: { label: "Select language", ko: "한국어", en: "English" },
   status: {
     running: "Running", paused: "Paused", frame: "FRAME", rendererOnline: "Renderer online",
@@ -38,7 +38,7 @@ export const en = Object.freeze({
     trailCapacity: "Trail capacity", trailCapacitySamples: "{value} samples",
     trailCapacityNote: "Fixed preparatory capacity; resizing occurs only when this setting changes.",
     trailSpeedDescription: "Current speed in simulation world units per second; brighter values approach white.",
-    spacetimeGrid: "Spacetime Grid", massRendering: "Mass Rendering", horizonIntensity: "Horizon intensity",
+    spacetimeGrid: "Spacetime Grid", gridDeformationGain: "Grid Deformation Gain", massRendering: "Mass Rendering", horizonIntensity: "Horizon intensity",
     coreEmissive: "Horizon rim intensity", reset: "Reset Visuals",
   },
   legend: {
@@ -135,5 +135,6 @@ export const en = Object.freeze({
     autoFit: { term: "Auto-fit", definition: "Event-driven camera framing that contains the horizon and current orbit with a safety margin without changing their proportions." },
     normalizedMassAppearance: { term: "Why mass can look unchanged", definition: "At fixed r/rₛ, both the horizon and orbit grow by the same SI factor. Normalized View divides both by rₛ, so their proportions stay identical." },
     gridPhysicalScale: { term: "Grid scale limitation", definition: "The grid is an educational normalized deformation proxy. Physical object positions may use SI scale while the grid is not a direct physical ruler." },
+    gridDeformationGain: { term: "Grid deformation gain", definition: "Presentation-only multiplier for grid-line displacement. It does not change raw deformation values, colors, physics, or particle motion." },
   },
 });

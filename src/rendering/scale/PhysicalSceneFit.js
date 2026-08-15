@@ -10,7 +10,7 @@ export function calculatePhysicalSceneFit(target, {
   const distance = Math.max(verticalDistance, horizontalDistance, extent * 1.1);
   target.extent = extent;
   target.distance = distance;
-  target.near = Math.max(0.001, Math.min(extent / 1000, distance / 100));
+  target.near = Math.max(Number.EPSILON, Math.min(extent / 1000, distance / 100));
   target.far = Math.max(distance + extent * 4, target.near * 100);
   return true;
 }

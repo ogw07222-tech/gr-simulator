@@ -1,6 +1,6 @@
 // 한국어 UI 문구는 이 파일에서 관리합니다. 키 구조를 en.js와 동일하게 유지하세요.
 export const ko = Object.freeze({
-  app: { title: "GR-4D Simulator v0.7.7", description: "브라우저 기반 일반상대성이론 시뮬레이션 및 과학 시각화 실험실", eyebrow: "일반상대성이론 연구 콘솔" },
+  app: { title: "GR-4D Simulator v0.7.8", description: "브라우저 기반 일반상대성이론 시뮬레이션 및 과학 시각화 실험실", eyebrow: "일반상대성이론 연구 콘솔" },
   language: { label: "언어 선택", ko: "한국어", en: "English" },
   status: {
     running: "실행 중", paused: "일시정지", frame: "프레임", rendererOnline: "렌더러 정상",
@@ -38,7 +38,7 @@ export const ko = Object.freeze({
     trailCapacity: "궤적 용량", trailCapacitySamples: "{value}개 표본",
     trailCapacityNote: "향후 궤도를 위한 고정 준비 용량이며, 이 설정을 바꿀 때만 버퍼를 재할당합니다.",
     trailSpeedDescription: "현재 속도는 시뮬레이션 월드 단위/초이며, 빠를수록 흰색에 가까워집니다.",
-    spacetimeGrid: "시공간 격자", massRendering: "질량체 표현", horizonIntensity: "사건지평선 강도",
+    spacetimeGrid: "시공간 격자", gridDeformationGain: "격자 변형 배율", massRendering: "질량체 표현", horizonIntensity: "사건지평선 강도",
     coreEmissive: "사건지평선 테두리 강도", reset: "시각 설정 초기화",
   },
   legend: {
@@ -134,5 +134,6 @@ export const ko = Object.freeze({
     autoFit: { term: "자동 맞춤", definition: "지평선과 현재 궤도를 여백 안에 담도록 이벤트 때만 카메라를 조정하며 물체 비율은 바꾸지 않습니다." },
     normalizedMassAppearance: { term: "질량 변화가 같아 보이는 이유", definition: "같은 r/rₛ에서는 지평선과 궤도가 같은 SI 배율로 커집니다. 정규화 보기는 둘 다 rₛ로 나누므로 비율이 같습니다." },
     gridPhysicalScale: { term: "격자 축척의 한계", definition: "격자는 교육용 정규화 변형 프록시입니다. 물체 위치가 SI 축척이어도 격자는 직접적인 물리 자가 아닙니다." },
+    gridDeformationGain: { term: "격자 변형 배율", definition: "격자 선의 변위에만 적용하는 시각적 배율입니다. 원시 변형값, 색상, 물리 계산, 입자 운동은 바뀌지 않습니다." },
   },
 });

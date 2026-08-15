@@ -15,7 +15,7 @@ test("preserves simulation behavior while switching scientific UI locales", asyn
   await expect(page.locator("html")).toHaveAttribute("lang", "en");
   await expect(page.locator("#locale-select")).toHaveValue("en");
   await expect(page.getByRole("heading", { name: "Simulation" })).toBeVisible();
-  await expect(page.locator(".version-chip")).toHaveText("v0.7.7");
+  await expect(page.locator(".version-chip")).toHaveText("v0.7.8");
   await expect(page.locator("#geo-classification")).toHaveText("Stable circular");
   await expect(page.locator("#geo-status")).toHaveText("Active");
   await expect(page.locator("#orbit-preset")).toHaveValue("circular");

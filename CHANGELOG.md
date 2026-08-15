@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+### v0.7.8
+
+- Added a presentation-only 1x/2x/3x/5x/10x grid deformation gain. It multiplies line displacement only; raw deformation diagnostics, the scientific color mapping, physics, and particle motion remain unchanged.
+- Stabilized normalized/physical/auto-fit view transitions with scale-aware fog, proportional clipping planes, and bounded camera visibility checks, preventing valid rendered scenes from appearing black at extreme display scales.
+
 ### v0.7.7
 
 - Connected applied black-hole mass and render-scale revisions to the reusable grid-buffer update path. The grid remains mathematically invariant in normalized `r/r_s` view and rescales consistently in physical views without exaggerating its educational deformation proxy.
