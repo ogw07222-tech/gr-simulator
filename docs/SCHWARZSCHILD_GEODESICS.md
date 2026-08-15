@@ -26,7 +26,7 @@ The effective potential and radial first integral are
 
 No circular motion is forced. Circular presets only construct analytic initial constants; the same equations then evolve the state.
 
-At the snapshot boundary, normalized polar coordinates are mapped to the existing scene with `2.4` presentation units per `r_s`, matching the default legacy horizon display. This scale affects presentation only and never feeds back into the solver.
+At the snapshot boundary, normalized polar coordinates remain canonical. `RenderScaleTransform` maps those coordinates to either `1 world unit per r_s` or the selected SI-derived physical presentation scale. This transform affects presentation only and never feeds back into the solver.
 
 ## Initial conditions
 

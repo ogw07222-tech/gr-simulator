@@ -1,5 +1,19 @@
 # Rendering performance architecture
 
+## v0.7.3 coordinate presentation
+
+`RenderScaleTransform` is the only normalized-to-world conversion boundary. The physics subsystem and immutable snapshot retain normalized Schwarzschild coordinates. `ParticleRenderer` writes transformed particle and trail coordinates into existing typed arrays, while `MassObject` obtains its exact horizon radius from the same transform.
+
+| Mode | Render factor | Camera behavior |
+| --- | --- | --- |
+| Normalized | `1 world unit / r_s` | camera is preserved |
+| Physical | `r_s(m) / metresPerWorldUnit` | camera is preserved |
+| Auto-fit physical | same physical factor | one fit on mode, scale, or applied mass change |
+
+Mode changes invalidate rendering by transform revision; they do not dirty physics. Camera fitting is event-driven and derives near/far planes from a bounded scene extent. It never runs in the animation loop. Invalid or non-finite presentation input is rejected or mapped deterministically without propagating NaN to GPU buffers.
+
+The spacetime grid is intentionally unchanged: it remains a normalized educational deformation proxy, not a physical SI lattice. Its physical-view visibility is user-controlled and accompanied by that disclosure.
+
 ## Supported simulation domain
 
 The renderer and particle runtime share one finite domain derived from the approved future orbit-engine contract:

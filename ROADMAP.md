@@ -2,6 +2,13 @@
 
 Version targets describe dependency order, not delivery dates. Every milestone must preserve the v0.1 experience unless a separately reviewed migration says otherwise.
 
+## v0.7.3 — Scale visualization
+
+- Central normalized/SI presentation transform
+- Normalized, fixed physical, and auto-fit physical views
+- Event-driven camera fit and persisted bilingual scale controls
+- No new equations, photons, Kerr rotation, lensing, or grid physics
+
 ## v0.7.2 — Scientific UX
 
 - Accessible categorized controls and progressive disclosure

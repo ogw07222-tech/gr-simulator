@@ -29,4 +29,10 @@ v0.7.2는 기존 슈바르츠실트 측지선 물리와 렌더링을 그대로 �
 
 ## English quick reference
 
+### Scale views
+
+Use **Scale and View** in Visual Settings. **Normalized** displays `r_s = 1` world unit. **Physical** converts the horizon, particle, and trail with the configured metres per world unit while leaving the camera untouched. **Auto-fit physical** uses the same conversion and fits the camera once when the mode, physical scale, or applied mass changes. The grid remains a normalized educational proxy rather than an SI spatial lattice.
+
+The scale indicator shows the active convention and equivalent distances. Changing this presentation never changes the active geodesic, time, conserved quantities, classification, or trail history.
+
 Choose a preset, enter only its relevant values, apply atomically, then play and inspect status, classification, invariant drift, and four-velocity residual. See [GLOSSARY.md](./GLOSSARY.md) for terminology.

@@ -1,6 +1,6 @@
 import { subscribeLocale, t } from "./i18n.js";
 
-const SECTIONS = ["quickStart", "workflows", "examples", "integrator", "measurements", "scope"];
+const SECTIONS = ["quickStart", "workflows", "scaleViews", "examples", "integrator", "measurements", "scope"];
 
 export class UserGuide {
   constructor(root) {

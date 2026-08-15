@@ -1,6 +1,7 @@
 import * as THREE from "three";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 import { SIMULATION_DOMAIN } from "../core/constants.js";
+import { calculatePhysicalSceneFit } from "./scale/PhysicalSceneFit.js";
 
 export class Renderer {
   constructor(container) {
@@ -14,6 +15,8 @@ export class Renderer {
     this.camera = new THREE.PerspectiveCamera(58, 1, 0.1, 500);
     this.camera.position.set(22, 18, 22);
     this.initialCameraPosition = this.camera.position.clone();
+    this.fitDirection = new THREE.Vector3();
+    this.fitDiagnostics = { count: 0, extent: 0, distance: 0, near: 0.1, far: 500 };
 
     this.renderer = new THREE.WebGLRenderer({ antialias: true });
     this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
@@ -43,6 +46,30 @@ export class Renderer {
     this.camera.position.copy(this.initialCameraPosition);
     this.controls.target.set(0, 0, 0);
     this.controls.update();
+  }
+
+  fitPhysicalScene(sceneExtent, safetyMargin = 1.25) {
+    if (!Number.isFinite(sceneExtent) || sceneExtent <= 0) return false;
+    if (!calculatePhysicalSceneFit(this.fitDiagnostics, {
+      sceneExtent,
+      safetyMargin,
+      verticalFovRadians: THREE.MathUtils.degToRad(this.camera.fov),
+      aspect: this.camera.aspect,
+    })) return false;
+    const { extent, distance } = this.fitDiagnostics;
+    this.fitDirection.copy(this.camera.position).sub(this.controls.target);
+    if (this.fitDirection.lengthSq() < Number.EPSILON) this.fitDirection.set(1, 0.8, 1);
+    this.fitDirection.normalize();
+    this.controls.target.set(0, 0, 0);
+    this.camera.position.copy(this.fitDirection).multiplyScalar(distance);
+    this.camera.near = this.fitDiagnostics.near;
+    this.camera.far = this.fitDiagnostics.far;
+    this.controls.minDistance = Math.max(extent * 0.02, this.camera.near * 2);
+    this.controls.maxDistance = Math.max(distance * 4, extent * 6);
+    this.camera.updateProjectionMatrix();
+    this.controls.update();
+    this.fitDiagnostics.count += 1;
+    return true;
   }
 
   resize() {

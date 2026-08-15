@@ -6,6 +6,7 @@ import {
   ParticleState,
   ParticleTrail,
 } from "../../src/systems/particles/index.js";
+import { RenderScaleMode, RenderScaleTransform } from "../../src/rendering/index.js";
 
 describe("ParticleManager", () => {
   it("creates a particle with the complete data model", () => {
@@ -395,5 +396,26 @@ describe("ParticleRenderer", () => {
     expect(renderer.trailPositions).not.toBe(oldRendererBuffer);
     expect(manager.maxTrailLength).toBe(8);
     expect(renderer.maxTrailLength).toBe(8);
+  });
+
+  it("uses one transform for particle and trail buffers without rewriting source history", () => {
+    const manager = new ParticleManager({ maxParticles: 1, maxTrailLength: 4 });
+    const particle = manager.create({ position: [2, 0, 0] });
+    particle.trail.push({ x: 1, y: 0, z: 0 });
+    particle.trail.push({ x: 2, y: 0, z: 0 });
+    manager.touch();
+    const transform = new RenderScaleTransform({ mode: RenderScaleMode.PHYSICAL, metresPerWorldUnit: 2e9 });
+    transform.setSchwarzschildRadiusMetres(10e9);
+    const renderer = new ParticleRenderer({ maxParticles: 1, maxTrailLength: 4, scaleTransform: transform });
+    renderer.sync(manager);
+    expect(renderer.positions[0]).toBe(10);
+    expect([...renderer.trailPositions.slice(0, 6)]).toEqual([5, 0, 0, 10, 0, 0]);
+    expect([...particle.trail.positions.slice(0, 6)]).toEqual([1, 0, 0, 2, 0, 0]);
+    const particleRevision = manager.revision();
+    transform.setMode(RenderScaleMode.NORMALIZED);
+    expect(renderer.sync(manager)).toBe(true);
+    expect(manager.revision()).toBe(particleRevision);
+    expect(renderer.positions[0]).toBe(2);
+    expect([...renderer.trailPositions.slice(0, 6)]).toEqual([1, 0, 0, 2, 0, 0]);
   });
 });

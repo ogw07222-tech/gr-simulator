@@ -4,10 +4,17 @@
 
 ### Added
 
+- v0.7.3 normalized, physical, and auto-fit physical view modes backed by one centralized render transform.
+- Persisted metres-per-world-unit controls, bilingual scale indicator, bounded mass comparison, and event-driven physical-scene fitting.
+- Scale-transform unit, integration, UI, resource-stability, and browser regression coverage.
+
 - v0.7.2 accessible control disclosures, bilingual in-app scientific guide, and contextual glossary.
 - Three-step orbit setup with isolated drafts, inline validation, explicit apply feedback, and integration-default recovery.
 
 ### Changed
+
+- Particle, trail, and event-horizon presentation now share the exact same Schwarzschild-radius conversion; the geodesic solver and SI boundary are unchanged.
+- The grid remains normalized and is explicitly disclosed as an educational proxy in physical views.
 
 - Reorganized existing controls without changing physics equations, runtime defaults, camera, or rendering behavior.
 

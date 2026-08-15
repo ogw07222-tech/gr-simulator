@@ -48,11 +48,12 @@ export class MassObject {
     this.group.add(this.core, this.horizon);
   }
 
-  update(model, mass) { this.updateSchwarzschildRadius(model.schwarzschildRadius(mass)); }
+  updateRenderScale(transform) { this.updateSchwarzschildRadius(transform.horizonRenderRadius()); }
 
-  updateSchwarzschildRadius(rs) {
-    const visualRadius = Math.max(1.05, Math.sqrt(rs) * 1.45);
-    this.horizon.scale.setScalar(visualRadius);
+  updateSchwarzschildRadius(renderRadius) {
+    const finiteRadius = Number.isFinite(renderRadius) && renderRadius > 0 ? renderRadius : 1;
+    this.horizon.scale.setScalar(finiteRadius);
+    this.core.scale.setScalar(finiteRadius);
   }
 
   setAppearance({ horizonOpacity, emissiveIntensity }) {

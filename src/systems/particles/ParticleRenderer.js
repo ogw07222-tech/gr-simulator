@@ -1,8 +1,9 @@
 import * as THREE from "three";
 import { DEFAULT_TRAIL_SPEED_MAX, normalizeSpeed, writeSpeedToWhiteColor } from "../../rendering/VisualizationScale.js";
+import { RenderScaleTransform } from "../../rendering/scale/RenderScaleTransform.js";
 
 export class ParticleRenderer {
-  constructor({ maxParticles = 1000, maxTrailLength = 256, pointSize = 0.36 } = {}) {
+  constructor({ maxParticles = 1000, maxTrailLength = 256, pointSize = 0.36, scaleTransform = null } = {}) {
     if (!Number.isInteger(maxParticles) || maxParticles < 1) {
       throw new RangeError("ParticleRenderer maxParticles must be a positive integer.");
     }
@@ -11,6 +12,7 @@ export class ParticleRenderer {
     }
 
     this.maxParticles = maxParticles;
+    this.scaleTransform = scaleTransform ?? new RenderScaleTransform();
     this.maxTrailLength = maxTrailLength;
     this.positions = new Float32Array(maxParticles * 3);
     this.colors = new Float32Array(maxParticles * 3);
@@ -78,6 +80,7 @@ export class ParticleRenderer {
     };
     this.speedLegend = { minimum: 0, midpoint: DEFAULT_TRAIL_SPEED_MAX / 2, maximum: DEFAULT_TRAIL_SPEED_MAX };
     this.lastRevision = -1;
+    this.lastTransformRevision = -1;
   }
 
   setAppearance(settings) {
@@ -122,16 +125,17 @@ export class ParticleRenderer {
 
   sync(manager) {
     const revision = manager.revision();
-    if (revision === this.lastRevision) return false;
+    const transformRevision = this.scaleTransform.revision();
+    if (revision === this.lastRevision && transformRevision === this.lastTransformRevision) return false;
 
     const count = manager.count();
     let trailVertexCount = 0;
     for (let index = 0; index < count; index += 1) {
       const particle = manager.particleAt(index);
       const offset = index * 3;
-      this.positions[offset] = particle.position.x;
-      this.positions[offset + 1] = particle.position.y;
-      this.positions[offset + 2] = particle.position.z;
+      this.scaleTransform.writeArray(
+        this.positions, offset, particle.position.x, particle.position.y, particle.position.z,
+      );
       const speed = Math.sqrt(
         particle.velocity.x ** 2 + particle.velocity.y ** 2 + particle.velocity.z ** 2,
       );
@@ -144,13 +148,15 @@ export class ParticleRenderer {
         const previous = ((oldest + trailIndex - 1) % trail.maxLength) * 3;
         const current = ((oldest + trailIndex) % trail.maxLength) * 3;
         let target = trailVertexCount * 3;
-        this.trailPositions[target] = trail.positions[previous];
-        this.trailPositions[target + 1] = trail.positions[previous + 1];
-        this.trailPositions[target + 2] = trail.positions[previous + 2];
+        this.scaleTransform.writeArray(
+          this.trailPositions, target,
+          trail.positions[previous], trail.positions[previous + 1], trail.positions[previous + 2],
+        );
         target += 3;
-        this.trailPositions[target] = trail.positions[current];
-        this.trailPositions[target + 1] = trail.positions[current + 1];
-        this.trailPositions[target + 2] = trail.positions[current + 2];
+        this.scaleTransform.writeArray(
+          this.trailPositions, target,
+          trail.positions[current], trail.positions[current + 1], trail.positions[current + 2],
+        );
         this.#setTrailVertexColor(trailVertexCount, normalizedSpeed, trail, trailIndex - 1);
         this.#setTrailVertexColor(trailVertexCount + 1, normalizedSpeed, trail, trailIndex);
         trailVertexCount += 2;
@@ -164,6 +170,7 @@ export class ParticleRenderer {
     this.#markUpdated(this.trailPositionAttribute, this.trailPositionUpdateRange, trailVertexCount * 3);
     this.#markUpdated(this.trailColorAttribute, this.trailColorUpdateRange, trailVertexCount * 3);
     this.lastRevision = revision;
+    this.lastTransformRevision = transformRevision;
     return true;
   }
 

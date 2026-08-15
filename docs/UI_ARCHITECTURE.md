@@ -45,6 +45,10 @@ Translation keys are grouped by stable domains such as `app.*`, `status.*`, `con
 
 ## Supported visual settings
 
+The Scale and View disclosure owns presentation-only settings persisted at `gr4d.renderScale`: view mode, metres per world unit, scale-indicator visibility, and normalized-grid visibility in physical modes. All labels, tooltips, comparison text, and mode names are present in both locale dictionaries. Locale and scale switches update the existing DOM and buffers without rebuilding the application or resetting simulation, particle, trail, camera, or orbit state.
+
+Auto-fit is an explicit event response, not continuous camera control. The scale indicator reports the active convention, Schwarzschild radius in kilometres, current particle radius in both `r_s` and kilometres, and render-space horizon radius. A bounded previous/current comparison appears after an applied mass change and can be dismissed.
+
 - particle point size, opacity, and material brightness;
 - trail visibility, opacity, brightness, age fade, speed legend, and fixed capacity;
 - grid visibility, opacity, and brightness;
