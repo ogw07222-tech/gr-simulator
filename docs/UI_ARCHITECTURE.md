@@ -43,6 +43,10 @@ Components render and bind events once, then subscribe to locale changes. Switch
 
 Translation keys are grouped by stable domains such as `app.*`, `status.*`, `controls.*`, `panels.*`, `visual.*`, and `camera.*`. A new language must provide the complete key set, be added to `SUPPORTED_LOCALES`, and receive a visible selector label. `GR-4D Simulator`, FPS, GR, GPU, scientific units, and mathematical symbols remain unchanged where they are established technical notation.
 
+### Visual validation cadence
+
+Patch releases in the `0.x.y` series perform the complete responsive/manual matrix in English and retain automated Korean/English key parity, string tests, and builds. Korean visual checks target only changed localized surfaces unless the patch affects localization, typography, wrapping, localized help content, locale state, or responsive layout broadly. Minor transitions to `0.(x+1).0` and the future major transition to `1.0.0` require the complete responsive/manual matrix in both languages. This policy reduces repeated screenshots; it never removes Korean functional automation.
+
 ## Supported visual settings
 
 The Scale and View disclosure owns presentation-only settings persisted at `gr4d.renderScale`: view mode, metres per world unit, scale-indicator visibility, and normalized-grid visibility in physical modes. All labels, tooltips, comparison text, and mode names are present in both locale dictionaries. Locale and scale switches update the existing DOM and buffers without rebuilding the application or resetting simulation, particle, trail, camera, or orbit state.

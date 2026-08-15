@@ -40,6 +40,18 @@ Dependencies should flow from presentation/orchestration toward public core and 
 - Confirm that existing controls, camera behavior, metrics, and cleanup still work.
 - Do not commit generated output, dependency directories, or local credentials.
 
+## Release validation matrix
+
+For prerelease versions `0.x.y`, `x` means the minor component and `y` means the patch component.
+
+| Release type | English visual audit | Korean visual audit | Locale parity tests |
+| --- | --- | --- | --- |
+| Patch `0.x.y` → `0.x.(y+1)` | Full, all supported viewports | Targeted affected surfaces only | Required |
+| Minor `0.x.y` → `0.(x+1).0` | Full, all supported viewports | Full, all supported viewports | Required |
+| Major `0.x.y` → `1.0.0` | Full, all supported viewports | Full, all supported viewports | Required |
+
+Every patch still runs Korean/English dictionary parity, automated localization tests, and build checks. A patch must also validate Korean visually when it changes Korean strings, localization architecture, fonts or typography, text wrapping or widths, localized accordion/help/guide content, locale persistence/switching, or responsive UI structure. Test only the affected Korean surfaces when the change is narrow; use the full bilingual matrix when its impact is broad. Korean functional automation is never optional.
+
 ## Performance and research quality
 
 - Benchmark before and after changing a hot path.

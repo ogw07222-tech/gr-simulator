@@ -59,6 +59,8 @@ Deployment status and logs are available in the repository's **Actions** tab. Th
 
 GitHub Pages serves this repository from `/gr-simulator/`. The deployment workflow enables that Vite base path while localhost and Codespaces retain `/`. See [Deployment](docs/DEPLOYMENT.md) for validation, local Pages preview, permissions, and future custom-domain guidance.
 
+Only `.github/workflows/deploy-pages.yml` publishes the site, and it uploads the generated `dist` directory rather than repository sources. Release validation is version-aware: patch releases use the full English visual matrix plus automated locale parity and targeted Korean checks; minor and major releases use the full bilingual matrix. Localization- or layout-affecting patch changes trigger the relevant Korean visual exception. See [Contributing](CONTRIBUTING.md).
+
 The first browser-smoke run requires `npx playwright install chromium`. Unit tests use Vitest with jsdom; browser smoke tests run the actual application in Chromium.
 
 ## Controls

@@ -14,7 +14,11 @@ Do not add independent hard-coded asset prefixes. JavaScript and CSS URLs are ge
 
 `.github/workflows/deploy-pages.yml` runs for every push to `main` and can also be started manually. The build job checks out the repository, installs the locked dependencies with `npm ci`, runs lint and unit tests, configures Pages, and performs a Pages-base production build. Only a successful build is uploaded and passed to the deployment job.
 
+This is the repository's only Pages publisher. It uploads `./dist` exclusively. A workflow that uploads `.` would publish the source `index.html`, leave `/src/main.js` as the browser entrypoint, and fail on Pages because source modules are not deployed as Vite production assets.
+
 The workflow uses the minimum deployment permissions: read-only repository contents plus Pages and OpenID Connect write access. The deploy job targets the protected `github-pages` environment, and a concurrency group prevents overlapping production deployments.
+
+The build assertion requires `dist/index.html`, hashed JavaScript and CSS references, matching on-disk assets, the `/gr-simulator/` Pages prefix, and the absence of `/src/main.js` or any other `src/` browser entrypoint.
 
 Inspect deployment status under the repository's **Actions** tab by opening the **Deploy GitHub Pages** workflow. To rerun manually, choose **Run workflow**, select `main`, and confirm the run.
 
