@@ -11,7 +11,7 @@ import {
 } from "../physics/index.js";
 import { ParticleState } from "./particles/index.js";
 
-const DEFAULT_RENDER_SCALE = 2.4;
+const DEFAULT_RENDER_SCALE = 1;
 
 function createInitialCondition(configuration) {
   if (configuration.preset === "local") {

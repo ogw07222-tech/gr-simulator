@@ -1,6 +1,6 @@
 # GR-4D Simulator
 
-A browser-based General Relativity visualization laboratory built with Three.js. Version 0.7.2 adds a bilingual scientific guide, contextual glossary, and structured experiment workflow while preserving the v0.7 Schwarzschild physics and rendering behavior.
+A browser-based General Relativity visualization laboratory built with Three.js. Version 0.7.3 adds normalized, physical, and auto-fit physical presentation modes while preserving the v0.7 Schwarzschild physics.
 
 User documentation: [scientific user guide](docs/USER_GUIDE.md) · [glossary](docs/GLOSSARY.md)
 
@@ -21,6 +21,7 @@ User documentation: [scientific user guide](docs/USER_GUIDE.md) · [glossary](do
 - Live Korean/English interface switching with persisted language preference
 - Explicit cleanup of renderer, controls, geometry, material, and subscriptions
 - Uniform finite-domain grid and independent maximum-render-FPS controls
+- Normalized (`r_s = 1`) and SI-derived physical-scale views with event-driven camera fitting
 
 ## Quick start
 
@@ -70,6 +71,7 @@ The first browser-smoke run requires `npx playwright install chromium`. Unit tes
 - Play / Pause / Time Scale: control the existing fixed-step runtime
 - Reset Particle / Reset All: restore particle or complete runtime time state
 - Visual Settings: adjust rendering materials without changing simulation state
+- Scale and View: switch between normalized, fixed physical, and auto-fit physical presentation; configure metres per world unit
 - Reset Camera / Fullscreen / Hide Panels: manage the scientific workspace
 - 한국어 / English: switch the complete interface language without resetting simulation, camera, or visual state
 
@@ -80,6 +82,12 @@ English (`en`) is the default interface language. Korean (`ko`) remains fully su
 Translations use stable keys in `src/ui/i18n.js`. To add a language, add a complete dictionary matching the existing `ko` and `en` keys, register its locale code in `SUPPORTED_LOCALES`, and add the selector label. Project name, FPS, GR, GPU, scientific units, and mathematical symbols remain untranslated where appropriate.
 
 ## Scientific dashboard
+
+The scale selector is a presentation boundary. Normalized mode maps one world unit to one Schwarzschild radius. Physical modes convert the same normalized particle, trail, and horizon coordinates with `r_s / metresPerWorldUnit`; changing view never changes solver state, energy, angular momentum, classification, or time. The grid remains a normalized educational deformation proxy and is explicitly labelled as not being an SI spatial lattice.
+
+| Normalized (English) | Physical (English) | Auto-fit physical (Korean) | Physical mobile (Korean) |
+| --- | --- | --- | --- |
+| ![Normalized scale view](docs/screenshots/v0.7.3/normalized-en-desktop.png) | ![Physical scale view](docs/screenshots/v0.7.3/physical-en-desktop.png) | ![Auto-fit physical scale view](docs/screenshots/v0.7.3/auto-fit-ko-desktop.png) | ![Mobile physical scale view](docs/screenshots/v0.7.3/physical-ko-mobile.png) |
 
 The v0.6.2 interface uses an original scientific-dashboard design language: compact telemetry, restrained accents, a viewport-first layout, and separate simulation and presentation controls. Grid deformation and trail speed include explicit legends. Desktop uses persistent side panels; tablet and mobile use keyboard- and touch-accessible drawers.
 

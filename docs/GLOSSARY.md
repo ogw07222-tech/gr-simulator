@@ -16,3 +16,14 @@
 | 궤도 분류 | 초기 불변량과 적분 상태로 얻는 진단 표지. 별도 물리 모델이 아니다. |
 
 English definitions are available through the in-app help controls. Both locale dictionaries must keep identical keys.
+
+## Scale-view terms
+
+| Term | Definition |
+| --- | --- |
+| Normalized coordinate | Dimensionless coordinate expressed in Schwarzschild radii, with `r_s = 1`. |
+| Physical scale | Presentation conversion from normalized radius to render-space units using the authoritative SI Schwarzschild radius. |
+| World unit | Three.js scene-space unit; not inherently a metre. |
+| Metres per world unit | User-selected physical presentation ratio used only by rendering. |
+| Auto-fit | A one-time camera fit after a relevant scale event; it is not continuous tracking. |
+| Normalized grid | Educational deformation proxy that remains normalized even in a physical particle/horizon view. |

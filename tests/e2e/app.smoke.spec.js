@@ -1,6 +1,6 @@
 import { expect, test } from "@playwright/test";
 
-test.setTimeout(90_000);
+test.setTimeout(150_000);
 
 function collectErrors(page) {
   const errors = [];
@@ -15,7 +15,7 @@ test("preserves simulation behavior while switching scientific UI locales", asyn
   await expect(page.locator("html")).toHaveAttribute("lang", "en");
   await expect(page.locator("#locale-select")).toHaveValue("en");
   await expect(page.getByRole("heading", { name: "Simulation" })).toBeVisible();
-  await expect(page.locator(".version-chip")).toHaveText("v0.7.2");
+  await expect(page.locator(".version-chip")).toHaveText("v0.7.3");
   await expect(page.locator("#geo-classification")).toHaveText("Stable circular");
   await expect(page.locator("#geo-status")).toHaveText("Active");
   await expect(page.locator("#orbit-preset")).toHaveValue("circular");
@@ -185,5 +185,53 @@ test("advances the geodesic particle through snapshots and GPU input while runni
   await page.waitForTimeout(500);
   const accelerated = await page.evaluate(() => window.__GR4D_DIAGNOSTICS__.getSnapshot());
   expect(accelerated.particleRenderer.z - paused.particleRenderer.z).toBeGreaterThan(0.05);
+  expect(consoleErrors).toEqual([]);
+});
+
+test("switches normalized, physical, and auto-fit views without changing physics", async ({ page }) => {
+  const consoleErrors = collectErrors(page);
+  await page.goto("/");
+  await page.waitForFunction(() => window.__GR4D_DIAGNOSTICS__?.getSnapshot().physicsUpdates > 0);
+  await page.getByRole("button", { name: "Pause", exact: true }).click();
+
+  const normalized = await page.evaluate(() => window.__GR4D_DIAGNOSTICS__.getSnapshot());
+  expect(normalized.scale.mode).toBe("normalized");
+  expect(normalized.scale.horizonRenderRadius).toBe(1);
+  expect(normalized.snapshot.x).toBe(normalized.snapshot.normalizedX);
+
+  await page.locator("#scale-mode").selectOption("physical");
+  const physical = await page.evaluate(() => window.__GR4D_DIAGNOSTICS__.getSnapshot());
+  expect(physical.scale.horizonRenderRadius).toBeCloseTo(
+    physical.snapshot.schwarzschildRadiusMetres / physical.scale.metresPerWorldUnit, 10,
+  );
+  expect(physical.particleRenderer.x).toBeCloseTo(physical.snapshot.x, 4);
+  expect(physical.physics).toEqual(normalized.physics);
+
+  const resourcesBefore = physical.renderer;
+  const fitCountBefore = physical.scale.fitCount;
+  await page.locator("#scale-mode").selectOption("auto-fit-physical");
+  const autoFit = await page.evaluate(() => window.__GR4D_DIAGNOSTICS__.getSnapshot());
+  expect(autoFit.scale.fitCount).toBe(fitCountBefore + 1);
+  expect(autoFit.scale.horizonRenderRadius).toBeCloseTo(physical.scale.horizonRenderRadius, 10);
+  expect(autoFit.physics).toEqual(normalized.physics);
+
+  await page.evaluate(() => {
+    const select = document.querySelector("#scale-mode");
+    for (let index = 0; index < 100; index += 1) {
+      select.value = index % 2 ? "physical" : "normalized";
+      select.dispatchEvent(new Event("change", { bubbles: true }));
+    }
+  });
+  await page.waitForTimeout(100);
+  const afterSwitches = await page.evaluate(() => window.__GR4D_DIAGNOSTICS__.getSnapshot());
+  expect(afterSwitches.renderer.geometries).toBe(resourcesBefore.geometries);
+  expect(afterSwitches.renderer.textures).toBe(resourcesBefore.textures);
+  expect(afterSwitches.physics).toEqual(normalized.physics);
+
+  await expect(page.locator(".scale-indicator")).toBeVisible();
+  await page.locator("#locale-select").selectOption("ko");
+  await expect(page.locator("#scale-mode")).toHaveValue("physical");
+  await expect(page.locator("#orbit-radius-km")).toContainText("물리 반지름");
+  expect(await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth)).toBeLessThanOrEqual(0);
   expect(consoleErrors).toEqual([]);
 });

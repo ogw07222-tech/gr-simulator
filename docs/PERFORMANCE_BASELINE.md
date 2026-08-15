@@ -111,3 +111,9 @@ Notes and trace location:
 ## v0.7 geodesic baseline
 
 RK4 state and all stage/candidate storage are fixed `Float64Array` buffers owned by each solver. No object, vector, or array is created in an integration substep. The live production configuration uses one scientific solver; a Node 24.14.0 sample measured mean costs of 0.0155 ms, 0.1386 ms, and 0.5756 ms per 240 Hz update for 1, 100, and 1000 solver instances respectively. See `VALIDATION.md` for the method and limitations. DOM diagnostics are throttled to 10 Hz independently of physics.
+
+## v0.7.3 scale-switch baseline
+
+Run `npm run benchmark:scale`. A Windows/Node sample on 2026-08-15 with one particle and 1,024 trail samples measured 100 normalized/physical switches in 16.73 ms total (0.167 ms mean), a mass/scale buffer refresh in 0.180 ms, and camera-fit calculation in 0.166 ms. The two geometries, four materials, four typed buffers, and their object identities remained unchanged. These are local microbenchmark observations, not cross-device performance guarantees.
+
+The production build measured HTML 1.80 kB / 0.69 kB gzip, CSS 16.21 kB / 4.37 kB gzip, and JavaScript 625.77 kB / 159.15 kB gzip. The existing large-chunk warning remains. Browser smoke coverage also performs 100 mode changes and asserts stable WebGL geometry and texture counts.

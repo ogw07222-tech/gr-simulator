@@ -120,6 +120,7 @@ export class ControlPanel {
       this.root.querySelector("#runtime-time-scale").textContent = t("units.multiplier", { value: this.runtimeView.timeScale });
     }
     if (this.runtime?.applyOrbit && this.geodesicView.snapshot) this.#writeGeodesic(this.geodesicView.snapshot);
+    if (this.runtime?.applyOrbit) this.#syncOrbitDerived();
     this.root.querySelector("#vertices").textContent = this.grid.segmentVertexCount.toLocaleString(getLocale());
   }
 

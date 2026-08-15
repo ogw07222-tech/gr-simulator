@@ -1,6 +1,6 @@
 // Edit English interface copy here. Keep this key structure identical to ko.js.
 export const en = Object.freeze({
-  app: { title: "GR-4D Simulator v0.7.2", description: "Browser-based General Relativity simulation and scientific visualization laboratory", eyebrow: "RELATIVITY RESEARCH CONSOLE" },
+  app: { title: "GR-4D Simulator v0.7.3", description: "Browser-based General Relativity simulation and scientific visualization laboratory", eyebrow: "RELATIVITY RESEARCH CONSOLE" },
   language: { label: "Select language", ko: "한국어", en: "English" },
   status: {
     running: "Running", paused: "Paused", frame: "FRAME", rendererOnline: "Renderer online",
@@ -92,6 +92,20 @@ export const en = Object.freeze({
     angularMomentumDrift: "Relative angular-momentum drift", normalizationResidual: "Four-velocity residual",
     substeps: "Integrator substeps",
   },
+  scale: {
+    section: "Scale and View", viewMode: "View mode",
+    mode: { normalized: "Normalized View", physical: "Physical Scale View", "auto-fit-physical": "Auto-fit Physical View" },
+    metresPerWorldUnit: "Metres per world unit", configuredValue: "Configured scale: {value} km / world unit",
+    decrease: "Decrease Scale", increase: "Increase Scale", fit: "Fit Current Physical Scene",
+    showIndicator: "Show scale indicator", showGridPhysical: "Show normalized grid in physical view",
+    reset: "Reset Scale Settings", gridDisclaimer: "The grid is an educational normalized proxy, not a direct SI ruler.",
+    oneWorldUnitNormalized: "1 rₛ", worldUnit: "1 world unit", schwarzschildRadius: "Schwarzschild radius",
+    particleRadius: "Particle radius", horizonRenderRadius: "Horizon radius (world units)",
+    comparison: "Scale Comparison", dismissComparison: "Dismiss scale comparison",
+    massComparison: "Mass: {previous} M☉ → {current} M☉",
+    radiusComparison: "Schwarzschild radius: {previous} → {current}", growthFactor: "Physical size: {value}×",
+    normalizedOrbitValue: "Normalized orbit: {value} rₛ",
+  },
   units: { multiplier: "{value}x" },
   help: { explain: "Explain {term}" },
   guide: {
@@ -102,6 +116,7 @@ export const en = Object.freeze({
     integrator: { title: "Integrator and step controls", body: "The engine uses a fixed 1/240 s runtime step and classical RK4. The solver limits normalized substeps to 0.02 and caps work per update. Raise the cap only when a valid trajectory reports insufficient substeps." },
     measurements: { title: "Measurements and classifications", body: "The HUD reports coordinate and proper time, radius, local speed, conserved quantities, drift, four-velocity residual, substeps, status, and an observational orbit classification." },
     scope: { title: "Scientific scope and limitations", body: "This release integrates timelike test-particle motion in a fixed Schwarzschild spacetime. It is not a numerical-relativity solver and does not model spin, backreaction, radiation reaction, collisions, or extended bodies." },
+    scaleViews: { title: "Normalized and physical scale", body: "Normalized View uses 1 world unit = 1 rₛ, so equal r/rₛ values keep the same proportions as mass changes. Physical Scale View converts SI metres through the configured metres per world unit, so mass growth visibly enlarges the horizon and orbit. Auto-fit uses the same physical geometry and changes only camera framing. The educational grid remains a normalized visualization proxy, not a literal SI ruler." },
   },
   glossary: {
     mass: { term: "Black-hole mass", definition: "The central Schwarzschild mass in solar masses (M☉). It sets physical length and time scales, not the dimensionless orbit shape." },
@@ -110,5 +125,12 @@ export const en = Object.freeze({
     specificEnergy: { term: "Specific energy ε", definition: "Conserved dimensionless energy per unit rest mass." }, angularMomentum: { term: "Specific angular momentum λ", definition: "Conserved angular momentum per unit rest mass, normalized by the Schwarzschild length scale." },
     localVelocity: { term: "Local observer velocity", definition: "Physical radial and tangential velocity fractions measured by a static observer." }, integrator: { term: "RK4 integrator", definition: "A fourth-order explicit method. Smaller normalized steps improve accuracy at greater cost." },
     residual: { term: "Four-velocity residual", definition: "Deviation from the timelike normalization condition; values closer to zero indicate better constraint preservation." }, classification: { term: "Orbit classification", definition: "A diagnostic label inferred from invariants and integration status, not an independent physics model." },
+    normalizedCoordinates: { term: "Normalized coordinates", definition: "Distances are divided by the Schwarzschild radius. The horizon is always 1 rₛ and a particle at 6 rₛ remains six world units from the center." },
+    physicalScale: { term: "Physical scale", definition: "SI metres are divided by one configured metres-per-world-unit value. Changing this display scale never changes the orbit solution." },
+    worldUnit: { term: "World unit", definition: "A render-space distance interpreted as either one Schwarzschild radius or the configured SI distance, depending on view mode." },
+    metresPerWorldUnit: { term: "Metres per world unit", definition: "The fixed SI distance represented by one render-world unit in physical views. It must be positive and bounded." },
+    autoFit: { term: "Auto-fit", definition: "Event-driven camera framing that contains the horizon and current orbit with a safety margin without changing their proportions." },
+    normalizedMassAppearance: { term: "Why mass can look unchanged", definition: "At fixed r/rₛ, both the horizon and orbit grow by the same SI factor. Normalized View divides both by rₛ, so their proportions stay identical." },
+    gridPhysicalScale: { term: "Grid scale limitation", definition: "The grid is an educational normalized deformation proxy. Physical object positions may use SI scale while the grid is not a direct physical ruler." },
   },
 });

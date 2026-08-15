@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { VisualSettingsPanel } from "../../src/ui/index.js";
+import { DEFAULT_METRES_PER_WORLD_UNIT, RenderScaleMode, RenderScaleTransform } from "../../src/rendering/index.js";
 
 describe("VisualSettingsPanel", () => {
   let root;
@@ -15,6 +16,7 @@ describe("VisualSettingsPanel", () => {
     grid = { setAppearance: vi.fn(), getLegend: () => ({ rawMinimum: 0, rawMidpoint: 0.25, rawMaximum: 1 }) };
     massObject = { setAppearance: vi.fn() };
     frameRateController = { maxFps: 60, setMaxFps: vi.fn() };
+    globalThis.localStorage.clear();
   });
 
   it("applies visual settings without simulation state", () => {
@@ -60,5 +62,47 @@ describe("VisualSettingsPanel", () => {
     root.querySelector("#max-fps").value = "30";
     root.querySelector("#max-fps").dispatchEvent(new Event("change", { bubbles: true }));
     expect(frameRateController.setMaxFps).toHaveBeenLastCalledWith(30);
+  });
+
+  it("offers all scale modes, validates and persists physical scale settings", () => {
+    const scaleTransform = new RenderScaleTransform();
+    const fitPhysicalScene = vi.fn();
+    const scaleIndicator = { setVisible: vi.fn() };
+    new VisualSettingsPanel(root, {
+      particleRenderer, grid, massObject, frameRateController,
+      scaleTransform, fitPhysicalScene, scaleIndicator,
+    });
+    expect([...root.querySelector("#scale-mode").options].map((option) => option.value)).toEqual([
+      RenderScaleMode.NORMALIZED, RenderScaleMode.PHYSICAL, RenderScaleMode.AUTO_FIT_PHYSICAL,
+    ]);
+    root.querySelector("#scale-mode").value = RenderScaleMode.PHYSICAL;
+    root.querySelector("#scale-mode").dispatchEvent(new Event("change", { bubbles: true }));
+    root.querySelector("#physical-scale").value = "2000000000";
+    root.querySelector("#physical-scale").dispatchEvent(new Event("change", { bubbles: true }));
+    expect(scaleTransform.mode).toBe(RenderScaleMode.PHYSICAL);
+    expect(scaleTransform.metresPerWorldUnit).toBe(2e9);
+    expect(JSON.parse(globalThis.localStorage.getItem("gr4d.renderScale"))).toMatchObject({
+      scaleMode: RenderScaleMode.PHYSICAL, metresPerWorldUnit: 2e9,
+    });
+    root.querySelector("#physical-scale").value = "0";
+    root.querySelector("#physical-scale").dispatchEvent(new Event("change", { bubbles: true }));
+    expect(scaleTransform.metresPerWorldUnit).toBe(2e9);
+  });
+
+  it("restores scale defaults and invokes event-driven auto-fit", () => {
+    const scaleTransform = new RenderScaleTransform();
+    const fitPhysicalScene = vi.fn();
+    new VisualSettingsPanel(root, {
+      particleRenderer, grid, massObject, frameRateController,
+      scaleTransform, fitPhysicalScene, scaleIndicator: { setVisible() {} },
+    });
+    root.querySelector("#scale-mode").value = RenderScaleMode.AUTO_FIT_PHYSICAL;
+    root.querySelector("#scale-mode").dispatchEvent(new Event("change", { bubbles: true }));
+    expect(fitPhysicalScene).toHaveBeenCalledOnce();
+    root.querySelector("#scale-increase").click();
+    expect(fitPhysicalScene).toHaveBeenCalledTimes(2);
+    root.querySelector("#reset-scale").click();
+    expect(scaleTransform.mode).toBe(RenderScaleMode.NORMALIZED);
+    expect(scaleTransform.metresPerWorldUnit).toBe(DEFAULT_METRES_PER_WORLD_UNIT);
   });
 });

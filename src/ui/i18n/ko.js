@@ -1,6 +1,6 @@
 // 한국어 UI 문구는 이 파일에서 관리합니다. 키 구조를 en.js와 동일하게 유지하세요.
 export const ko = Object.freeze({
-  app: { title: "GR-4D Simulator v0.7.2", description: "브라우저 기반 일반상대성이론 시뮬레이션 및 과학 시각화 실험실", eyebrow: "일반상대성이론 연구 콘솔" },
+  app: { title: "GR-4D Simulator v0.7.3", description: "브라우저 기반 일반상대성이론 시뮬레이션 및 과학 시각화 실험실", eyebrow: "일반상대성이론 연구 콘솔" },
   language: { label: "언어 선택", ko: "한국어", en: "English" },
   status: {
     running: "실행 중", paused: "일시정지", frame: "프레임", rendererOnline: "렌더러 정상",
@@ -91,6 +91,20 @@ export const ko = Object.freeze({
     angularMomentumDrift: "상대 각운동량 편차", normalizationResidual: "4-속도 정규화 잔차",
     substeps: "적분 서브스텝",
   },
+  scale: {
+    section: "축척 및 보기", viewMode: "보기 모드",
+    mode: { normalized: "정규화 보기", physical: "실제 축척 보기", "auto-fit-physical": "실제 축척 자동 맞춤" },
+    metresPerWorldUnit: "월드 단위당 미터", configuredValue: "설정 축척: 월드 단위당 {value} km",
+    decrease: "축척 줄이기", increase: "축척 늘리기", fit: "현재 물리 장면 맞춤",
+    showIndicator: "축척 표시기 보기", showGridPhysical: "물리 보기에서 정규화 격자 표시",
+    reset: "축척 설정 초기화", gridDisclaimer: "격자는 교육용 정규화 프록시이며 직접적인 SI 자가 아닙니다.",
+    oneWorldUnitNormalized: "1 rₛ", worldUnit: "월드 단위 1", schwarzschildRadius: "슈바르츠실트 반지름",
+    particleRadius: "입자 반지름", horizonRenderRadius: "지평선 반지름(월드 단위)",
+    comparison: "축척 비교", dismissComparison: "축척 비교 닫기",
+    massComparison: "질량: {previous} M☉ → {current} M☉",
+    radiusComparison: "슈바르츠실트 반지름: {previous} → {current}", growthFactor: "물리 크기: {value}배",
+    normalizedOrbitValue: "정규화 궤도: {value} rₛ",
+  },
   units: { multiplier: "{value}배" },
   help: { explain: "{term} 설명" },
   guide: {
@@ -101,6 +115,7 @@ export const ko = Object.freeze({
     integrator: { title: "적분기와 스텝 제어", body: "엔진은 1/240초 고정 런타임 스텝과 고전적 RK4를 사용합니다. 솔버는 정규화 하위 스텝을 0.02로 제한하고 업데이트당 계산량을 제한합니다." },
     measurements: { title: "측정값과 분류", body: "HUD는 좌표·고유 시간, 반지름, 국소 속도, 보존량, 드리프트, 4-속도 잔차, 하위 스텝, 상태와 관측적 궤도 분류를 표시합니다." },
     scope: { title: "과학적 범위와 한계", body: "고정된 슈바르츠실트 시공간에서 시간꼴 시험 입자 운동을 적분합니다. 수치 상대론 솔버가 아니며 회전, 역반응, 복사 반작용, 충돌, 유한 크기 천체는 모델링하지 않습니다." },
+    scaleViews: { title: "정규화 보기와 실제 축척", body: "정규화 보기는 월드 단위 1을 1 rₛ로 사용하므로 질량이 바뀌어도 같은 r/rₛ의 비율은 유지됩니다. 실제 축척 보기는 SI 미터를 설정된 월드 단위당 미터로 변환해 질량 증가에 따른 지평선과 궤도의 확대를 보여 줍니다. 자동 맞춤은 동일한 물리 형상을 유지하고 카메라 구도만 바꿉니다. 교육용 격자는 직접적인 SI 자가 아닌 정규화 시각화 프록시입니다." },
   },
   glossary: {
     mass: { term: "블랙홀 질량", definition: "태양 질량(M☉) 단위의 중심 슈바르츠실트 질량입니다. 물리적 길이와 시간 척도를 정하지만 무차원 궤도 모양은 바꾸지 않습니다." },
@@ -109,5 +124,12 @@ export const ko = Object.freeze({
     specificEnergy: { term: "비에너지 ε", definition: "단위 정지 질량당 보존되는 무차원 에너지입니다." }, angularMomentum: { term: "비각운동량 λ", definition: "슈바르츠실트 길이 척도로 정규화한 단위 정지 질량당 보존 각운동량입니다." },
     localVelocity: { term: "국소 관측자 속도", definition: "정지 관측자가 측정한 물리적 방사·접선 속도의 광속 대비 비율입니다." }, integrator: { term: "RK4 적분기", definition: "4차 명시적 수치 적분법입니다. 정규화 스텝이 작을수록 정확도와 계산 비용이 증가합니다." },
     residual: { term: "4-속도 잔차", definition: "시간꼴 정규화 조건에서 벗어난 수치 오차입니다. 0에 가까울수록 좋습니다." }, classification: { term: "궤도 분류", definition: "불변량과 적분 상태로 추론한 진단 표지이며 별도의 물리 모델이 아닙니다." },
+    normalizedCoordinates: { term: "정규화 좌표", definition: "거리를 슈바르츠실트 반지름으로 나눕니다. 지평선은 항상 1 rₛ이고 6 rₛ의 입자는 중심에서 월드 단위 6만큼 떨어집니다." },
+    physicalScale: { term: "실제 축척", definition: "SI 미터를 하나의 월드 단위당 미터 값으로 나눕니다. 표시 축척 변경은 궤도 해를 바꾸지 않습니다." },
+    worldUnit: { term: "월드 단위", definition: "보기 모드에 따라 슈바르츠실트 반지름 하나 또는 설정된 SI 거리를 뜻하는 렌더 공간 거리입니다." },
+    metresPerWorldUnit: { term: "월드 단위당 미터", definition: "실제 축척 보기에서 월드 단위 하나가 나타내는 고정 SI 거리입니다. 양수의 안전 범위 안에서만 설정할 수 있습니다." },
+    autoFit: { term: "자동 맞춤", definition: "지평선과 현재 궤도를 여백 안에 담도록 이벤트 때만 카메라를 조정하며 물체 비율은 바꾸지 않습니다." },
+    normalizedMassAppearance: { term: "질량 변화가 같아 보이는 이유", definition: "같은 r/rₛ에서는 지평선과 궤도가 같은 SI 배율로 커집니다. 정규화 보기는 둘 다 rₛ로 나누므로 비율이 같습니다." },
+    gridPhysicalScale: { term: "격자 축척의 한계", definition: "격자는 교육용 정규화 변형 프록시입니다. 물체 위치가 SI 축척이어도 격자는 직접적인 물리 자가 아닙니다." },
   },
 });

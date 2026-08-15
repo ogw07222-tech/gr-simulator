@@ -1,7 +1,7 @@
 import "./ui/main.css";
 import { PHYSICS_DEFAULTS, SIMULATION_DEFAULTS, SIMULATION_DOMAIN, TRAIL_CAPACITY, Store } from "./core/index.js";
 import { SchwarzschildModel } from "./physics/index.js";
-import { MassObject, Renderer, VolumetricGrid } from "./rendering/index.js";
+import { MassObject, RenderScaleMode, RenderScaleTransform, Renderer, VolumetricGrid } from "./rendering/index.js";
 import {
   ResourceManager,
   FrameRateController,
@@ -14,7 +14,7 @@ import {
   SnapshotManager,
   SubsystemManager,
 } from "./systems/index.js";
-import { AppShell, ControlPanel, VisualSettingsPanel } from "./ui/index.js";
+import { AppShell, ControlPanel, ScaleIndicator, VisualSettingsPanel } from "./ui/index.js";
 
 function createRenderSnapshotBuffer() {
   const data = {
@@ -24,7 +24,7 @@ function createRenderSnapshotBuffer() {
     energy: 0, angularMomentum: 0, angularMomentumSI: 0, energyDrift: 0,
     angularMomentumDrift: 0, normalizationResidual: 0, integrationSubsteps: 0,
     minimumRadiusRs: 0, maximumRadiusRs: 0,
-    renderX: 0, renderY: 0, renderZ: 0,
+    normalizedX: 0, normalizedY: 0, normalizedZ: 0, renderX: 0, renderY: 0, renderZ: 0,
   };
   const view = Object.freeze({
     get mass() { return data.mass; },
@@ -49,6 +49,9 @@ function createRenderSnapshotBuffer() {
     get integrationSubsteps() { return data.integrationSubsteps; },
     get minimumRadiusRs() { return data.minimumRadiusRs; },
     get maximumRadiusRs() { return data.maximumRadiusRs; },
+    get normalizedX() { return data.normalizedX; },
+    get normalizedY() { return data.normalizedY; },
+    get normalizedZ() { return data.normalizedZ; },
     get renderX() { return data.renderX; },
     get renderY() { return data.renderY; },
     get renderZ() { return data.renderZ; },
@@ -79,6 +82,9 @@ function copyRenderSnapshot(target, source) {
   target.integrationSubsteps = source.integrationSubsteps;
   target.minimumRadiusRs = source.minimumRadiusRs;
   target.maximumRadiusRs = source.maximumRadiusRs;
+  target.normalizedX = source.normalizedX;
+  target.normalizedY = source.normalizedY;
+  target.normalizedZ = source.normalizedZ;
   target.renderX = source.renderX;
   target.renderY = source.renderY;
   target.renderZ = source.renderZ;
@@ -101,6 +107,7 @@ const grid = resources.register(new VolumetricGrid({
   spacing: SIMULATION_DEFAULTS.gridSpacing,
 }));
 const massObject = resources.register(new MassObject());
+const scaleTransform = new RenderScaleTransform();
 const mobileLayout = window.matchMedia("(max-width: 820px)").matches;
 const trailCapacityOptions = mobileLayout ? TRAIL_CAPACITY.mobileOptions : TRAIL_CAPACITY.desktopOptions;
 const initialTrailCapacity = mobileLayout ? TRAIL_CAPACITY.mobile : TRAIL_CAPACITY.desktop;
@@ -112,6 +119,7 @@ const particles = resources.register(new ParticleManager({
 const particleRenderer = resources.register(new ParticleRenderer({
   maxParticles: particles.maxParticles,
   maxTrailLength: particles.maxTrailLength,
+  scaleTransform,
 }));
 renderer.add(grid.object);
 renderer.add(massObject.group);
@@ -120,18 +128,65 @@ renderer.add(particleRenderer.haloObject);
 renderer.add(particleRenderer.trailObject);
 
 const geodesicSubsystem = new SchwarzschildParticleSubsystem({ particles });
+const scaleIndicator = resources.register(new ScaleIndicator(
+  document.querySelector("#viewport-shell"), scaleTransform,
+));
+
+const snapshotRenderPosition = { x: 0, y: 0, z: 0 };
+const snapshotSource = { mass: 0, schwarzschildRadius: 0 };
+let lastMassScaleRevision = -1;
+function refreshPresentationSnapshot(forceIndicator = false) {
+  geodesicSubsystem.writeSnapshot(snapshotSource);
+  snapshotSource.normalizedX = snapshotSource.renderX;
+  snapshotSource.normalizedY = snapshotSource.renderY;
+  snapshotSource.normalizedZ = snapshotSource.renderZ;
+  scaleTransform.setSchwarzschildRadiusMetres(snapshotSource.schwarzschildRadiusMetres);
+  scaleTransform.writeCartesian(
+    snapshotRenderPosition,
+    snapshotSource.normalizedX, snapshotSource.normalizedY, snapshotSource.normalizedZ,
+  );
+  snapshotSource.renderX = snapshotRenderPosition.x;
+  snapshotSource.renderY = snapshotRenderPosition.y;
+  snapshotSource.renderZ = snapshotRenderPosition.z;
+  const snapshot = snapshots.publish(snapshotSource);
+  if (lastMassScaleRevision !== scaleTransform.revision()) {
+    massObject.updateRenderScale(scaleTransform);
+    lastMassScaleRevision = scaleTransform.revision();
+  }
+  scaleIndicator.update(snapshot, forceIndicator);
+  return snapshot;
+}
+
+function fitPhysicalScene() {
+  const snapshot = snapshots.latest();
+  if (!snapshot || snapshot.schwarzschildRadiusMetres <= 0 || !scaleTransform.isPhysical()) return false;
+  const normalizedExtent = Math.max(1, snapshot.radiusRs, snapshot.maximumRadiusRs);
+  return renderer.fitPhysicalScene(scaleTransform.normalizedRadiusToRender(normalizedExtent), 1.25);
+}
 
 const runtimeControls = {
   timeScales: TIME_SCALES,
   play: () => clock.resume(),
   pause: () => clock.pause(),
   setTimeScale: (scale) => clock.setTimeScale(scale),
-  applyOrbit: (configuration) => geodesicSubsystem.apply(configuration),
+  applyOrbit: (configuration) => {
+    const previous = snapshots.latest();
+    const previousValues = previous ? {
+      massSolar: previous.massSolar,
+      schwarzschildRadiusMetres: previous.schwarzschildRadiusMetres,
+      radiusRs: previous.radiusRs,
+    } : null;
+    geodesicSubsystem.apply(configuration);
+    const current = refreshPresentationSnapshot(true);
+    scaleIndicator.recordApplied(previousValues, current);
+    if (scaleTransform.mode === RenderScaleMode.AUTO_FIT_PHYSICAL) fitPhysicalScene();
+  },
   getOrbitConfiguration: () => ({ ...geodesicSubsystem.configuration }),
-  resetParticle: () => geodesicSubsystem.reset(),
+  resetParticle: () => { geodesicSubsystem.reset(); refreshPresentationSnapshot(true); },
   resetAll: () => {
     clock.reset();
     geodesicSubsystem.reset();
+    refreshPresentationSnapshot(true);
   },
 };
 
@@ -157,6 +212,10 @@ const visualSettings = resources.register(new VisualSettingsPanel(
         particleRenderer.resizeTrailCapacity(capacity);
       },
     },
+    scaleTransform,
+    scaleIndicator,
+    fitPhysicalScene,
+    onScaleChange: () => refreshPresentationSnapshot(true),
   },
 ));
 const appShell = resources.register(new AppShell(
@@ -164,7 +223,6 @@ const appShell = resources.register(new AppShell(
   { resetCamera: () => renderer.resetCamera() },
 ));
 
-const snapshotSource = { mass: 0, schwarzschildRadius: 0 };
 let state = store.getState();
 const applyState = (nextState) => {
   state = nextState;
@@ -172,19 +230,19 @@ const applyState = (nextState) => {
   visualSettings.updateLegends();
   snapshotSource.mass = state.mass;
   snapshotSource.schwarzschildRadius = model.schwarzschildRadius(state.mass);
-  geodesicSubsystem.writeSnapshot(snapshotSource);
-  snapshots.publish(snapshotSource);
+  refreshPresentationSnapshot(true);
 };
 resources.register(store.subscribe(applyState));
 applyState(state);
+if (scaleTransform.mode === RenderScaleMode.AUTO_FIT_PHYSICAL) fitPhysicalScene();
 
 const renderingSubsystem = {
   order: 100,
   render(renderDelta) {
     const snapshot = snapshots.latest();
-    massObject.updateSchwarzschildRadius(snapshot.schwarzschildRadius);
     renderer.render(prepareGridView);
     appShell.update(renderDelta, simulationState);
+    scaleIndicator.update(snapshot);
   },
 };
 
@@ -192,8 +250,7 @@ const particleSubsystem = {
   order: 60,
   update(delta) {
     geodesicSubsystem.update(delta);
-    geodesicSubsystem.writeSnapshot(snapshotSource);
-    snapshots.publish(snapshotSource);
+    refreshPresentationSnapshot();
   },
   render() {
     particleRenderer.sync(particles);
@@ -260,6 +317,9 @@ window.__GR4D_DIAGNOSTICS__ = Object.freeze({
       },
       physics: {
         status: geodesicSubsystem.geodesic.status,
+        classification: geodesicSubsystem.geodesic.classification,
+        energy: geodesicSubsystem.geodesic.state.energy,
+        angularMomentum: geodesicSubsystem.geodesic.state.angularMomentum,
         normalizedTime: geodesicSubsystem.geodesic.state.values[0],
         radius: geodesicSubsystem.geodesic.state.values[1],
         phi: geodesicSubsystem.geodesic.state.values[2],
@@ -275,6 +335,10 @@ window.__GR4D_DIAGNOSTICS__ = Object.freeze({
       },
       snapshot: {
         revision: snapshots.revision(),
+        schwarzschildRadiusMetres: snapshots.latest().schwarzschildRadiusMetres,
+        normalizedX: snapshots.latest().normalizedX,
+        normalizedY: snapshots.latest().normalizedY,
+        normalizedZ: snapshots.latest().normalizedZ,
         x: snapshots.latest().renderX,
         y: snapshots.latest().renderY,
         z: snapshots.latest().renderZ,
@@ -285,6 +349,13 @@ window.__GR4D_DIAGNOSTICS__ = Object.freeze({
         x: particleRenderer.positions[0],
         y: particleRenderer.positions[1],
         z: particleRenderer.positions[2],
+      },
+      scale: {
+        mode: scaleTransform.mode,
+        metresPerWorldUnit: scaleTransform.metresPerWorldUnit,
+        revision: scaleTransform.revision(),
+        horizonRenderRadius: scaleTransform.horizonRenderRadius(),
+        fitCount: renderer.fitDiagnostics.count,
       },
       maxFps: frameRateController.maxFps,
       grid: { ...grid.getDiagnostics() },

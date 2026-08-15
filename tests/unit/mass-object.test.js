@@ -14,10 +14,11 @@ describe("MassObject presentation", () => {
     expect(object.horizon.material.uniforms.uRimIntensity.value).toBe(1.4);
   });
 
-  it("preserves horizon radius scaling and disposes every resource", () => {
+  it("keeps the black presentation body at 0.85 horizon radius and disposes every resource", () => {
     const object = new MassObject();
     object.updateSchwarzschildRadius(4);
-    expect(object.horizon.scale.x).toBeCloseTo(2.9);
+    expect(object.horizon.scale.x).toBe(4);
+    expect(object.core.geometry.parameters.radius * object.core.scale.x).toBeCloseTo(3.4);
     const coreGeometry = vi.spyOn(object.core.geometry, "dispose");
     const coreMaterial = vi.spyOn(object.core.material, "dispose");
     const horizonGeometry = vi.spyOn(object.horizon.geometry, "dispose");

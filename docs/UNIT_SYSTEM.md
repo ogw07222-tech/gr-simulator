@@ -16,4 +16,12 @@ Internally `c = 1`, `r_s = 1`, `ρ = r/r_s`, and `s = cτ/r_s`. The mass paramet
 
 Public conversion APIs name SI explicitly. Radius conversions use metres, time conversions use seconds, velocity conversions use metres per second, and SI specific angular momentum uses square metres per second. One solar mass gives `r_s = 2953.339382066878 m`, preventing the common factor-of-two error.
 
+## Rendering scale boundary
+
+Physics snapshots remain authoritative in normalized Schwarzschild coordinates. Normalized view uses `1 world unit = 1 r_s`. Physical views use the presentation-only conversion
+
+`render coordinate = normalized coordinate × r_s(m) / configured metres per world unit`.
+
+The same factor is applied to the horizon, particle position, and every trail sample. It is never passed into the geodesic equations. The configurable metres-per-world-unit value is a camera/rendering convention, not a change to SI constants or solver normalization.
+
 The supported UI mass range is `1–10¹⁰ M☉`. Normalization makes the solver dynamics mass-independent while SI readouts scale predictably; this range also avoids unusable number-entry magnitudes.

@@ -1,5 +1,15 @@
 # TODO
 
+## v0.7.3 scale visualization
+
+- [x] Centralize normalized-to-render coordinate conversion.
+- [x] Add normalized, physical, and auto-fit physical modes without solver mutation.
+- [x] Apply one transform to horizon, particle, and trail buffers.
+- [x] Persist and localize physical scale controls and indicators.
+- [x] Verify bounded resources across repeated view changes.
+- [ ] Revisit physical grid geometry only with a separately reviewed scientific model.
+- [ ] Keep photons, Kerr, lensing, and additional physics outside this release.
+
 ## v0.7.2 scientific UX
 
 - [x] Categorize dense controls with accessible disclosures.
