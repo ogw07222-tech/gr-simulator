@@ -43,8 +43,7 @@ export class ControlPanel {
         <div class="mode-switch" role="group" data-i18n-aria="controls.distanceMode">
           <button data-mode="GR" type="button">GR 3D</button><button data-mode="GR_W" type="button">GR + W</button>
         </div>
-        <label class="range-control" for="mass"><span><span data-i18n="controls.mass"></span>${helpButton("mass")}</span><output id="mass-value"></output><input id="mass" type="range" min="10" max="300" step="5" /></label>
-        <label class="range-control" for="w"><span data-i18n="controls.wDistance"></span><output id="w-value"></output><input id="w" type="range" min="0" max="6" step="0.05" /></label>
+        <label class="range-control" for="w"><span><span data-i18n="controls.wSlice"></span>${helpButton("wSlice")}</span><output id="w-value"></output><input id="w" type="range" min="-25" max="25" step="0.25" /></label>
       </div></details>
       <section class="panel-section"><h3 data-i18n="metrics.title"></h3><div class="metrics">
         <div><small data-i18n="metrics.schwarzschildRadius"></small><strong id="rs"></strong></div>
@@ -61,7 +60,7 @@ export class ControlPanel {
           <option value="constants" data-i18n="orbit.constants"></option>
         </select></label>
         <h3 data-i18n="orbit.step2"></h3>
-        <label class="numeric-control" for="black-hole-mass"><span><span data-i18n="orbit.massSolar"></span>${helpButton("mass")}</span><input id="black-hole-mass" type="number" min="1" max="10000000000" step="1" /></label>
+        <label class="numeric-control" for="black-hole-mass"><span><span data-i18n="orbit.massSolar"></span>${helpButton("mass")}</span><input id="black-hole-mass" type="number" min="1" max="10000000000" step="any" inputmode="decimal" /></label>
         <label class="numeric-control" for="orbit-radius"><span><span data-i18n="orbit.radiusRs"></span>${helpButton("schwarzschildRadius")}</span><input id="orbit-radius" type="number" min="1.000001" max="10" step="0.01" /></label>
         <output id="orbit-radius-km" class="derived-value"></output>
         <div class="orbit-local-inputs">
@@ -139,7 +138,6 @@ export class ControlPanel {
     this.root.querySelectorAll("[data-mode]").forEach((button) => {
       button.addEventListener("click", () => this.store.setState({ mode: button.dataset.mode }));
     });
-    this.root.querySelector("#mass").addEventListener("input", (event) => this.store.setState({ mass: Number(event.target.value) }));
     this.root.querySelector("#w").addEventListener("input", (event) => this.store.setState({ w: Number(event.target.value) }));
     if (this.runtime) {
       this.root.querySelector("#play").addEventListener("click", this.runtime.play);
@@ -177,18 +175,16 @@ export class ControlPanel {
   sync(state) {
     const useW = state.mode === "GR_W";
     this.root.querySelectorAll("[data-mode]").forEach((button) => button.classList.toggle("active", button.dataset.mode === state.mode));
-    const massInput = this.root.querySelector("#mass");
     const wInput = this.root.querySelector("#w");
-    massInput.value = state.mass;
     wInput.value = state.w;
     wInput.disabled = !useW;
-    this.root.querySelector("#mass-value").textContent = state.mass.toFixed(0);
     this.root.querySelector("#w-value").textContent = state.w.toFixed(2);
 
+    const normalizedMass = this.model.c * this.model.c / (2 * this.model.G);
     const sampleRadius = this.model.effectiveRadius(1, 1, 1, state.w, useW);
-    this.root.querySelector("#rs").textContent = this.model.schwarzschildRadius(state.mass).toFixed(3);
-    this.root.querySelector("#lapse").textContent = this.model.lapse(state.mass, sampleRadius).toFixed(3);
-    this.root.querySelector("#curvature").textContent = this.model.curvatureProxy(state.mass, sampleRadius).toFixed(3);
+    this.root.querySelector("#rs").textContent = this.model.schwarzschildRadius(normalizedMass).toFixed(3);
+    this.root.querySelector("#lapse").textContent = this.model.lapse(normalizedMass, sampleRadius).toFixed(3);
+    this.root.querySelector("#curvature").textContent = this.model.curvatureProxy(normalizedMass, sampleRadius).toFixed(3);
     this.root.querySelector("#vertices").textContent = this.grid.segmentVertexCount.toLocaleString(getLocale());
   }
 

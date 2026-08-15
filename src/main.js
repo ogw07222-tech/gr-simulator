@@ -144,6 +144,8 @@ const snapshotSource = { mass: 0, schwarzschildRadius: 0 };
 let lastMassScaleRevision = -1;
 function refreshPresentationSnapshot(forceIndicator = false) {
   geodesicSubsystem.writeSnapshot(snapshotSource);
+  snapshotSource.mass = snapshotSource.massSolar;
+  snapshotSource.schwarzschildRadius = 1;
   snapshotSource.normalizedX = snapshotSource.renderX;
   snapshotSource.normalizedY = snapshotSource.renderY;
   snapshotSource.normalizedZ = snapshotSource.renderZ;
@@ -233,17 +235,13 @@ const appShell = resources.register(new AppShell(
   { resetCamera: () => renderer.resetCamera() },
 ));
 
-let state = store.getState();
 const applyState = (nextState) => {
-  state = nextState;
-  grid.update(model, state);
+  grid.update(model, nextState);
   visualSettings.updateLegends();
-  snapshotSource.mass = state.mass;
-  snapshotSource.schwarzschildRadius = model.schwarzschildRadius(state.mass);
-  refreshPresentationSnapshot(true);
 };
 resources.register(store.subscribe(applyState));
-applyState(state);
+refreshPresentationSnapshot(true);
+applyState(store.getState());
 if (scaleTransform.mode === RenderScaleMode.AUTO_FIT_PHYSICAL) fitPhysicalScene();
 
 const renderingSubsystem = {

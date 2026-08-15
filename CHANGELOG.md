@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+### v0.7.6
+
+- Removed the duplicate visualization-only mass slider; the existing validated solar-mass field and Apply Initial Condition action are now the sole black-hole mass input path.
+- Defined W as a symmetric Schwarzschild-normalized visualization-slice coordinate and expanded it to a bounded `-25 rₛ` through `+25 rₛ` range with a zero default.
+- Isolated W updates to the reusable grid buffers and added diagnostics proving that W weakens the deformation proxy without changing particle physics.
+
 ### v0.7.5
 
 - Preserved the 1/240 s ordinary-time path while adding bounded, solver-safe high-speed advancement above 100x; unprocessed requested time remains queued and the HUD reports the effective rate.

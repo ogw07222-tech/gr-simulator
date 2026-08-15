@@ -1,4 +1,4 @@
-export const VERSION = "0.7.5";
+export const VERSION = "0.7.6";
 
 // 시각화용 무차원 단위계. SI 단위 변환은 이후 버전에서 별도 계층으로 추가한다.
 export const PHYSICS_DEFAULTS = Object.freeze({
@@ -18,8 +18,7 @@ export const SIMULATION_DOMAIN = Object.freeze({
 
 export const SIMULATION_DEFAULTS = Object.freeze({
   mode: "GR_W",
-  mass: 120,
-  w: 1.5,
+  w: 0,
   gridSize: SIMULATION_DOMAIN.width,
   gridSpacing: SIMULATION_DOMAIN.gridSpacing,
   warpScale: 12,
