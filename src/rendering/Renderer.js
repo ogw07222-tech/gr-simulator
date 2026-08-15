@@ -16,6 +16,10 @@ export class Renderer {
     this.camera.position.set(22, 18, 22);
     this.initialCameraPosition = this.camera.position.clone();
     this.fitDirection = new THREE.Vector3();
+    this.trackingOffset = new THREE.Vector3();
+    this.trackingPosition = new THREE.Vector3();
+    this.trackingDelta = new THREE.Vector3();
+    this.followingParticle = false;
     this.fitDiagnostics = { count: 0, extent: 0, distance: 0, near: 0.1, far: 500 };
 
     this.renderer = new THREE.WebGLRenderer({ antialias: true });
@@ -46,6 +50,41 @@ export class Renderer {
     this.camera.position.copy(this.initialCameraPosition);
     this.controls.target.set(0, 0, 0);
     this.controls.update();
+  }
+
+  focusPoint(x, y, z) {
+    if (!Number.isFinite(x) || !Number.isFinite(y) || !Number.isFinite(z)) return false;
+    this.trackingOffset.copy(this.camera.position).sub(this.controls.target);
+    if (this.trackingOffset.lengthSq() < Number.EPSILON) this.trackingOffset.copy(this.initialCameraPosition);
+    this.controls.target.set(x, y, z);
+    this.camera.position.copy(this.controls.target).add(this.trackingOffset);
+    this.controls.update();
+    return true;
+  }
+
+  setParticleFollow(enabled, x, y, z) {
+    if (enabled && (!Number.isFinite(x) || !Number.isFinite(y) || !Number.isFinite(z))) return false;
+    this.followingParticle = Boolean(enabled);
+    if (this.followingParticle) this.trackingPosition.set(x, y, z);
+    return this.followingParticle;
+  }
+
+  updateParticleFollow(x, y, z) {
+    if (!this.followingParticle || !Number.isFinite(x) || !Number.isFinite(y) || !Number.isFinite(z)) return false;
+    this.trackingDelta.set(x, y, z).sub(this.trackingPosition);
+    this.controls.target.add(this.trackingDelta);
+    this.camera.position.add(this.trackingDelta);
+    this.trackingPosition.set(x, y, z);
+    return true;
+  }
+
+  rebaseParticleFollow(x, y, z) {
+    if (!this.followingParticle || !Number.isFinite(x) || !Number.isFinite(y) || !Number.isFinite(z)) return false;
+    this.trackingOffset.copy(this.camera.position).sub(this.controls.target);
+    this.controls.target.set(x, y, z);
+    this.camera.position.copy(this.controls.target).add(this.trackingOffset);
+    this.trackingPosition.set(x, y, z);
+    return true;
   }
 
   fitPhysicalScene(sceneExtent, safetyMargin = 1.25) {

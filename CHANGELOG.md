@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+### v0.7.7
+
+- Connected applied black-hole mass and render-scale revisions to the reusable grid-buffer update path. The grid remains mathematically invariant in normalized `r/r_s` view and rescales consistently in physical views without exaggerating its educational deformation proxy.
+- Added localized one-shot particle focus and opt-in snapshot-driven particle follow controls. Follow preserves the camera offset and stops automatically when the particle is no longer valid.
+
 ### v0.7.6
 
 - Removed the duplicate visualization-only mass slider; the existing validated solar-mass field and Apply Initial Condition action are now the sole black-hole mass input path.

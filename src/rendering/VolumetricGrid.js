@@ -135,13 +135,13 @@ export class VolumetricGrid {
       line.name = `uniform-grid-${ix}-${iy}-${iz}`;
       line.frustumCulled = true;
       this.object.add(line);
-      chunks.push({ geometry, indices: chunkIndices, line, box });
+      chunks.push({ geometry, indices: chunkIndices, line, box, minimum: minimum.clone(), maximum: maximum.clone() });
     }
     return chunks;
   }
 
-  update(model, { w, mode, warpScale, maxDisplacement }) {
-    const signature = `${w}|${mode}|${warpScale}|${maxDisplacement}`;
+  update(model, { w, mode, warpScale, maxDisplacement, massSolar = 0, renderScale = 1 }) {
+    const signature = `${w}|${mode}|${warpScale}|${maxDisplacement}|${massSolar}|${renderScale}`;
     if (signature === this.lastInputSignature) return false;
     this.lastInputSignature = signature;
     const useW = mode === "GR_W";
@@ -167,21 +167,29 @@ export class VolumetricGrid {
       this.displayValues[vertex] = normalized;
       const spatialRadius = Math.sqrt(x * x + y * y + z * z);
       const ratio = spatialRadius > 0 ? maxDisplacement * normalized / spatialRadius : 0;
-      this.positions[offset] = x * (1 - ratio);
-      this.positions[offset + 1] = y * (1 - ratio);
-      this.positions[offset + 2] = z * (1 - ratio);
+      this.positions[offset] = x * (1 - ratio) * renderScale;
+      this.positions[offset + 1] = y * (1 - ratio) * renderScale;
+      this.positions[offset + 2] = z * (1 - ratio) * renderScale;
       writeGridDeformationColor(this.colors, offset, normalized);
     }
 
     this.legend.farFieldValue = this.rawDisplacements[this.rawDisplacements.length - 1];
     this.positionAttribute.needsUpdate = true;
     this.colorAttribute.needsUpdate = true;
+    for (let index = 0; index < this.chunks.length; index += 1) {
+      const chunk = this.chunks[index];
+      chunk.box.min.copy(chunk.minimum).multiplyScalar(renderScale);
+      chunk.box.max.copy(chunk.maximum).multiplyScalar(renderScale);
+      chunk.box.getBoundingSphere(chunk.geometry.boundingSphere);
+    }
     this.diagnostics.recomputations += 1;
     this.diagnostics.bufferUploads += 2;
     const center = Math.floor(this.rawDisplacements.length / 2);
     this.diagnostics.sliceW = useW ? w : 0;
     this.diagnostics.centralRawDeformation = this.rawDisplacements[center];
     this.diagnostics.centralDisplayDeformation = this.displayValues[center];
+    this.diagnostics.appliedMassSolar = massSolar;
+    this.diagnostics.renderScale = renderScale;
     return true;
   }
 

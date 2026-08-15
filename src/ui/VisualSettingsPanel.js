@@ -30,7 +30,7 @@ export class VisualSettingsPanel {
   constructor(root, {
     particleRenderer, grid, massObject, frameRateController = null, trailCapacity = null,
     scaleTransform = null, fitPhysicalScene = () => {}, scaleIndicator = null,
-    onScaleChange = () => {}, unitFormatter = null,
+    onScaleChange = () => {}, unitFormatter = null, particleCamera = null,
   }) {
     this.root = root;
     this.particleRenderer = particleRenderer;
@@ -42,6 +42,8 @@ export class VisualSettingsPanel {
     this.scaleIndicator = scaleIndicator;
     this.onScaleChange = onScaleChange;
     this.unitFormatter = unitFormatter;
+    this.particleCamera = particleCamera;
+    this.particleTrackingAvailable = false;
     this.trailCapacity = trailCapacity ?? {
       current: particleRenderer.maxTrailLength,
       options: [particleRenderer.maxTrailLength],
@@ -81,6 +83,8 @@ export class VisualSettingsPanel {
         <label class="numeric-control" for="physical-scale"><span><span data-i18n="scale.metresPerWorldUnit"></span>${helpButton("metresPerWorldUnit")}</span><input id="physical-scale" type="number" min="1000000" max="1000000000000000" step="1000000" /></label>
         <output id="physical-scale-readable" class="derived-value"></output>
         <div class="scale-actions"><button id="scale-decrease" type="button" data-i18n="scale.decrease"></button><button id="scale-increase" type="button" data-i18n="scale.increase"></button><button id="fit-physical-scene" type="button" data-i18n="scale.fit"></button></div>
+        ${this.particleCamera ? `<button id="focus-particle" class="secondary-action" type="button" data-i18n="camera.focusParticle" disabled></button>
+        <label class="switch scale-switch"><input id="follow-particle" type="checkbox" disabled /><span data-i18n="camera.followParticle"></span></label>` : ""}
         <label class="switch scale-switch"><input id="show-scale-indicator" type="checkbox" /><span data-i18n="scale.showIndicator"></span></label>
         <label class="switch scale-switch"><input id="show-normalized-grid-physical" type="checkbox" /><span data-i18n="scale.showGridPhysical"></span></label>
         <p class="scientific-note"><span data-i18n="scale.gridDisclaimer"></span>${helpButton("gridPhysicalScale")}</p>
@@ -201,6 +205,10 @@ export class VisualSettingsPanel {
         this.#applyScale(false);
       });
       this.root.querySelector("#reset-scale").addEventListener("click", () => this.resetScale());
+      this.root.querySelector("#focus-particle")?.addEventListener("click", () => this.particleCamera.focus());
+      this.root.querySelector("#follow-particle")?.addEventListener("change", (event) => {
+        if (!this.particleCamera.setFollow(event.target.checked)) event.target.checked = false;
+      });
     }
   }
 
@@ -262,6 +270,19 @@ export class VisualSettingsPanel {
     this.root.querySelector("#grid-legend-max").textContent = format(grid.rawMaximum);
   }
 
+  setParticleTrackingAvailable(available) {
+    const next = Boolean(available);
+    if (next === this.particleTrackingAvailable) return;
+    this.particleTrackingAvailable = next;
+    this.root.querySelector("#focus-particle").disabled = !next;
+    const follow = this.root.querySelector("#follow-particle");
+    follow.disabled = !next;
+    if (!next && follow.checked) {
+      follow.checked = false;
+      this.particleCamera.setFollow(false);
+    }
+  }
+
   reset() {
     Object.assign(this.values, DEFAULTS);
     this.apply();
@@ -290,9 +311,9 @@ export class VisualSettingsPanel {
     });
     this.scaleIndicator?.setVisible(this.values.showScaleIndicator);
     this.#persistScaleSettings();
-    if (notify) this.onScaleChange();
     this.sync();
     if (shouldFit && this.scaleTransform.isPhysical()) this.fitPhysicalScene();
+    if (notify) this.onScaleChange();
   }
 
   #restoreScaleSettings() {

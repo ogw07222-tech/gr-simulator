@@ -15,7 +15,7 @@ test("preserves simulation behavior while switching scientific UI locales", asyn
   await expect(page.locator("html")).toHaveAttribute("lang", "en");
   await expect(page.locator("#locale-select")).toHaveValue("en");
   await expect(page.getByRole("heading", { name: "Simulation" })).toBeVisible();
-  await expect(page.locator(".version-chip")).toHaveText("v0.7.6");
+  await expect(page.locator(".version-chip")).toHaveText("v0.7.7");
   await expect(page.locator("#geo-classification")).toHaveText("Stable circular");
   await expect(page.locator("#geo-status")).toHaveText("Active");
   await expect(page.locator("#orbit-preset")).toHaveValue("circular");
@@ -99,6 +99,11 @@ test("applies one numeric mass input and keeps W isolated to the grid", async ({
   await page.getByRole("button", { name: "Apply Initial Condition" }).click();
   const applied = await page.evaluate(() => window.__GR4D_DIAGNOSTICS__.getSnapshot());
   expect(applied.snapshot.schwarzschildRadiusMetres).toBeGreaterThan(initial.snapshot.schwarzschildRadiusMetres);
+  expect(applied.grid.appliedMassSolar).toBe(1.25e7);
+  expect(applied.grid.recomputations).toBe(initial.grid.recomputations + 1);
+  await page.getByRole("button", { name: "Apply Initial Condition" }).click();
+  expect((await page.evaluate(() => window.__GR4D_DIAGNOSTICS__.getSnapshot())).grid.recomputations)
+    .toBe(applied.grid.recomputations);
 
   await mass.fill("0");
   await page.getByRole("button", { name: "Apply Initial Condition" }).click();
@@ -113,6 +118,34 @@ test("applies one numeric mass input and keeps W isolated to the grid", async ({
   expect(afterW.grid.recomputations).toBe(gridBeforeW.recomputations + 1);
   expect(afterW.physics).toEqual(physicsBeforeW);
   await expect(page.getByRole("button", { name: "Explain W visualization slice" })).toBeVisible();
+  expect(consoleErrors).toEqual([]);
+});
+
+test("focuses and follows the particle through final render coordinates", async ({ page }) => {
+  const consoleErrors = collectErrors(page);
+  await page.goto("/");
+  await page.locator("#time-scale").selectOption("100");
+  await page.getByRole("button", { name: "Pause", exact: true }).click();
+  await page.getByRole("button", { name: "Focus Particle" }).click();
+  const focused = await page.evaluate(() => window.__GR4D_DIAGNOSTICS__.getSnapshot());
+  expect(focused.camera.targetX).toBeCloseTo(focused.snapshot.x, 5);
+  expect(focused.camera.targetY).toBeCloseTo(focused.snapshot.y, 5);
+  expect(focused.camera.targetZ).toBeCloseTo(focused.snapshot.z, 5);
+  await page.getByLabel("Follow Particle").check();
+  const before = await page.evaluate(() => window.__GR4D_DIAGNOSTICS__.getSnapshot());
+  await page.getByRole("button", { name: "Play", exact: true }).click();
+  await page.waitForTimeout(400);
+  const followed = await page.evaluate(() => window.__GR4D_DIAGNOSTICS__.getSnapshot());
+  expect(followed.camera.followingParticle).toBe(true);
+  expect(followed.camera.targetZ).not.toBe(before.camera.targetZ);
+  const beforeOffset = [before.camera.x - before.camera.targetX, before.camera.y - before.camera.targetY, before.camera.z - before.camera.targetZ];
+  const afterOffset = [followed.camera.x - followed.camera.targetX, followed.camera.y - followed.camera.targetY, followed.camera.z - followed.camera.targetZ];
+  afterOffset.forEach((value, index) => expect(value).toBeCloseTo(beforeOffset[index], 4));
+  await page.getByRole("button", { name: "Pause", exact: true }).click();
+  await page.locator("#scale-mode").selectOption("physical");
+  const physical = await page.evaluate(() => window.__GR4D_DIAGNOSTICS__.getSnapshot());
+  expect(physical.camera.targetX).toBeCloseTo(physical.snapshot.x, 4);
+  await page.getByLabel("Follow Particle").uncheck();
   expect(consoleErrors).toEqual([]);
 });
 

@@ -1,6 +1,6 @@
 // 한국어 UI 문구는 이 파일에서 관리합니다. 키 구조를 en.js와 동일하게 유지하세요.
 export const ko = Object.freeze({
-  app: { title: "GR-4D Simulator v0.7.6", description: "브라우저 기반 일반상대성이론 시뮬레이션 및 과학 시각화 실험실", eyebrow: "일반상대성이론 연구 콘솔" },
+  app: { title: "GR-4D Simulator v0.7.7", description: "브라우저 기반 일반상대성이론 시뮬레이션 및 과학 시각화 실험실", eyebrow: "일반상대성이론 연구 콘솔" },
   language: { label: "언어 선택", ko: "한국어", en: "English" },
   status: {
     running: "실행 중", paused: "일시정지", frame: "프레임", rendererOnline: "렌더러 정상",
@@ -49,6 +49,7 @@ export const ko = Object.freeze({
   },
   camera: {
     reset: "카메라 초기화", fullscreen: "전체 화면", toggleFullscreen: "전체 화면 전환",
+    focusParticle: "입자 찾기", followParticle: "입자 추적",
     viewportTools: "뷰포트 도구", viewport: "대화형 3차원 중력 시뮬레이션",
     orbitHint: "드래그: 회전", panHint: "오른쪽 드래그: 이동", zoomHint: "휠: 확대/축소",
   },
