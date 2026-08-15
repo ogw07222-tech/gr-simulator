@@ -1,6 +1,6 @@
 // 한국어 UI 문구는 이 파일에서 관리합니다. 키 구조를 en.js와 동일하게 유지하세요.
 export const ko = Object.freeze({
-  app: { title: "GR-4D Simulator v0.7.4", description: "브라우저 기반 일반상대성이론 시뮬레이션 및 과학 시각화 실험실", eyebrow: "일반상대성이론 연구 콘솔" },
+  app: { title: "GR-4D Simulator v0.7.5", description: "브라우저 기반 일반상대성이론 시뮬레이션 및 과학 시각화 실험실", eyebrow: "일반상대성이론 연구 콘솔" },
   language: { label: "언어 선택", ko: "한국어", en: "English" },
   status: {
     running: "실행 중", paused: "일시정지", frame: "프레임", rendererOnline: "렌더러 정상",
@@ -22,7 +22,7 @@ export const ko = Object.freeze({
     title: "계량 정보", schwarzschildRadius: "슈바르츠실트 반지름", centralLapse: "중심 시간 지연 계수 α",
     curvatureProxy: "곡률 근사값", gridVertices: "격자 정점",
   },
-  runtime: { title: "실행 상태", state: "상태", simulationTime: "시뮬레이션 시간", timeScale: "시간 배속", particleCount: "입자 수" },
+  runtime: { title: "실행 상태", state: "상태", simulationTime: "시뮬레이션 시간", timeScale: "요청 시간 배속", effectiveTimeScale: "유효 시간 배속", particleCount: "입자 수", trailSamples: "궤적 표본", trailCapacity: "궤적 용량", radialPeriods: "반지름 주기" },
   displayUnits: { section: "표시 단위", mode: "단위 체계", automatic: "자동", si: "SI", astronomical: "천문학", note: "표시만 변환하며 물리 계산은 항상 SI 단위를 유지합니다." },
   particle: { outOfDomain: "지원 영역 이탈" },
   model: {
@@ -54,7 +54,7 @@ export const ko = Object.freeze({
   },
   drawer: { close: "열린 패널 닫기" },
   orbit: {
-    setup: "슈바르츠실트 궤도 설정", preset: "초기 조건", circular: "원형 궤도",
+    setup: "슈바르츠실트 궤도 설정", preset: "초기 조건", circular: "원형 궤도", precessionDemo: "근일점 세차 데모",
     localVelocity: "정지 관측자 기준 국소 속도", constants: "보존량 직접 입력",
     massSolar: "블랙홀 질량 (M☉)", radiusRs: "초기 반지름 (rₛ)",
     radialVelocity: "국소 방사 속도 (광속 비율)", tangentialVelocity: "국소 접선 속도 (광속 비율)",

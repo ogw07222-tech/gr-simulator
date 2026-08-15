@@ -3,7 +3,7 @@ import { DEFAULT_TRAIL_SPEED_MAX, normalizeSpeed, writeSpeedToWhiteColor } from 
 import { RenderScaleTransform } from "../../rendering/scale/RenderScaleTransform.js";
 
 export class ParticleRenderer {
-  constructor({ maxParticles = 1000, maxTrailLength = 256, pointSize = 0.36, scaleTransform = null } = {}) {
+  constructor({ maxParticles = 1000, maxTrailParticles = maxParticles, maxTrailLength = 256, pointSize = 0.36, scaleTransform = null } = {}) {
     if (!Number.isInteger(maxParticles) || maxParticles < 1) {
       throw new RangeError("ParticleRenderer maxParticles must be a positive integer.");
     }
@@ -12,12 +12,13 @@ export class ParticleRenderer {
     }
 
     this.maxParticles = maxParticles;
+    this.maxTrailParticles = maxTrailParticles;
     this.scaleTransform = scaleTransform ?? new RenderScaleTransform();
     this.maxTrailLength = maxTrailLength;
     this.positions = new Float32Array(maxParticles * 3);
     this.colors = new Float32Array(maxParticles * 3);
-    this.trailPositions = new Float32Array(maxParticles * Math.max(0, maxTrailLength - 1) * 6);
-    this.trailColors = new Float32Array(maxParticles * Math.max(0, maxTrailLength - 1) * 6);
+    this.trailPositions = new Float32Array(maxTrailParticles * Math.max(0, maxTrailLength - 1) * 6);
+    this.trailColors = new Float32Array(maxTrailParticles * Math.max(0, maxTrailLength - 1) * 6);
     this.geometry = new THREE.BufferGeometry();
     this.positionAttribute = new THREE.BufferAttribute(this.positions, 3);
     this.colorAttribute = new THREE.BufferAttribute(this.colors, 3);
@@ -103,8 +104,8 @@ export class ParticleRenderer {
     }
     if (maxTrailLength === this.maxTrailLength) return false;
     this.maxTrailLength = maxTrailLength;
-    this.trailPositions = new Float32Array(this.maxParticles * Math.max(0, maxTrailLength - 1) * 6);
-    this.trailColors = new Float32Array(this.maxParticles * Math.max(0, maxTrailLength - 1) * 6);
+    this.trailPositions = new Float32Array(this.maxTrailParticles * Math.max(0, maxTrailLength - 1) * 6);
+    this.trailColors = new Float32Array(this.maxTrailParticles * Math.max(0, maxTrailLength - 1) * 6);
     this.trailGeometry.dispose();
     this.trailGeometry = new THREE.BufferGeometry();
     this.trailPositionAttribute = new THREE.BufferAttribute(this.trailPositions, 3);
@@ -143,6 +144,7 @@ export class ParticleRenderer {
       writeSpeedToWhiteColor(this.colors, offset, normalizedSpeed);
 
       const trail = particle.trail;
+      if (index >= this.maxTrailParticles) continue;
       const oldest = (trail.head - trail.count + trail.maxLength) % trail.maxLength;
       for (let trailIndex = 1; trailIndex < trail.count; trailIndex += 1) {
         const previous = ((oldest + trailIndex - 1) % trail.maxLength) * 3;

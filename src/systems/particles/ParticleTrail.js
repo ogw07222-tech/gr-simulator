@@ -64,6 +64,18 @@ export class ParticleTrail {
     return true;
   }
 
+  pushIfSeparated(position, minimumDistanceSquared) {
+    if (!this.enabled) return false;
+    if (this.count > 0) {
+      const previous = ((this.head - 1 + this.maxLength) % this.maxLength) * 3;
+      const dx = position.x - this.positions[previous];
+      const dy = position.y - this.positions[previous + 1];
+      const dz = position.z - this.positions[previous + 2];
+      if (dx * dx + dy * dy + dz * dz < minimumDistanceSquared) return false;
+    }
+    return this.push(position);
+  }
+
   read(index, target) {
     if (!Number.isInteger(index) || index < 0 || index >= this.count) {
       throw new RangeError("ParticleTrail index is out of range.");

@@ -25,7 +25,7 @@ function createRenderSnapshotBuffer() {
     coordinateTime: 0, properTime: 0, localSpeedFraction: 0, localSpeedMetresPerSecond: 0,
     energy: 0, angularMomentum: 0, angularMomentumSI: 0, energyDrift: 0,
     angularMomentumDrift: 0, normalizationResidual: 0, integrationSubsteps: 0,
-    minimumRadiusRs: 0, maximumRadiusRs: 0,
+    minimumRadiusRs: 0, maximumRadiusRs: 0, radialPeriods: 0,
     normalizedX: 0, normalizedY: 0, normalizedZ: 0, renderX: 0, renderY: 0, renderZ: 0,
   };
   const view = Object.freeze({
@@ -51,6 +51,7 @@ function createRenderSnapshotBuffer() {
     get integrationSubsteps() { return data.integrationSubsteps; },
     get minimumRadiusRs() { return data.minimumRadiusRs; },
     get maximumRadiusRs() { return data.maximumRadiusRs; },
+    get radialPeriods() { return data.radialPeriods; },
     get normalizedX() { return data.normalizedX; },
     get normalizedY() { return data.normalizedY; },
     get normalizedZ() { return data.normalizedZ; },
@@ -84,6 +85,7 @@ function copyRenderSnapshot(target, source) {
   target.integrationSubsteps = source.integrationSubsteps;
   target.minimumRadiusRs = source.minimumRadiusRs;
   target.maximumRadiusRs = source.maximumRadiusRs;
+  target.radialPeriods = source.radialPeriods;
   target.normalizedX = source.normalizedX;
   target.normalizedY = source.normalizedY;
   target.normalizedZ = source.normalizedZ;
@@ -120,6 +122,7 @@ const particles = resources.register(new ParticleManager({
 }));
 const particleRenderer = resources.register(new ParticleRenderer({
   maxParticles: particles.maxParticles,
+  maxTrailParticles: 1,
   maxTrailLength: particles.maxTrailLength,
   scaleTransform,
 }));
@@ -130,6 +133,7 @@ renderer.add(particleRenderer.haloObject);
 renderer.add(particleRenderer.trailObject);
 
 const geodesicSubsystem = new SchwarzschildParticleSubsystem({ particles });
+clock.setHighSpeedDelta(geodesicSubsystem.maximumSafeAdvanceSeconds());
 const unitFormatter = new UnitFormatter({ locale: getLocale });
 const scaleIndicator = resources.register(new ScaleIndicator(
   document.querySelector("#viewport-shell"), scaleTransform, unitFormatter,
@@ -180,6 +184,7 @@ const runtimeControls = {
       radiusRs: previous.radiusRs,
     } : null;
     geodesicSubsystem.apply(configuration);
+    clock.setHighSpeedDelta(geodesicSubsystem.maximumSafeAdvanceSeconds());
     const current = refreshPresentationSnapshot(true);
     scaleIndicator.recordApplied(previousValues, current);
     if (scaleTransform.mode === RenderScaleMode.AUTO_FIT_PHYSICAL) fitPhysicalScene();
@@ -259,7 +264,12 @@ const particleSubsystem = {
   },
   render() {
     particleRenderer.sync(particles);
-    controlPanel.syncRuntime(simulationState, particles.count());
+    controlPanel.syncRuntime(simulationState, particles.count(), {
+      effectiveTimeScale: clock.effectiveTimeScale(),
+      trailSamples: geodesicSubsystem.particle.trail.length,
+      trailCapacity: geodesicSubsystem.particle.trail.maxLength,
+      radialPeriods: geodesicSubsystem.geodesic.diagnostics.radialPeriods,
+    });
     controlPanel.syncGeodesic(snapshots.latest(), simulationState);
   },
 };
@@ -310,6 +320,9 @@ window.__GR4D_DIAGNOSTICS__ = Object.freeze({
       renderedFrames: runtimeDiagnostics.renderedFrames,
       simulationDelta: clock.simulationDelta,
       accumulator: clock.accumulator,
+      effectiveTimeScale: clock.effectiveTimeScale(),
+      droppedSimulationTime: clock.droppedSimulationTime,
+      lastUpdateCount: clock.lastUpdateCount,
       physicsUpdates: runtimeDiagnostics.physicsUpdates,
       lastPhysicsDelta: runtimeDiagnostics.lastPhysicsDelta,
       runtime: {
@@ -330,6 +343,9 @@ window.__GR4D_DIAGNOSTICS__ = Object.freeze({
         phi: geodesicSubsystem.geodesic.state.values[2],
         radialVelocity: geodesicSubsystem.geodesic.state.values[3],
         normalizedProperTime: geodesicSubsystem.geodesic.state.values[4],
+        radialPeriods: geodesicSubsystem.geodesic.diagnostics.radialPeriods,
+        radialPeriodAngle: geodesicSubsystem.geodesic.diagnostics.lastRadialPeriodAngle,
+        periapsisAdvance: geodesicSubsystem.geodesic.diagnostics.periapsisAdvance,
       },
       particle: {
         revision: particles.revision(),
@@ -337,6 +353,7 @@ window.__GR4D_DIAGNOSTICS__ = Object.freeze({
         y: geodesicSubsystem.particle.position.y,
         z: geodesicSubsystem.particle.position.z,
         trailLength: geodesicSubsystem.particle.trail.length,
+        trailCapacity: geodesicSubsystem.particle.trail.maxLength,
       },
       snapshot: {
         revision: snapshots.revision(),

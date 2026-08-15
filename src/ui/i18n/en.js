@@ -1,6 +1,6 @@
 // Edit English interface copy here. Keep this key structure identical to ko.js.
 export const en = Object.freeze({
-  app: { title: "GR-4D Simulator v0.7.4", description: "Browser-based General Relativity simulation and scientific visualization laboratory", eyebrow: "RELATIVITY RESEARCH CONSOLE" },
+  app: { title: "GR-4D Simulator v0.7.5", description: "Browser-based General Relativity simulation and scientific visualization laboratory", eyebrow: "RELATIVITY RESEARCH CONSOLE" },
   language: { label: "Select language", ko: "한국어", en: "English" },
   status: {
     running: "Running", paused: "Paused", frame: "FRAME", rendererOnline: "Renderer online",
@@ -22,7 +22,7 @@ export const en = Object.freeze({
     title: "Metric Readout", schwarzschildRadius: "Schwarzschild radius", centralLapse: "Central lapse α",
     curvatureProxy: "Curvature proxy", gridVertices: "Grid vertices",
   },
-  runtime: { title: "Runtime Status", state: "State", simulationTime: "Simulation time", timeScale: "Time scale", particleCount: "Particle count" },
+  runtime: { title: "Runtime Status", state: "State", simulationTime: "Simulation time", timeScale: "Requested time scale", effectiveTimeScale: "Effective time scale", particleCount: "Particle count", trailSamples: "Trail samples", trailCapacity: "Trail capacity", radialPeriods: "Radial periods" },
   displayUnits: { section: "Display Units", mode: "Unit system", automatic: "Automatic", si: "SI", astronomical: "Astronomical", note: "Display conversion only; physics always remains in SI units." },
   particle: { outOfDomain: "Outside supported domain" },
   model: {
@@ -54,7 +54,7 @@ export const en = Object.freeze({
   },
   drawer: { close: "Close open panel" },
   orbit: {
-    setup: "Schwarzschild Orbit Setup", preset: "Initial condition", circular: "Circular orbit",
+    setup: "Schwarzschild Orbit Setup", preset: "Initial condition", circular: "Circular orbit", precessionDemo: "Periapsis Precession Demo",
     localVelocity: "Local static-observer velocity", constants: "Conserved quantities",
     massSolar: "Black-hole mass (M☉)", radiusRs: "Initial radius (rₛ)",
     radialVelocity: "Local radial velocity (fraction of c)", tangentialVelocity: "Local tangential velocity (fraction of c)",

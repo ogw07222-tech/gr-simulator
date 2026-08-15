@@ -56,6 +56,7 @@ export class ControlPanel {
         <h3 data-i18n="orbit.step1"></h3><p class="control-description" data-i18n="orbit.step1Description"></p>
         <label class="select-control" for="orbit-preset"><span data-i18n="orbit.preset"></span><select id="orbit-preset">
           <option value="circular" data-i18n="orbit.circular"></option>
+          <option value="precession" data-i18n="orbit.precessionDemo"></option>
           <option value="local" data-i18n="orbit.localVelocity"></option>
           <option value="constants" data-i18n="orbit.constants"></option>
         </select></label>
@@ -89,7 +90,11 @@ export class ControlPanel {
         <div><small data-i18n="runtime.state"></small><strong id="runtime-state"></strong></div>
         <div><small data-i18n="runtime.simulationTime"></small><strong id="simulation-time"></strong></div>
         <div><small data-i18n="runtime.timeScale"></small><strong id="runtime-time-scale"></strong></div>
+        <div><small data-i18n="runtime.effectiveTimeScale"></small><strong id="runtime-effective-time-scale"></strong></div>
         <div><small data-i18n="runtime.particleCount"></small><strong id="particle-count"></strong></div>
+        <div><small data-i18n="runtime.trailSamples"></small><strong id="runtime-trail-samples"></strong></div>
+        <div><small data-i18n="runtime.trailCapacity"></small><strong id="runtime-trail-capacity"></strong></div>
+        <div><small data-i18n="runtime.radialPeriods"></small><strong id="runtime-radial-periods"></strong></div>
       </div></section>` : ""}
       ${this.runtime?.applyOrbit ? `<details class="panel-section control-disclosure scientific-measurements"><summary><span data-i18n="geodesic.title"></span></summary><div class="disclosure-body"><div class="runtime-status geodesic-status" aria-live="polite">
         <div><small data-i18n="geodesic.mass"></small><strong id="geo-mass"></strong></div>
@@ -187,7 +192,7 @@ export class ControlPanel {
     this.root.querySelector("#vertices").textContent = this.grid.segmentVertexCount.toLocaleString(getLocale());
   }
 
-  syncRuntime(state, particleCount) {
+  syncRuntime(state, particleCount, diagnostics = null) {
     if (!this.runtime) return;
     if (this.runtimeView.paused !== state.paused) {
       this.runtimeView.paused = state.paused;
@@ -212,6 +217,12 @@ export class ControlPanel {
       this.runtimeView.simulationTime = simulationTime;
       this.root.querySelector("#simulation-time").textContent = simulationTime;
     }
+    if (diagnostics) {
+      this.root.querySelector("#runtime-effective-time-scale").textContent = t("units.multiplier", { value: diagnostics.effectiveTimeScale.toFixed(1) });
+      this.root.querySelector("#runtime-trail-samples").textContent = diagnostics.trailSamples.toLocaleString(getLocale());
+      this.root.querySelector("#runtime-trail-capacity").textContent = diagnostics.trailCapacity.toLocaleString(getLocale());
+      this.root.querySelector("#runtime-radial-periods").textContent = diagnostics.radialPeriods.toLocaleString(getLocale());
+    }
   }
 
   syncGeodesic(snapshot, runtimeState = null) {
@@ -224,8 +235,14 @@ export class ControlPanel {
 
   #syncOrbitInputs() {
     const preset = this.root.querySelector("#orbit-preset").value;
+    if (preset === "precession") {
+      this.root.querySelector("#orbit-radius").value = 6;
+      this.root.querySelector("#specific-energy").value = 0.965;
+      this.root.querySelector("#specific-angular-momentum").value = 2;
+      this.root.querySelector("#radial-direction").value = -1;
+    }
     this.root.querySelector(".orbit-local-inputs").hidden = preset !== "local";
-    this.root.querySelector(".orbit-constant-inputs").hidden = preset !== "constants";
+    this.root.querySelector(".orbit-constant-inputs").hidden = preset !== "constants" && preset !== "precession";
     this.#syncOrbitDerived();
   }
 

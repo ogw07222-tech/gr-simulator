@@ -119,6 +119,32 @@ describe("SimulationClock", () => {
     expect(clock.tick(10_016, update)).toBeLessThanOrEqual(4);
     expect(clock.renderDelta).toBeCloseTo(0.016);
   });
+
+  it("advances high requested scales monotonically without silently dropping backlog", () => {
+    const advances = [1, 100, 1000, 10000, 100000].map((timeScale) => {
+      const state = new SimulationState({ timeScale });
+      const clock = new SimulationClock({ state });
+      clock.start(0);
+      for (let frame = 1; frame <= 60; frame += 1) clock.tick(frame * (1000 / 60), () => {});
+      expect(clock.droppedSimulationTime).toBeCloseTo(0);
+      return state.simulationTime;
+    });
+    expect(advances[1]).toBeGreaterThan(advances[0]);
+    expect(advances[2]).toBeGreaterThan(advances[1]);
+    expect(advances[3]).toBeGreaterThan(advances[2]);
+    expect(advances[4]).toBeGreaterThan(advances[3]);
+  });
+
+  it("produces the same unsaturated advancement across render frame rates", () => {
+    const run = (frames) => {
+      const state = new SimulationState({ timeScale: 1000 });
+      const clock = new SimulationClock({ state });
+      clock.start(0);
+      for (let frame = 1; frame <= frames; frame += 1) clock.tick(frame * (1000 / frames), () => {});
+      return state.simulationTime;
+    };
+    expect(run(30)).toBeCloseTo(run(60), 8);
+  });
 });
 
 describe("SimulationState", () => {
