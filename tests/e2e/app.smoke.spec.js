@@ -15,7 +15,7 @@ test("preserves simulation behavior while switching scientific UI locales", asyn
   await expect(page.locator("html")).toHaveAttribute("lang", "en");
   await expect(page.locator("#locale-select")).toHaveValue("en");
   await expect(page.getByRole("heading", { name: "Simulation" })).toBeVisible();
-  await expect(page.locator(".version-chip")).toHaveText("v0.7.4");
+  await expect(page.locator(".version-chip")).toHaveText("v0.7.5");
   await expect(page.locator("#geo-classification")).toHaveText("Stable circular");
   await expect(page.locator("#geo-status")).toHaveText("Active");
   await expect(page.locator("#orbit-preset")).toHaveValue("circular");
@@ -45,11 +45,11 @@ test("preserves simulation behavior while switching scientific UI locales", asyn
   await expect(page.locator(".grid-gradient")).toBeVisible();
   await expect(page.locator("#speed-legend-max")).toHaveText("2.0");
   await expect(page.locator("#grid-legend-max")).not.toBeEmpty();
-  await expect(page.locator("#trail-capacity")).toHaveValue("1024");
+  await expect(page.locator("#trail-capacity")).toHaveValue("16384");
   await expect(page.locator("#max-fps")).toHaveValue("60");
   await page.locator("#max-fps").selectOption("30");
-  await page.locator("#trail-capacity").selectOption("512");
-  await expect(page.locator("#trail-capacity")).toHaveValue("512");
+  await page.locator("#trail-capacity").selectOption("4096");
+  await expect(page.locator("#trail-capacity")).toHaveValue("4096");
 
   await page.locator("#time-scale").selectOption("2");
   await expect(page.locator("#runtime-time-scale")).toHaveText("2x");
@@ -78,7 +78,7 @@ test("preserves simulation behavior while switching scientific UI locales", asyn
   await expect(page.getByRole("heading", { name: "시뮬레이션" })).toBeVisible();
   await expect(page.locator("#runtime-time-scale")).toHaveText("2배");
   await expect(page.locator("#max-fps")).toHaveValue("30");
-  await expect(page.locator("#trail-capacity")).toHaveValue("512");
+  await expect(page.locator("#trail-capacity")).toHaveValue("4096");
   expect(Number.parseFloat(await page.locator("#simulation-time").textContent())).toBeGreaterThanOrEqual(timeBeforeLocaleSwitch);
   await page.reload();
   await expect(page.locator("#locale-select")).toHaveValue("ko");
@@ -128,7 +128,7 @@ test("keeps bilingual drawers and legends usable on mobile", async ({ page }) =>
   expect(await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth)).toBeLessThanOrEqual(0);
   await page.getByRole("button", { name: "Visuals", exact: true }).click();
   await expect(page.locator("#visual-settings-panel")).toBeFocused();
-  await expect(page.locator("#trail-capacity")).toHaveValue("512");
+  await expect(page.locator("#trail-capacity")).toHaveValue("16384");
   await expect(page.locator(".speed-gradient")).toBeVisible();
   await page.getByRole("button", { name: "Close visual settings", exact: true }).click();
 

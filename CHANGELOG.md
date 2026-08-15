@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+### v0.7.5
+
+- Preserved the 1/240 s ordinary-time path while adding bounded, solver-safe high-speed advancement above 100x; unprocessed requested time remains queued and the HUD reports the effective rate.
+- Increased the selectable trail capacity to 4,096 / 16,384 / 65,536 samples; only created particles own storage, and displacement-based sampling remains independent of solver substeps.
+- Added a deterministic periapsis-precession demonstration preset and radial-period diagnostics without changing the Schwarzschild equations or initial-condition formulas.
+
 ### Deployment fixes
 
 - Removed the duplicate repository-root GitHub Pages publisher that deployed the source `index.html` and caused `/src/main.js` to return 404.

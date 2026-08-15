@@ -12,8 +12,11 @@ import {
 import { ParticleState } from "./particles/index.js";
 
 const DEFAULT_RENDER_SCALE = 1;
+const MINIMUM_TRAIL_DISPLACEMENT_SQUARED = 0.02 ** 2;
 
 function createInitialCondition(configuration) {
+  // Stable bound demo: r=6 r_s, epsilon=0.965, lambda=2, initially inward.
+  if (configuration.preset === "precession") return createConstantsInitialCondition(6, 0.965, 2, -1);
   if (configuration.preset === "local") {
     return createLocalVelocityInitialCondition(
       configuration.radius,
@@ -81,6 +84,12 @@ export class SchwarzschildParticleSubsystem {
 
   reset() { return this.apply(this.configuration); }
 
+  maximumSafeAdvanceSeconds() {
+    return this.units.normalizedTimeToSI(
+      this.geodesic.maximumNormalizedStep * this.geodesic.maximumSubsteps,
+    );
+  }
+
   update(deltaSeconds) {
     if (this.geodesic.status !== GeodesicStatus.ACTIVE) return;
     this.geodesic.advanceProperTimeSI(deltaSeconds);
@@ -113,6 +122,7 @@ export class SchwarzschildParticleSubsystem {
     target.angularMomentumDrift = this.geodesic.diagnostics.relativeAngularMomentumDrift;
     target.normalizationResidual = this.geodesic.diagnostics.normalizationResidual;
     target.integrationSubsteps = this.geodesic.diagnostics.substeps;
+    target.radialPeriods = this.geodesic.diagnostics.radialPeriods;
     target.minimumRadiusRs = this.geodesic.diagnostics.minimumRadius;
     target.maximumRadiusRs = this.geodesic.diagnostics.maximumRadius;
     target.renderX = this.particle.position.x;
@@ -140,7 +150,9 @@ export class SchwarzschildParticleSubsystem {
     else if (this.geodesic.status === GeodesicStatus.OUT_OF_DOMAIN) this.particle.state = ParticleState.OUT_OF_DOMAIN;
     else if (this.geodesic.state.energy >= 1) this.particle.state = ParticleState.ESCAPING;
     else this.particle.state = ParticleState.ORBITING;
-    if (appendTrail && this.geodesic.status === GeodesicStatus.ACTIVE) this.particle.trail.push(this.particle.position);
+    if (appendTrail && this.geodesic.status === GeodesicStatus.ACTIVE) {
+      this.particle.trail.pushIfSeparated(this.particle.position, MINIMUM_TRAIL_DISPLACEMENT_SQUARED);
+    }
     this.particles.touch();
   }
 }

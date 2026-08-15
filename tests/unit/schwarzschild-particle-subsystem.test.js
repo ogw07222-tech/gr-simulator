@@ -33,4 +33,30 @@ describe("SchwarzschildParticleSubsystem", () => {
     expect(subsystem.particle.trail.length).toBe(0);
     expect(subsystem.geodesic.state.values[1]).toBe(6);
   });
+
+  it("uses bounded long-trail storage and samples by displacement", () => {
+    const particles = new ParticleManager({ maxParticles: 1000, maxTrailLength: 16384, domainHalfExtent: 75 });
+    const subsystem = new SchwarzschildParticleSubsystem({ particles });
+    expect(subsystem.particle.trail.positions.length).toBe(16384 * 3);
+    subsystem.update(0.001);
+    const firstLength = subsystem.particle.trail.length;
+    subsystem.update(0.001);
+    expect(subsystem.particle.trail.length).toBe(firstLength);
+    expect(particles.count()).toBe(1);
+  });
+
+  it("measures positive relativistic periapsis advance for the demo orbit", () => {
+    const particles = new ParticleManager({ maxTrailLength: 4096, domainHalfExtent: 75 });
+    const subsystem = new SchwarzschildParticleSubsystem({ particles });
+    subsystem.apply({ preset: "precession" });
+    const delta = subsystem.maximumSafeAdvanceSeconds() * 0.5;
+    for (let step = 0; step < 20000 && subsystem.geodesic.diagnostics.radialPeriods < 2; step += 1) {
+      subsystem.update(delta);
+    }
+    const { radialPeriods, lastRadialPeriodAngle, periapsisAdvance } = subsystem.geodesic.diagnostics;
+    expect(radialPeriods).toBeGreaterThanOrEqual(2);
+    expect(lastRadialPeriodAngle).toBeGreaterThan(2 * Math.PI);
+    expect(periapsisAdvance).toBeGreaterThan(0);
+    expect(Number.isFinite(periapsisAdvance * 180 / Math.PI)).toBe(true);
+  });
 });
