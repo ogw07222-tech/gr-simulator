@@ -56,6 +56,18 @@ describe("SimulationClock", () => {
     expect(state.timeScale).toBe(timeScale);
   });
 
+  it("accepts decimal custom scales within the configured range", () => {
+    const state = new SimulationState();
+    state.setTimeScale(37.5);
+    expect(state.timeScale).toBe(37.5);
+    state.setTimeScale(0.01);
+    state.setTimeScale(100000);
+  });
+
+  it.each([0, -1, Number.NaN, Number.POSITIVE_INFINITY, 0.009, 100001])("rejects invalid time scale %s", (value) => {
+    expect(() => new SimulationState({ timeScale: value })).toThrow(RangeError);
+  });
+
   it("applies time scale only to simulation time", () => {
     const state = new SimulationState();
     const clock = new SimulationClock({ state });
@@ -70,7 +82,7 @@ describe("SimulationClock", () => {
   it("rejects unsupported time scales", () => {
     const clock = new SimulationClock();
 
-    expect(() => clock.setTimeScale(3)).toThrow(RangeError);
+    expect(() => clock.setTimeScale(0.001)).toThrow(RangeError);
   });
 
   it("resets runtime time and the accumulator", () => {

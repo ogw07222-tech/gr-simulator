@@ -15,7 +15,7 @@ test("preserves simulation behavior while switching scientific UI locales", asyn
   await expect(page.locator("html")).toHaveAttribute("lang", "en");
   await expect(page.locator("#locale-select")).toHaveValue("en");
   await expect(page.getByRole("heading", { name: "Simulation" })).toBeVisible();
-  await expect(page.locator(".version-chip")).toHaveText("v0.7.3");
+  await expect(page.locator(".version-chip")).toHaveText("v0.7.4");
   await expect(page.locator("#geo-classification")).toHaveText("Stable circular");
   await expect(page.locator("#geo-status")).toHaveText("Active");
   await expect(page.locator("#orbit-preset")).toHaveValue("circular");
@@ -85,6 +85,38 @@ test("preserves simulation behavior while switching scientific UI locales", asyn
   await expect(page.locator("#max-fps")).toHaveValue("30");
   await page.locator("#locale-select").selectOption("en");
   await expect(page.getByRole("heading", { name: "Simulation" })).toBeVisible();
+  expect(consoleErrors).toEqual([]);
+});
+
+test("changes custom clock speed and display units without resetting simulation state", async ({ page }) => {
+  const consoleErrors = collectErrors(page);
+  await page.goto("/");
+  await page.waitForFunction(() => window.__GR4D_DIAGNOSTICS__?.getSnapshot().physicsUpdates > 0);
+  await page.getByRole("button", { name: "Pause", exact: true }).click();
+  const before = await page.evaluate(() => window.__GR4D_DIAGNOSTICS__.getSnapshot());
+
+  await page.locator("#time-scale").selectOption("custom");
+  await page.locator("#custom-time-scale").fill("37.5");
+  await page.locator("#apply-time-scale").click();
+  await expect(page.locator("#runtime-time-scale")).toHaveText("37.5x");
+  const afterScale = await page.evaluate(() => window.__GR4D_DIAGNOSTICS__.getSnapshot());
+  expect(afterScale.runtime.timeScale).toBe(37.5);
+  expect(afterScale.physics).toEqual(before.physics);
+  expect(afterScale.snapshot.revision).toBe(before.snapshot.revision);
+
+  await page.locator("#custom-time-scale").fill("0");
+  await page.locator("#apply-time-scale").click();
+  await expect(page.locator("#time-scale-error")).toBeVisible();
+  expect((await page.locator("#time-scale-error").textContent()).length).toBeGreaterThan(10);
+
+  const physicalRadius = before.snapshot.radiusMetres;
+  await page.locator("#display-unit-mode").selectOption("si");
+  await expect(page.locator("#geo-radius")).toContainText("m");
+  await page.locator("#display-unit-mode").selectOption("astronomical");
+  await expect(page.locator("#geo-radius")).toContainText("AU");
+  expect(await page.evaluate(() => window.__GR4D_DIAGNOSTICS__.getSnapshot().snapshot.radiusMetres)).toBe(physicalRadius);
+  await page.reload();
+  await expect(page.locator("#display-unit-mode")).toHaveValue("astronomical");
   expect(consoleErrors).toEqual([]);
 });
 

@@ -15,6 +15,8 @@ import {
   SubsystemManager,
 } from "./systems/index.js";
 import { AppShell, ControlPanel, ScaleIndicator, VisualSettingsPanel } from "./ui/index.js";
+import { UnitFormatter } from "./ui/units/index.js";
+import { getLocale } from "./ui/i18n.js";
 
 function createRenderSnapshotBuffer() {
   const data = {
@@ -128,8 +130,9 @@ renderer.add(particleRenderer.haloObject);
 renderer.add(particleRenderer.trailObject);
 
 const geodesicSubsystem = new SchwarzschildParticleSubsystem({ particles });
+const unitFormatter = new UnitFormatter({ locale: getLocale });
 const scaleIndicator = resources.register(new ScaleIndicator(
-  document.querySelector("#viewport-shell"), scaleTransform,
+  document.querySelector("#viewport-shell"), scaleTransform, unitFormatter,
 ));
 
 const snapshotRenderPosition = { x: 0, y: 0, z: 0 };
@@ -196,6 +199,7 @@ const controlPanel = resources.register(new ControlPanel(
   model,
   grid,
   runtimeControls,
+  unitFormatter,
 ));
 const visualSettings = resources.register(new VisualSettingsPanel(
   document.querySelector("#visual-settings-panel"),
@@ -216,6 +220,7 @@ const visualSettings = resources.register(new VisualSettingsPanel(
     scaleIndicator,
     fitPhysicalScene,
     onScaleChange: () => refreshPresentationSnapshot(true),
+    unitFormatter,
   },
 ));
 const appShell = resources.register(new AppShell(

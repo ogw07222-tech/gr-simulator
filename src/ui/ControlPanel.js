@@ -1,14 +1,16 @@
 import { getLocale, subscribeLocale, t } from "./i18n.js";
 import { validateOrbitConfiguration } from "./OrbitInputValidation.js";
 import { helpButton } from "./ScientificHelp.js";
+import { MAX_TIME_SCALE, MIN_TIME_SCALE } from "../systems/index.js";
 
 export class ControlPanel {
-  constructor(root, store, model, grid, runtime = null) {
+  constructor(root, store, model, grid, runtime = null, unitFormatter = null) {
     this.root = root;
     this.store = store;
     this.model = model;
     this.grid = grid;
     this.runtime = runtime;
+    this.unitFormatter = unitFormatter;
     this.runtimeView = { paused: null, timeScale: null, particleCount: null, simulationTime: null };
     this.geodesicView = { snapshot: null, lastRefresh: 0 };
     this.render();
@@ -32,7 +34,10 @@ export class ControlPanel {
         </div>
         <label class="select-control" for="time-scale"><span data-i18n="controls.timeScale"></span><select id="time-scale" data-i18n-aria="controls.timeScale">
           ${this.runtime.timeScales.map((scale) => `<option value="${scale}" data-scale="${scale}"></option>`).join("")}
+          <option value="custom" data-i18n="controls.customTimeScale"></option>
         </select></label>
+        <div id="custom-time-scale-controls" class="numeric-control" hidden><label for="custom-time-scale"><span data-i18n="controls.customTimeScale"></span><input id="custom-time-scale" type="number" min="${MIN_TIME_SCALE}" max="${MAX_TIME_SCALE}" step="any" inputmode="decimal" /></label><button id="apply-time-scale" type="button" data-i18n="controls.applyTimeScale"></button></div>
+        <p id="time-scale-error" class="input-error" role="alert" hidden></p>
       </div></details>` : ""}
       <details class="panel-section control-disclosure" open><summary><span data-i18n="controls.centralBody"></span></summary><div class="disclosure-body"><h3 data-i18n="controls.physicsInputs"></h3>
         <div class="mode-switch" role="group" data-i18n-aria="controls.distanceMode">
@@ -115,6 +120,7 @@ export class ControlPanel {
     this.root.querySelectorAll("[data-scale]").forEach((option) => {
       option.textContent = t("units.multiplier", { value: option.dataset.scale });
     });
+    if (this.runtime) this.#validateTimeScale(null);
     if (this.runtime && this.runtimeView.paused !== null) {
       this.root.querySelector("#runtime-state").textContent = t(this.runtimeView.paused ? "status.paused" : "status.running");
       this.root.querySelector("#runtime-time-scale").textContent = t("units.multiplier", { value: this.runtimeView.timeScale });
@@ -133,7 +139,15 @@ export class ControlPanel {
     if (this.runtime) {
       this.root.querySelector("#play").addEventListener("click", this.runtime.play);
       this.root.querySelector("#pause").addEventListener("click", this.runtime.pause);
-      this.root.querySelector("#time-scale").addEventListener("change", (event) => this.runtime.setTimeScale(Number(event.target.value)));
+      this.root.querySelector("#time-scale").addEventListener("change", (event) => {
+        const custom = event.target.value === "custom";
+        this.root.querySelector("#custom-time-scale-controls").hidden = !custom;
+        if (!custom) this.#validateTimeScale(Number(event.target.value));
+      });
+      this.root.querySelector("#apply-time-scale").addEventListener("click", () => this.#validateTimeScale(Number(this.root.querySelector("#custom-time-scale").value)));
+      this.root.querySelector("#custom-time-scale").addEventListener("keydown", (event) => {
+        if (event.key === "Enter") this.#validateTimeScale(Number(event.currentTarget.value));
+      });
       this.root.querySelector("#reset-particle").addEventListener("click", this.runtime.resetParticle);
       this.root.querySelector("#reset-all").addEventListener("click", this.runtime.resetAll);
       if (!this.runtime.applyOrbit) return;
@@ -183,17 +197,20 @@ export class ControlPanel {
     }
     if (this.runtimeView.timeScale !== state.timeScale) {
       this.runtimeView.timeScale = state.timeScale;
-      this.root.querySelector("#time-scale").value = state.timeScale;
+      const preset = this.runtime.timeScales.includes(state.timeScale);
+      this.root.querySelector("#time-scale").value = preset ? String(state.timeScale) : "custom";
+      this.root.querySelector("#custom-time-scale-controls").hidden = preset;
+      if (!preset) this.root.querySelector("#custom-time-scale").value = state.timeScale;
       this.root.querySelector("#runtime-time-scale").textContent = t("units.multiplier", { value: state.timeScale });
     }
     if (this.runtimeView.particleCount !== particleCount) {
       this.runtimeView.particleCount = particleCount;
       this.root.querySelector("#particle-count").textContent = particleCount;
     }
-    const simulationTime = state.simulationTime.toFixed(2);
+    const simulationTime = this.unitFormatter?.formatTime(state.simulationTime) ?? `${state.simulationTime.toFixed(2)} s`;
     if (this.runtimeView.simulationTime !== simulationTime) {
       this.runtimeView.simulationTime = simulationTime;
-      this.root.querySelector("#simulation-time").textContent = `${simulationTime} s`;
+      this.root.querySelector("#simulation-time").textContent = simulationTime;
     }
   }
 
@@ -219,7 +236,7 @@ export class ControlPanel {
     const radial = Number(this.root.querySelector("#radial-beta").value);
     const tangential = Number(this.root.querySelector("#tangential-beta").value);
     const speed = Math.sqrt(radial * radial + tangential * tangential);
-    this.root.querySelector("#orbit-radius-km").textContent = t("orbit.radiusKmValue", { value: radiusKm.toExponential(4) });
+    this.root.querySelector("#orbit-radius-km").textContent = t("orbit.radiusDisplayValue", { value: this.unitFormatter?.formatDistance(radiusKm * 1000) ?? `${radiusKm.toExponential(4)} km` });
     this.root.querySelector("#orbit-speed").textContent = t("orbit.speedValue", {
       kilometres: (speed * 299792.458).toFixed(2), fraction: speed.toFixed(5),
     });
@@ -258,12 +275,12 @@ export class ControlPanel {
 
   #writeGeodesic(snapshot) {
     const format = (value, digits = 4) => Number(value).toExponential(digits);
-    this.root.querySelector("#geo-mass").textContent = `${format(snapshot.massSolar)} M☉ / ${format(snapshot.massKg)} kg`;
-    this.root.querySelector("#geo-rs").textContent = `${format(snapshot.schwarzschildRadiusMetres / 1000)} km`;
-    this.root.querySelector("#geo-radius").textContent = `${snapshot.radiusRs.toFixed(6)} rₛ / ${format(snapshot.radiusMetres / 1000)} km`;
-    this.root.querySelector("#geo-speed").textContent = `${format(snapshot.localSpeedMetresPerSecond / 1000)} km/s / ${snapshot.localSpeedFraction.toFixed(6)} c`;
-    this.root.querySelector("#geo-coordinate-time").textContent = `${format(snapshot.coordinateTime)} s`;
-    this.root.querySelector("#geo-proper-time").textContent = `${format(snapshot.properTime)} s`;
+    this.root.querySelector("#geo-mass").textContent = this.unitFormatter?.formatMass(snapshot.massKg) ?? `${format(snapshot.massKg)} kg`;
+    this.root.querySelector("#geo-rs").textContent = this.unitFormatter?.formatDistance(snapshot.schwarzschildRadiusMetres) ?? `${format(snapshot.schwarzschildRadiusMetres)} m`;
+    this.root.querySelector("#geo-radius").textContent = `${snapshot.radiusRs.toFixed(6)} rₛ / ${this.unitFormatter?.formatDistance(snapshot.radiusMetres) ?? `${format(snapshot.radiusMetres)} m`}`;
+    this.root.querySelector("#geo-speed").textContent = this.unitFormatter?.formatVelocity(snapshot.localSpeedMetresPerSecond) ?? `${format(snapshot.localSpeedMetresPerSecond)} m/s`;
+    this.root.querySelector("#geo-coordinate-time").textContent = this.unitFormatter?.formatTime(snapshot.coordinateTime) ?? `${format(snapshot.coordinateTime)} s`;
+    this.root.querySelector("#geo-proper-time").textContent = this.unitFormatter?.formatTime(snapshot.properTime) ?? `${format(snapshot.properTime)} s`;
     this.root.querySelector("#geo-energy").textContent = snapshot.energy.toFixed(10);
     this.root.querySelector("#geo-angular-momentum").textContent = `${snapshot.angularMomentum.toFixed(8)} / ${format(snapshot.angularMomentumSI)} m²/s`;
     this.root.querySelector("#geo-classification").textContent = t(`orbit.classification.${snapshot.orbitClassification}`);
@@ -272,6 +289,19 @@ export class ControlPanel {
     this.root.querySelector("#geo-angular-drift").textContent = format(snapshot.angularMomentumDrift);
     this.root.querySelector("#geo-normalization").textContent = format(snapshot.normalizationResidual);
     this.root.querySelector("#geo-substeps").textContent = snapshot.integrationSubsteps.toLocaleString(getLocale());
+  }
+
+  #validateTimeScale(value) {
+    const error = this.root.querySelector("#time-scale-error");
+    if (value === null) { error.hidden = true; return false; }
+    if (!Number.isFinite(value) || value < MIN_TIME_SCALE || value > MAX_TIME_SCALE) {
+      error.textContent = t("controls.timeScaleError", { minimum: MIN_TIME_SCALE, maximum: MAX_TIME_SCALE });
+      error.hidden = false;
+      return false;
+    }
+    this.runtime.setTimeScale(value);
+    error.hidden = true;
+    return true;
   }
 
   dispose() { this.unsubscribe?.(); this.unsubscribeLocale?.(); }

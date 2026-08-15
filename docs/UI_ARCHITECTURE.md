@@ -1,5 +1,11 @@
 # Scientific UI architecture
 
+## v0.7.4 scientific display settings
+
+Visual Settings owns the presentation-unit selector. `UnitFormatter` publishes mode changes to existing panels and the scale indicator without rebuilding the application, resetting runtime state, or replacing event handlers. Unit names and setting labels are localized; international symbols such as SI, AU, `c`, and `M☉` remain stable.
+
+The runtime time-scale control combines preserved presets with high-speed presets and a validated custom field. It delegates directly to `SimulationClock`; changing the multiplier has no particle, trail, camera, or orbit-reset side effect.
+
 ## v0.7.2 interaction layer
 
 - `ControlPanel` and `VisualSettingsPanel` group existing controls with native `details/summary` disclosures. Simulation and orbit setup open initially; numerical integration stays collapsed.

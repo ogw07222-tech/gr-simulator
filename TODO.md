@@ -1,5 +1,11 @@
 # TODO
 
+## v0.7.4 time scale and unit display
+
+- [x] Add validated preset and custom clock multipliers without reset side effects.
+- [x] Centralize adaptive scientific display formatting and persistence.
+- [x] Reuse presentation formatting across runtime, orbit, measurement, and scale readouts.
+
 ## v0.7.3 scale visualization
 
 - [x] Centralize normalized-to-render coordinate conversion.
