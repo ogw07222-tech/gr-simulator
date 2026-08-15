@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+### v0.7.9
+
+- Made the particle marker a bounded 4–24 CSS-pixel presentation control using native non-attenuated Three.js points, keeping apparent size stable across camera distance, FOV, device pixel ratio, and render-scale modes without changing particle physics or trail geometry.
+- Made valid mass application update particle/grid/central-body presentation synchronously and reuse the bounded camera-safety path, preventing a rapidly enlarged physical-scale horizon from enclosing the camera and blacking out the viewport.
+
 ### v0.7.8
 
 - Added a presentation-only 1x/2x/3x/5x/10x grid deformation gain. It multiplies line displacement only; raw deformation diagnostics, the scientific color mapping, physics, and particle motion remain unchanged.

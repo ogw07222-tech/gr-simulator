@@ -7,28 +7,28 @@
 
 | Metric | Value |
 | --- | ---: |
-| Version | v0.7.8 |
+| Version | v0.7.9 |
 | Scanned text files | 126 |
 | Source files | 58 |
-| Source physical LOC | 4,573 |
-| Source non-empty LOC | 4,224 |
+| Source physical LOC | 4,582 |
+| Source non-empty LOC | 4,233 |
 | Test files | 28 |
-| Test physical LOC | 2,627 |
+| Test physical LOC | 2,689 |
 | Documentation files | 22 |
-| Documentation physical LOC | 1,896 |
+| Documentation physical LOC | 1,901 |
 | Configuration/tooling physical LOC | 950 |
-| Git commits | 51 |
+| Git commits | 53 |
 
 ## Source by Module
 
 | Module | Files | Physical LOC | Non-empty LOC |
 | --- | ---: | ---: | ---: |
-| (root) | 1 | 439 | 420 |
+| (root) | 1 | 447 | 428 |
 | core | 3 | 55 | 48 |
 | hud | 1 | 3 | 2 |
 | physics | 15 | 410 | 374 |
 | rendering | 9 | 620 | 563 |
-| systems | 14 | 1,245 | 1,127 |
+| systems | 14 | 1,246 | 1,128 |
 | ui | 14 | 1,798 | 1,688 |
 | utils | 1 | 3 | 2 |
 
@@ -38,9 +38,9 @@
 | --- | ---: | ---: | ---: |
 | CSS | 1 | 255 | 238 |
 | HTML | 1 | 30 | 30 |
-| JavaScript | 94 | 7,564 | 6,839 |
+| JavaScript | 94 | 7,635 | 6,906 |
 | JSON | 1 | 34 | 34 |
-| Markdown | 25 | 2,005 | 1,323 |
+| Markdown | 25 | 2,010 | 1,326 |
 | Other text | 1 | 21 | 17 |
 | YAML | 2 | 137 | 124 |
 
@@ -48,10 +48,10 @@
 
 | Test category | Files | Physical LOC | Non-empty LOC |
 | --- | ---: | ---: | ---: |
-| Unit / integration | 25 | 2,146 | 1,876 |
+| Unit / integration | 25 | 2,174 | 1,902 |
 | Physics | 1 | 92 | 83 |
-| Playwright / e2e | 2 | 389 | 350 |
-| Total | 28 | 2,627 | 2,309 |
+| Playwright / e2e | 2 | 423 | 382 |
+| Total | 28 | 2,689 | 2,367 |
 
 The report counts discovered test source files, not test cases. It does not run Vitest, Playwright, or scientific simulations.
 
@@ -59,9 +59,9 @@ The report counts discovered test source files, not test cases. It does not run 
 
 | Location | Files | Physical LOC | Non-empty LOC |
 | --- | ---: | ---: | ---: |
-| Root Markdown | 6 | 1,082 | 729 |
+| Root Markdown | 6 | 1,087 | 732 |
 | docs/ | 16 | 814 | 509 |
-| Total | 22 | 1,896 | 1,238 |
+| Total | 22 | 1,901 | 1,241 |
 
 Major documents: `CHANGELOG.md`, `CONTRIBUTING.md`, `docs/ARCHITECTURE.md`, `docs/DEPLOYMENT.md`, `docs/GLOSSARY.md`, `docs/MODULES.md`, `docs/NUMERICAL_INTEGRATION.md`, `docs/ORBIT_CLASSIFICATION.md`, `docs/PARTICLE_ENGINE.md`, `docs/PERFORMANCE_BASELINE.md`, `docs/PHYSICS.md`, `docs/RENDERING_ARCHITECTURE.md`, `docs/RUNTIME_ENGINE.md`, `docs/SCHWARZSCHILD_GEODESICS.md`, `docs/UI_ARCHITECTURE.md`, `docs/UNIT_SYSTEM.md`, `docs/USER_GUIDE.md`, `docs/VALIDATION.md`, `PROJECT.md`, `README.md`, `ROADMAP.md`, `TODO.md`.
 
@@ -69,13 +69,13 @@ Major documents: `CHANGELOG.md`, `CONTRIBUTING.md`, `docs/ARCHITECTURE.md`, `doc
 
 | Metric | Value |
 | --- | ---: |
-| Total dist size | 646.54 KiB |
-| JavaScript assets | 628.90 KiB |
-| JavaScript gzip | 159.39 KiB |
+| Total dist size | 647.23 KiB |
+| JavaScript assets | 629.59 KiB |
+| JavaScript gzip | 159.53 KiB |
 | CSS assets | 15.87 KiB |
 | CSS gzip | 4.28 KiB |
 | Other assets | 1.76 KiB |
-| Largest asset | assets/index-BEohJ-Kv.js (628.90 KiB) |
+| Largest asset | assets/index-BJhQf7vN.js (629.59 KiB) |
 
 `npm run stats` reads an existing `dist/` directory but never starts a production build.
 
@@ -83,10 +83,10 @@ Major documents: `CHANGELOG.md`, `CONTRIBUTING.md`, `docs/ARCHITECTURE.md`, `doc
 
 | Metric | Value |
 | --- | ---: |
-| Current branch | feature/gr-v0.7.8-grid-gain-view-safety |
-| Current commit | 2e28e7c |
-| Tracked files | 151 |
-| Commit count | 51 |
+| Current branch | feature/gr-v0.7.9-particle-size-mass-safety |
+| Current commit | 8aca4a4 |
+| Tracked files | 154 |
+| Commit count | 53 |
 | Commit-author identities | 1 |
 
 No network or GitHub API access is used. Git fields are shown as unavailable when local metadata cannot be read within the bounded command limits.
@@ -100,4 +100,4 @@ No network or GitHub API access is used. Git fields are shown as unavailable whe
 - Build statistics require an existing `dist/` directory and may describe the most recent local build.
 - Statistics represent the working tree measured at the displayed local commit.
 
-Generated from commit: 2e28e7c
+Generated from commit: 8aca4a4
