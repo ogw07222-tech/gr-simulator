@@ -406,9 +406,23 @@ Merge
 
 No feature is considered complete until all automated verification passes.
 
+## Release validation policy
+
+The project uses semantic-version-aware visual validation to avoid repeating the complete bilingual screenshot matrix for every maintenance change. In the `0.x.y` series, `x` is the minor component and `y` is the patch component.
+
+| Release type | English visual audit | Korean visual audit | Locale parity tests |
+| --- | --- | --- | --- |
+| Patch `0.x.y` → `0.x.(y+1)` | Full | Targeted only | Required |
+| Minor `0.x.y` → `0.(x+1).0` | Full | Full | Required |
+| Major `0.x.y` → `1.0.0` | Full | Full | Required |
+
+Patch releases still run Korean key-parity, automated localization, compile, and build checks. Full Korean visual coverage is required for a patch when it changes Korean strings, localization architecture, typography, text wrapping, localized guide/help content, locale persistence/switching, or responsive structures likely to differ by language. Narrow localization changes require targeted Korean verification of the affected surfaces; broad changes require the full bilingual matrix.
+
 ## Production Deployment
 
 The production application is designed for `https://ogw07222-tech.github.io/gr-simulator/`. GitHub Actions owns production publishing: validation and build complete before the immutable `dist` artifact can reach the `github-pages` environment. Local development retains root-based Vite routing, while Pages builds use `/gr-simulator/` through an explicit deployment environment flag.
+
+Exactly one workflow, `.github/workflows/deploy-pages.yml`, owns Pages publishing. It uploads only `dist`; repository root, source files, dependencies, and the source `index.html` are never Pages artifacts.
 
 Repository owners must configure **Settings → Pages → Build and deployment → Source** to **GitHub Actions**. A merged deployment configuration is not evidence of a live release; only a successful Pages workflow and environment URL establish deployment success.
 

@@ -11,12 +11,20 @@ if (!existsSync(INDEX_PATH)) {
 }
 
 const html = readFileSync(INDEX_PATH, "utf8");
+if (/src=["']\/?src\/main\.js["']/.test(html)) {
+  throw new Error("Production HTML still references the source entrypoint /src/main.js.");
+}
 const assetUrls = [...html.matchAll(/(?:src|href)="([^"]+)"/g)]
   .map((match) => match[1])
   .filter((url) => !url.startsWith("data:") && !url.startsWith("http"));
 
 if (assetUrls.length === 0) {
   throw new Error("The production document does not reference any generated assets.");
+}
+
+const generatedAssets = assetUrls.filter((url) => /\/assets\/[^/]+-[A-Za-z0-9_-]+\.(?:js|css)$/.test(url));
+if (!generatedAssets.some((url) => url.endsWith(".js")) || !generatedAssets.some((url) => url.endsWith(".css"))) {
+  throw new Error("Production HTML must reference hashed JavaScript and CSS assets.");
 }
 
 for (const assetUrl of assetUrls) {
@@ -28,6 +36,10 @@ for (const assetUrl of assetUrls) {
   if (!relativePath || !existsSync(resolve(DIST_DIRECTORY, relativePath))) {
     throw new Error(`Referenced production asset is missing: ${assetUrl}`);
   }
+}
+
+if (assetUrls.some((url) => /(?:^|\/)src\//.test(url))) {
+  throw new Error("Production HTML must not expose source-directory entrypoints.");
 }
 
 process.stdout.write(`Validated ${assetUrls.length} production assets under ${expectedBase}.\n`);

@@ -2,6 +2,15 @@
 
 ## Unreleased
 
+### Deployment fixes
+
+- Removed the duplicate repository-root GitHub Pages publisher that deployed the source `index.html` and caused `/src/main.js` to return 404.
+- Standardized Pages publishing on the validated Vite `dist` artifact with the `/gr-simulator/` production base.
+
+### Process
+
+- Added a permanent release-validation matrix: full English plus targeted Korean visual checks for patches, and full bilingual checks for minor and major releases, with localization/layout exceptions.
+
 ### Added
 
 - v0.7.3 normalized, physical, and auto-fit physical view modes backed by one centralized render transform.
