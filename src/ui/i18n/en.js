@@ -1,6 +1,6 @@
 // Edit English interface copy here. Keep this key structure identical to ko.js.
 export const en = Object.freeze({
-  app: { title: "GR-4D Simulator v0.7.5", description: "Browser-based General Relativity simulation and scientific visualization laboratory", eyebrow: "RELATIVITY RESEARCH CONSOLE" },
+  app: { title: "GR-4D Simulator v0.7.6", description: "Browser-based General Relativity simulation and scientific visualization laboratory", eyebrow: "RELATIVITY RESEARCH CONSOLE" },
   language: { label: "Select language", ko: "한국어", en: "English" },
   status: {
     running: "Running", paused: "Paused", frame: "FRAME", rendererOnline: "Renderer online",
@@ -16,7 +16,7 @@ export const en = Object.freeze({
     runtime: "Runtime", runtimeIntro: "Runtime and Schwarzschild visualization controls.",
     play: "Play", pause: "Pause", resetParticle: "Reset Particle", resetAll: "Reset All",
     timeScale: "Time Scale", customTimeScale: "Custom", applyTimeScale: "Apply", timeScaleError: "Enter a finite time scale from {minimum}x to {maximum}x.", centralBody: "Central Body", physicsInputs: "Visualization Proxy Inputs", distanceMode: "Distance mode",
-    mass: "Mass M", wDistance: "W-axis distance",
+    wSlice: "W Slice (rₛ)",
   },
   metrics: {
     title: "Metric Readout", schwarzschildRadius: "Schwarzschild radius", centralLapse: "Central lapse α",
@@ -121,6 +121,7 @@ export const en = Object.freeze({
   },
   glossary: {
     mass: { term: "Black-hole mass", definition: "The central Schwarzschild mass in solar masses (M☉). It sets physical length and time scales, not the dimensionless orbit shape." },
+    wSlice: { term: "W visualization slice", definition: "Selects the W position of the educational 4D visualization slice. This changes the displayed deformation proxy, not the Schwarzschild particle physics." },
     schwarzschildRadius: { term: "Schwarzschild radius", definition: "rₛ = 2GM/c². The horizon is at 1 rₛ; initial timelike particles must start outside it." },
     properTime: { term: "Proper time", definition: "Time measured by a clock moving with the particle along its worldline." }, coordinateTime: { term: "Coordinate time", definition: "Schwarzschild time assigned by a distant static observer; it is not the particle's own clock." },
     specificEnergy: { term: "Specific energy ε", definition: "Conserved dimensionless energy per unit rest mass." }, angularMomentum: { term: "Specific angular momentum λ", definition: "Conserved angular momentum per unit rest mass, normalized by the Schwarzschild length scale." },

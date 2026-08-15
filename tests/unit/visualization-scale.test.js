@@ -86,6 +86,23 @@ describe("scientific visualization mappings", () => {
     expect(diagnostics.bufferUploads).toBe(uploads);
   });
 
+  it("treats W as a symmetric visualization slice with bounded recomputation", () => {
+    const grid = new VolumetricGrid();
+    const model = new SchwarzschildModel(PHYSICS_DEFAULTS);
+    const slice = { ...state, mode: "GR_W", w: 0 };
+    expect(grid.update(model, slice)).toBe(true);
+    const atZero = grid.getDiagnostics().centralRawDeformation;
+    const recomputations = grid.getDiagnostics().recomputations;
+    expect(grid.update(model, { ...slice, w: 10 })).toBe(true);
+    const atPositive = grid.getDiagnostics().centralRawDeformation;
+    expect(atPositive).toBeLessThan(atZero);
+    expect(grid.getDiagnostics().recomputations).toBe(recomputations + 1);
+    expect(grid.update(model, { ...slice, w: 10 })).toBe(false);
+    expect(grid.getDiagnostics().recomputations).toBe(recomputations + 1);
+    grid.update(model, { ...slice, w: -10 });
+    expect(grid.getDiagnostics().centralRawDeformation).toBeCloseTo(atPositive, 12);
+  });
+
   it("keeps configured grid opacity when the camera is at the mesh origin", () => {
     const grid = new VolumetricGrid();
     grid.setAppearance({ visible: true, opacity: 0.52, brightness: 0.82 });
@@ -115,7 +132,8 @@ describe("scientific visualization mappings", () => {
   it("decreases toward the flat-space far-field limit", () => {
     const model = new SchwarzschildModel(PHYSICS_DEFAULTS);
     const radii = [20, 40, 80, 160];
-    const values = radii.map((radius) => model.displacementMagnitude(state.mass, radius, state.warpScale));
+    const normalizedMass = model.c * model.c / (2 * model.G);
+    const values = radii.map((radius) => model.displacementMagnitude(normalizedMass, radius, state.warpScale));
     for (let index = 1; index < values.length; index += 1) expect(values[index]).toBeLessThan(values[index - 1]);
     expect(values.at(-1)).toBeLessThan(0.002);
   });

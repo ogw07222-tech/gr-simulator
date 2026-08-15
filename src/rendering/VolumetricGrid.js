@@ -140,11 +140,13 @@ export class VolumetricGrid {
     return chunks;
   }
 
-  update(model, { mass, w, mode, warpScale, maxDisplacement }) {
-    const signature = `${mass}|${w}|${mode}|${warpScale}|${maxDisplacement}`;
+  update(model, { w, mode, warpScale, maxDisplacement }) {
+    const signature = `${w}|${mode}|${warpScale}|${maxDisplacement}`;
     if (signature === this.lastInputSignature) return false;
     this.lastInputSignature = signature;
     const useW = mode === "GR_W";
+    // The grid is expressed in Schwarzschild-normalized display coordinates: r_s = 1.
+    const mass = model.c * model.c / (2 * model.G);
     const schwarzschildRadius = model.schwarzschildRadius(mass);
     const boundaryRadius = Math.max(schwarzschildRadius, model.softening);
     const rawMaximum = model.displacementMagnitude(mass, boundaryRadius, warpScale);
@@ -176,6 +178,10 @@ export class VolumetricGrid {
     this.colorAttribute.needsUpdate = true;
     this.diagnostics.recomputations += 1;
     this.diagnostics.bufferUploads += 2;
+    const center = Math.floor(this.rawDisplacements.length / 2);
+    this.diagnostics.sliceW = useW ? w : 0;
+    this.diagnostics.centralRawDeformation = this.rawDisplacements[center];
+    this.diagnostics.centralDisplayDeformation = this.displayValues[center];
     return true;
   }
 

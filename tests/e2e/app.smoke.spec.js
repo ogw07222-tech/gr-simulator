@@ -15,7 +15,7 @@ test("preserves simulation behavior while switching scientific UI locales", asyn
   await expect(page.locator("html")).toHaveAttribute("lang", "en");
   await expect(page.locator("#locale-select")).toHaveValue("en");
   await expect(page.getByRole("heading", { name: "Simulation" })).toBeVisible();
-  await expect(page.locator(".version-chip")).toHaveText("v0.7.5");
+  await expect(page.locator(".version-chip")).toHaveText("v0.7.6");
   await expect(page.locator("#geo-classification")).toHaveText("Stable circular");
   await expect(page.locator("#geo-status")).toHaveText("Active");
   await expect(page.locator("#orbit-preset")).toHaveValue("circular");
@@ -33,11 +33,9 @@ test("preserves simulation behavior while switching scientific UI locales", asyn
   await expect(page.locator("#w")).toBeDisabled();
   await page.getByRole("button", { name: "GR + W" }).click();
   await expect(page.locator("#w")).toBeEnabled();
-  await page.locator("#mass").evaluate((input) => {
-    input.value = "200";
-    input.dispatchEvent(new Event("input", { bubbles: true }));
-  });
-  await expect(page.locator("#rs")).toHaveText("4.000");
+  await expect(page.locator("#mass")).toHaveCount(0);
+  await expect(page.locator("#black-hole-mass")).toHaveAttribute("type", "number");
+  await expect(page.locator("#rs")).toHaveText("1.000");
   await expect(page.locator("#vertices")).toHaveText("172,980");
 
   await expect(page.locator("#trail-color-mode")).toHaveCount(0);
@@ -85,6 +83,36 @@ test("preserves simulation behavior while switching scientific UI locales", asyn
   await expect(page.locator("#max-fps")).toHaveValue("30");
   await page.locator("#locale-select").selectOption("en");
   await expect(page.getByRole("heading", { name: "Simulation" })).toBeVisible();
+  expect(consoleErrors).toEqual([]);
+});
+
+test("applies one numeric mass input and keeps W isolated to the grid", async ({ page }) => {
+  const consoleErrors = collectErrors(page);
+  await page.goto("/");
+  await page.getByRole("button", { name: "Pause", exact: true }).click();
+  const initial = await page.evaluate(() => window.__GR4D_DIAGNOSTICS__.getSnapshot());
+
+  const mass = page.locator("#black-hole-mass");
+  await mass.fill("1.25e7");
+  expect((await page.evaluate(() => window.__GR4D_DIAGNOSTICS__.getSnapshot())).snapshot.schwarzschildRadiusMetres)
+    .toBe(initial.snapshot.schwarzschildRadiusMetres);
+  await page.getByRole("button", { name: "Apply Initial Condition" }).click();
+  const applied = await page.evaluate(() => window.__GR4D_DIAGNOSTICS__.getSnapshot());
+  expect(applied.snapshot.schwarzschildRadiusMetres).toBeGreaterThan(initial.snapshot.schwarzschildRadiusMetres);
+
+  await mass.fill("0");
+  await page.getByRole("button", { name: "Apply Initial Condition" }).click();
+  await expect(page.locator("#orbit-error")).toBeVisible();
+  await mass.fill("1.25e7");
+
+  const physicsBeforeW = await page.evaluate(() => window.__GR4D_DIAGNOSTICS__.getSnapshot().physics);
+  const gridBeforeW = await page.evaluate(() => window.__GR4D_DIAGNOSTICS__.getSnapshot().grid);
+  await page.locator("#w").fill("10");
+  const afterW = await page.evaluate(() => window.__GR4D_DIAGNOSTICS__.getSnapshot());
+  expect(afterW.grid.centralRawDeformation).toBeLessThan(gridBeforeW.centralRawDeformation);
+  expect(afterW.grid.recomputations).toBe(gridBeforeW.recomputations + 1);
+  expect(afterW.physics).toEqual(physicsBeforeW);
+  await expect(page.getByRole("button", { name: "Explain W visualization slice" })).toBeVisible();
   expect(consoleErrors).toEqual([]);
 });
 
