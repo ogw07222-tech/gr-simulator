@@ -1,0 +1,84 @@
+name: Temporary Photon Stage F Validation
+on:
+  push:
+    branches: [tmp/photon-stage-f-validation]
+permissions:
+  contents: write
+jobs:
+  validate:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - name: Wire photon renderer into production runtime
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          p = Path('src/main.js')
+          s = p.read_text()
+          s = s.replace('  ParticleRenderer,\n  PhotonSubsystem,\n', '  ParticleRenderer,\n  PhotonRenderer,\n  PhotonSubsystem,\n')
+          particle_block = '''const particleRenderer = resources.register(new ParticleRenderer({
+            maxParticles: particles.maxParticles,
+            maxTrailParticles: 1,
+            maxTrailLength: particles.maxTrailLength,
+            scaleTransform,
+          }));
+          '''.replace('          ', '')
+          photon_block = particle_block + '''const photonRenderer = resources.register(new PhotonRenderer({
+            maxTrailLength: 128,
+            pointSize: 8,
+            scaleTransform,
+          }));
+          '''.replace('          ', '')
+          if 'const photonRenderer = resources.register' not in s:
+              if particle_block not in s: raise SystemExit('missing particle renderer anchor')
+              s = s.replace(particle_block, photon_block)
+          scene_anchor = 'renderer.add(particleRenderer.trailObject);\n'
+          scene_add = scene_anchor + 'renderer.add(photonRenderer.markerObject);\nrenderer.add(photonRenderer.trailObject);\n'
+          if 'renderer.add(photonRenderer.markerObject);' not in s:
+              if scene_anchor not in s: raise SystemExit('missing scene anchor')
+              s = s.replace(scene_anchor, scene_add)
+          old_subsystem = 'const photonSubsystem = new PhotonSubsystem({ massSolar: geodesicSubsystem.configuration.massSolar });'
+          new_subsystem = '''const photonSubsystem = new PhotonSubsystem({
+            massSolar: geodesicSubsystem.configuration.massSolar,
+            maxTrailLength: photonRenderer.maxTrailLength,
+            renderer: photonRenderer,
+          });'''.replace('          ', '')
+          if old_subsystem in s:
+              s = s.replace(old_subsystem, new_subsystem)
+          elif new_subsystem not in s:
+              raise SystemExit('missing photon subsystem anchor')
+          diagnostics_anchor = '      photons: photonSubsystem.getDiagnostics(),\n'
+          diagnostics_add = diagnostics_anchor + '''      photonRenderer: {
+                markerVisible: photonRenderer.markerObject.visible,
+                trailVisible: photonRenderer.trailObject.visible,
+                markerSizeCssPixels: photonRenderer.markerMaterial.size,
+                sizeAttenuation: photonRenderer.markerMaterial.sizeAttenuation,
+                markerX: photonRenderer.markerPositions[0],
+                markerY: photonRenderer.markerPositions[1],
+                markerZ: photonRenderer.markerPositions[2],
+                trailVertices: photonRenderer.trailGeometry.drawRange.count,
+              },
+          '''.replace('          ', '')
+          if 'markerSizeCssPixels: photonRenderer.markerMaterial.size' not in s:
+              if diagnostics_anchor not in s: raise SystemExit('missing diagnostics anchor')
+              s = s.replace(diagnostics_anchor, diagnostics_add)
+          p.write_text(s)
+          PY
+      - run: npm ci
+      - run: npm run lint
+      - run: npx vitest run tests/unit/photon-rendering.test.js tests/unit/photon-performance-gate.test.js tests/unit/photon-subsystem.test.js tests/unit/photon-deflection-subsystem.test.js
+      - run: npm run build
+      - name: Commit validated Stage F patch
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add src tests
+          git commit -m 'feat(rendering): render bounded photon trails'
+          git push origin HEAD:tmp/photon-stage-f-validation
