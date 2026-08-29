@@ -14,4 +14,5 @@ export { SchwarzschildGeodesicSystem } from "./SchwarzschildGeodesicSystem.js";
 export { SchwarzschildNullGeodesicState, NullGeodesicStateIndex } from "./SchwarzschildNullGeodesicState.js";
 export { SchwarzschildNullGeodesicSystem, nullRadialVelocity } from "./SchwarzschildNullGeodesicSystem.js";
 export { PHOTON_PRESETS, createPhotonInitialCondition, photonPreset } from "./SchwarzschildPhotonInitialConditions.js";
+export { SCHWARZSCHILD_HORIZON_RADIUS_RS, SCHWARZSCHILD_PHOTON_SPHERE_RADIUS_RS, SCHWARZSCHILD_CRITICAL_IMPACT_PARAMETER_RS } from "./SchwarzschildPhotonReference.js";
 export { classifyOrbit, OrbitClassification } from "./SchwarzschildOrbitClassifier.js";
