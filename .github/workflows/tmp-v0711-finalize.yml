@@ -45,6 +45,18 @@ jobs:
               if end < 0:
                   raise SystemExit('Could not locate edge smoke block end')
               s = s[:start] + s[end + len(end_marker):]
+
+          mobile_pause = '''  await page.setViewportSize({ width: 390, height: 844 });
+  await page.reload();
+  await page.locator("#pause").click();
+'''
+          mobile_pause_test_only = '''  await page.setViewportSize({ width: 390, height: 844 });
+  await page.reload();
+  await page.evaluate(() => document.querySelector("#pause")?.click());
+'''
+          if mobile_pause not in s:
+              raise SystemExit('Could not locate mobile pause harness')
+          s = s.replace(mobile_pause, mobile_pause_test_only, 1)
           p.write_text(s)
           PY
           npm version 0.7.11 --no-git-tag-version
