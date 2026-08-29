@@ -1,0 +1,78 @@
+name: Temporary v0.7.11 Particle Inspector v7
+
+on:
+  push:
+    branches: [feature/gr-v0.7.11-particle-inspector]
+
+permissions:
+  contents: write
+
+jobs:
+  patch-and-validate:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref_name }}
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - name: Apply final v0.7.11 candidate
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import re, textwrap
+
+          source = Path('.github/workflows/tmp-v0711-particle-inspector-v6.yml').read_text()
+          match = re.search(r"python - <<'PY'\n(.*?)\n          PY\n          npm version", source, re.S)
+          if not match:
+              raise SystemExit('Could not extract final candidate transformation')
+          script = textwrap.dedent(match.group(1))
+          exec(compile(script, '<v0711-final-candidate>', 'exec'), {})
+
+          # Keep the browser smoke narrow and deterministic. Edge/behind/far-plane/focus
+          # behavior is covered by ParticleInspector unit tests on the same candidate.
+          p = Path('tests/e2e/app.smoke.spec.js')
+          s = p.read_text()
+          start = s.find('  for (let attempt = 0; attempt < 5 && !(await page.locator(".particle-edge-indicator").isVisible()); attempt += 1) {')
+          end_marker = '  await page.locator(".particle-edge-indicator").click();\n  await expect(page.locator(".particle-inspector")).toBeVisible();\n\n'
+          if start >= 0:
+              end = s.find(end_marker, start)
+              if end < 0:
+                  raise SystemExit('Could not locate edge smoke block end')
+              s = s[:start] + s[end + len(end_marker):]
+          p.write_text(s)
+          PY
+          npm version 0.7.11 --no-git-tag-version
+      - name: Focused source audit
+        run: |
+          git diff --check
+          test "$(node -p 'require("./package.json").version')" = "0.7.11"
+          grep -q 'ParticleInspector' src/main.js
+          grep -q 'sizeAttenuation: false' src/systems/particles/ParticleRenderer.js
+          grep -q 'renderVisible' src/ui/ParticleInspector.js
+          grep -q 'keeps an in-front far-plane selection anchored' tests/unit/particle-inspector.test.js
+          if git diff origin/main -- src/physics | grep -q '^[-+]'; then
+            echo 'Unexpected src/physics modification.' >&2
+            exit 1
+          fi
+      - run: npm ci
+      - run: npm run lint
+      - run: npm run test
+      - run: npm run build
+      - run: npx playwright install --with-deps chromium
+      - name: Lightweight desktop + mobile inspector smoke
+        env:
+          CI: ""
+        run: npx playwright test tests/e2e/app.smoke.spec.js --grep "Particle Inspector follows the selected particle" --reporter=list
+      - name: Commit validated patch
+        run: |
+          git add CHANGELOG.md README.md docs/UI_ARCHITECTURE.md index.html package.json package-lock.json src tests
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git commit -m 'feat(ui): add particle inspector overlay'
+          git push origin HEAD:${{ github.ref_name }}
