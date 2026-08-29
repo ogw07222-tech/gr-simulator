@@ -1,6 +1,6 @@
 // 한국어 UI 문구는 이 파일에서 관리합니다. 키 구조를 en.js와 동일하게 유지하세요.
 export const ko = Object.freeze({
-  app: { title: "GR-4D Simulator v0.7.10", description: "브라우저 기반 일반상대성이론 시뮬레이션 및 과학 시각화 실험실", eyebrow: "일반상대성이론 연구 콘솔" },
+  app: { title: "GR-4D Simulator v0.7.11", description: "브라우저 기반 일반상대성이론 시뮬레이션 및 과학 시각화 실험실", eyebrow: "일반상대성이론 연구 콘솔" },
   language: { label: "언어 선택", ko: "한국어", en: "English" },
   status: {
     running: "실행 중", paused: "일시정지", frame: "프레임", rendererOnline: "렌더러 정상",
@@ -29,6 +29,16 @@ export const ko = Object.freeze({
   },
   displayUnits: { section: "표시 단위", mode: "단위 체계", automatic: "자동", si: "SI", astronomical: "천문학", note: "표시만 변환하며 물리 계산은 항상 SI 단위를 유지합니다." },
   particle: { outOfDomain: "지원 영역 이탈" },
+  inspector: {
+    title: "입자 검사기", close: "입자 검사기 닫기", physicsModel: "물리 모델",
+    identifierValue: "입자 {id}", modelSchwarzschild: "슈바르츠실트 · 시간꼴 시험 입자", modelParticle: "입자",
+    radius: "방사 거리 r", localSpeed: "국소 / 현재 속도", properTime: "고유시간 τ", coordinateTime: "좌표시간 t", classification: "궤도 분류",
+    details: "상세 정보", specificEnergy: "비에너지 ε", angularMomentum: "각운동량 λ", radialVelocity: "방사 속도 βᵣ", tangentialVelocity: "접선 속도 βφ",
+    periapsis: "근일점", apoapsis: "원일점", particleState: "입자 상태", integrationStatus: "적분 상태",
+    dimensionlessValue: "{value} (무차원)", cFractionValue: "{value} c", behindCamera: "카메라 뒤쪽", outsideViewport: "화면 밖",
+    focusSelected: "선택한 입자 {id} 찾기",
+    state: { Idle: "대기", Moving: "이동", Orbiting: "속박 / 공전", Escaping: "탈출", Captured: "포획", Absorbed: "흡수", OutOfDomain: "지원 영역 이탈" },
+  },
   model: {
     scope: "모델 범위", scopeDescription: "교육용 슈바르츠실트 계량 시각화이며, 수치 3+1차원 아인슈타인 방정식 해석기가 아닙니다.",
     active: "활성 모델", name: "슈바르츠실트 · 교육용",

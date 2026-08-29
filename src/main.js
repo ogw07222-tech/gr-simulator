@@ -14,7 +14,7 @@ import {
   SnapshotManager,
   SubsystemManager,
 } from "./systems/index.js";
-import { AppShell, ControlPanel, ScaleIndicator, VisualSettingsPanel } from "./ui/index.js";
+import { AppShell, ControlPanel, ParticleInspector, ScaleIndicator, VisualSettingsPanel } from "./ui/index.js";
 import { UnitFormatter } from "./ui/units/index.js";
 import { getLocale } from "./ui/i18n.js";
 
@@ -23,9 +23,11 @@ function createRenderSnapshotBuffer() {
     mass: 0, schwarzschildRadius: 0, geodesicStatus: "", orbitClassification: "",
     massSolar: 0, massKg: 0, schwarzschildRadiusMetres: 0, radiusRs: 0, radiusMetres: 0,
     coordinateTime: 0, properTime: 0, localSpeedFraction: 0, localSpeedMetresPerSecond: 0,
+    radialSpeedFraction: 0, tangentialSpeedFraction: 0,
     energy: 0, angularMomentum: 0, angularMomentumSI: 0, energyDrift: 0,
     angularMomentumDrift: 0, normalizationResidual: 0, integrationSubsteps: 0,
     minimumRadiusRs: 0, maximumRadiusRs: 0, radialPeriods: 0,
+    periapsisRadiusRs: Number.NaN, apocenterRadiusRs: Number.NaN,
     normalizedX: 0, normalizedY: 0, normalizedZ: 0, renderX: 0, renderY: 0, renderZ: 0,
   };
   const view = Object.freeze({
@@ -42,6 +44,8 @@ function createRenderSnapshotBuffer() {
     get properTime() { return data.properTime; },
     get localSpeedFraction() { return data.localSpeedFraction; },
     get localSpeedMetresPerSecond() { return data.localSpeedMetresPerSecond; },
+    get radialSpeedFraction() { return data.radialSpeedFraction; },
+    get tangentialSpeedFraction() { return data.tangentialSpeedFraction; },
     get energy() { return data.energy; },
     get angularMomentum() { return data.angularMomentum; },
     get angularMomentumSI() { return data.angularMomentumSI; },
@@ -52,6 +56,8 @@ function createRenderSnapshotBuffer() {
     get minimumRadiusRs() { return data.minimumRadiusRs; },
     get maximumRadiusRs() { return data.maximumRadiusRs; },
     get radialPeriods() { return data.radialPeriods; },
+    get periapsisRadiusRs() { return data.periapsisRadiusRs; },
+    get apocenterRadiusRs() { return data.apocenterRadiusRs; },
     get normalizedX() { return data.normalizedX; },
     get normalizedY() { return data.normalizedY; },
     get normalizedZ() { return data.normalizedZ; },
@@ -76,6 +82,8 @@ function copyRenderSnapshot(target, source) {
   target.properTime = source.properTime;
   target.localSpeedFraction = source.localSpeedFraction;
   target.localSpeedMetresPerSecond = source.localSpeedMetresPerSecond;
+  target.radialSpeedFraction = source.radialSpeedFraction;
+  target.tangentialSpeedFraction = source.tangentialSpeedFraction;
   target.energy = source.energy;
   target.angularMomentum = source.angularMomentum;
   target.angularMomentumSI = source.angularMomentumSI;
@@ -86,6 +94,8 @@ function copyRenderSnapshot(target, source) {
   target.minimumRadiusRs = source.minimumRadiusRs;
   target.maximumRadiusRs = source.maximumRadiusRs;
   target.radialPeriods = source.radialPeriods;
+  target.periapsisRadiusRs = source.periapsisRadiusRs;
+  target.apocenterRadiusRs = source.apocenterRadiusRs;
   target.normalizedX = source.normalizedX;
   target.normalizedY = source.normalizedY;
   target.normalizedZ = source.normalizedZ;
@@ -136,6 +146,14 @@ clock.setHighSpeedDelta(geodesicSubsystem.maximumSafeAdvanceSeconds());
 const unitFormatter = new UnitFormatter({ locale: getLocale });
 const scaleIndicator = resources.register(new ScaleIndicator(
   document.querySelector("#viewport-shell"), scaleTransform, unitFormatter,
+));
+const particleInspector = resources.register(new ParticleInspector(
+  document.querySelector("#viewport-shell"),
+  {
+    renderer, particleRenderer, particles, unitFormatter,
+    snapshotParticleId: geodesicSubsystem.particleId,
+    focusParticle: (x, y, z) => renderer.focusPoint(x, y, z),
+  },
 ));
 
 const snapshotRenderPosition = { x: 0, y: 0, z: 0 };
@@ -296,6 +314,7 @@ const renderingSubsystem = {
     visualSettings.setParticleTrackingAvailable(trackable);
     if (trackable) renderer.updateParticleFollow(snapshot.renderX, snapshot.renderY, snapshot.renderZ);
     renderer.render(prepareGridView);
+    particleInspector.update(snapshot, snapshots.revision(), particles.revision());
     appShell.update(renderDelta, simulationState);
     scaleIndicator.update(snapshot);
   },
@@ -360,6 +379,7 @@ resources.register(window, () => window.removeEventListener("beforeunload", disp
 window.addEventListener("beforeunload", dispose);
 if (import.meta.hot) import.meta.hot.dispose(dispose);
 window.__GR4D_DIAGNOSTICS__ = Object.freeze({
+  getParticleScreenPosition(id) { return particleInspector.getProjectedParticlePosition(id); },
   getSnapshot() {
     return {
       animationFrames: runtimeDiagnostics.animationFrames,
@@ -421,6 +441,7 @@ window.__GR4D_DIAGNOSTICS__ = Object.freeze({
         apparentSizeCssPixels: particleRenderer.material.size,
         sizeAttenuation: particleRenderer.material.sizeAttenuation,
       },
+      inspector: particleInspector.getDiagnostics(),
       scale: {
         mode: scaleTransform.mode,
         metresPerWorldUnit: scaleTransform.metresPerWorldUnit,

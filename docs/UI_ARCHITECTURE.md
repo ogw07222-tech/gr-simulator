@@ -79,10 +79,20 @@ Desktop displays both side panels. Tablet and mobile convert them into slide-ove
 
 ## Unsupported future controls
 
-The UI intentionally omits arbitrary thick 3D lines, fake bloom without post-processing, Energy/Proper Time/Curvature coloring, orbit analytics, and scientific particle inspection. These controls require corresponding tested engine data or rendering capabilities.
+The UI intentionally omits arbitrary thick 3D lines, fake bloom without post-processing, Energy/Proper Time/Curvature coloring, orbit analytics, and unsupported derived physics overlays. These controls require corresponding tested engine data or rendering capabilities.
 
 ## v0.7 orbit controls and HUD
 
 The simulation panel adds bilingual basic and advanced orbit setup. Input edits remain draft DOM state; Apply validates mass, radius, local subluminal velocity, conserved quantities, and substep bounds before atomically replacing the solver state. Language switching only replaces localized text and preserves the active orbit, camera, runtime, and draft values.
 
 The scientific HUD consumes reusable snapshots and refreshes text at no more than 10 Hz. It distinguishes SI from normalized quantities and labels local static-observer speed explicitly. At capture the last outside-horizon value is retained; no inside-horizon local-static speed is presented.
+
+## v0.7.11 Particle Inspector
+
+`ParticleInspector` owns selection as UI state, separate from `Particle` and the Schwarzschild solver. It creates one HTML overlay and reuses it for the lifetime of the app. Pointer down/up displacement distinguishes taps/clicks from OrbitControls drags, and screen-space hit testing slightly expands only the interaction target without enlarging rendered particles.
+
+The inspector reads the existing immutable presentation snapshot plus authoritative particle state. Radial/tangential local velocity fractions are exposed by `SchwarzschildParticleSubsystem.writeSnapshot()` from values it already computes; the inspector does not integrate, classify, or derive a second physics model. Render-space particle coordinates are projected with a reused Three.js vector. Card dimensions remain CSS-pixel sized at all camera distances and scale modes.
+
+When an in-front particle leaves the viewport, the same selection is represented by a clamped edge indicator. Behind-camera points are detected in camera space before perspective projection, so no mirrored or fabricated screen coordinate is used. The edge action delegates to the existing `Renderer.focusPoint()` behavior. Selection is not dropped for camera distance, apparent size, trail distance, render scale, or grid distance.
+
+This patch does not add full-scene occlusion testing. The inspector can therefore remain visible when the selected particle is geometrically behind the black-hole presentation object from the current camera view; adding a depth/occlusion system is intentionally outside this focused interaction patch.
