@@ -190,6 +190,7 @@ const runtimeControls = {
   play: () => clock.resume(),
   pause: () => clock.pause(),
   setTimeScale: (scale) => clock.setTimeScale(scale),
+  previewPrecessionDemo: (eccentricity) => geodesicSubsystem.previewPrecessionDemo(eccentricity),
   applyOrbit: (configuration) => {
     const previous = snapshots.latest();
     const previousValues = previous ? {
@@ -318,6 +319,7 @@ const particleSubsystem = {
       trailSamples: geodesicSubsystem.particle.trail.length,
       trailCapacity: geodesicSubsystem.particle.trail.maxLength,
       radialPeriods: geodesicSubsystem.geodesic.diagnostics.radialPeriods,
+      periapsisAdvance: geodesicSubsystem.geodesic.diagnostics.periapsisAdvance,
     });
     controlPanel.syncGeodesic(snapshots.latest(), simulationState);
   },

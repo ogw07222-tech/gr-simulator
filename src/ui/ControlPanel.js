@@ -3,6 +3,12 @@ import { validateOrbitConfiguration } from "./OrbitInputValidation.js";
 import { helpButton } from "./ScientificHelp.js";
 import { MAX_TIME_SCALE, MIN_TIME_SCALE } from "../systems/index.js";
 
+const FALLBACK_PRECESSION_DEMO = Object.freeze({
+  minimumEccentricity: 0.05,
+  maximumEccentricity: 0.5,
+  defaultEccentricity: 0.3,
+});
+
 export class ControlPanel {
   constructor(root, store, model, grid, runtime = null, unitFormatter = null) {
     this.root = root;
@@ -13,6 +19,8 @@ export class ControlPanel {
     this.unitFormatter = unitFormatter;
     this.runtimeView = { paused: null, timeScale: null, particleCount: null, simulationTime: null };
     this.geodesicView = { snapshot: null, lastRefresh: 0 };
+    this.activeOrbitPreset = null;
+    this.precessionReturnDraft = null;
     this.render();
     this.bind();
     this.unsubscribe = store.subscribe((state) => this.sync(state));
@@ -22,6 +30,7 @@ export class ControlPanel {
   }
 
   render() {
+    const precession = this.runtime?.precessionDemo ?? FALLBACK_PRECESSION_DEMO;
     this.root.innerHTML = `
       <div class="panel-heading"><div><span class="section-index">01</span><h2 data-i18n="panels.simulation"></h2></div><button class="panel-close" data-close-panel type="button" data-i18n="panels.close" data-i18n-aria="panels.closeSimulation"></button></div>
       <p class="panel-intro" data-i18n="controls.runtimeIntro"></p>
@@ -59,6 +68,10 @@ export class ControlPanel {
           <option value="local" data-i18n="orbit.localVelocity"></option>
           <option value="constants" data-i18n="orbit.constants"></option>
         </select></label>
+        <div class="precession-demo-controls" hidden>
+          <label class="range-control" for="orbit-eccentricity"><span><span data-i18n="orbit.eccentricity"></span>${helpButton("eccentricity")}</span><output id="orbit-eccentricity-value"></output><input id="orbit-eccentricity" type="range" min="${precession.minimumEccentricity}" max="${precession.maximumEccentricity}" step="0.01" /></label>
+          <p class="control-description"><span data-i18n="orbit.eccentricityLow"></span> ←────────→ <span data-i18n="orbit.eccentricityHigh"></span></p>
+        </div>
         <h3 data-i18n="orbit.step2"></h3>
         <label class="numeric-control" for="black-hole-mass"><span><span data-i18n="orbit.massSolar"></span>${helpButton("mass")}</span><input id="black-hole-mass" type="number" min="1" max="10000000000" step="any" inputmode="decimal" /></label>
         <label class="numeric-control" for="orbit-radius"><span><span data-i18n="orbit.radiusRs"></span>${helpButton("schwarzschildRadius")}</span><input id="orbit-radius" type="number" min="1.000001" max="10" step="0.01" /></label>
@@ -74,6 +87,23 @@ export class ControlPanel {
             <label class="numeric-control" for="specific-angular-momentum"><span><span data-i18n="orbit.specificAngularMomentum"></span>${helpButton("angularMomentum")}</span><input id="specific-angular-momentum" type="number" step="0.001" /></label>
             <label class="select-control" for="radial-direction"><span data-i18n="orbit.radialDirection"></span><select id="radial-direction"><option value="1" data-i18n="orbit.outward"></option><option value="-1" data-i18n="orbit.inward"></option></select></label>
           </div>
+        </div>
+        <div class="precession-generated-values" hidden aria-live="polite">
+          <h3 data-i18n="orbit.generatedTitle"></h3>
+          <p class="control-description" data-i18n="orbit.generatedDescription"></p>
+          <dl class="solver-facts">
+            <div><dt data-i18n="orbit.eccentricitySymbol"></dt><dd id="precession-eccentricity"></dd></div>
+            <div><dt data-i18n="orbit.semiLatusRectum"></dt><dd id="precession-p"></dd></div>
+            <div><dt data-i18n="orbit.periapsis"></dt><dd id="precession-periapsis"></dd></div>
+            <div><dt data-i18n="orbit.apocenter"></dt><dd id="precession-apocenter"></dd></div>
+            <div><dt data-i18n="orbit.startingRadius"></dt><dd id="precession-starting-radius"></dd></div>
+            <div><dt data-i18n="orbit.specificEnergy"></dt><dd id="precession-energy"></dd></div>
+            <div><dt data-i18n="orbit.specificAngularMomentum"></dt><dd id="precession-angular-momentum"></dd></div>
+            <div><dt data-i18n="orbit.initialRadialSpeed"></dt><dd id="precession-radial-speed"></dd></div>
+            <div><dt data-i18n="orbit.initialTangentialSpeed"></dt><dd id="precession-tangential-speed"></dd></div>
+            <div><dt data-i18n="orbit.expectedClassification"></dt><dd id="precession-classification"></dd></div>
+          </dl>
+          <p class="scientific-note" data-i18n="orbit.precessionPhysicsNote"></p>
         </div>
         <h3 data-i18n="orbit.step3"></h3><p class="control-description" data-i18n="orbit.step3Description"></p>
         <button id="apply-orbit" class="primary-action" type="button" data-i18n="orbit.apply"></button>
@@ -94,6 +124,7 @@ export class ControlPanel {
         <div><small data-i18n="runtime.trailSamples"></small><strong id="runtime-trail-samples"></strong></div>
         <div><small data-i18n="runtime.trailCapacity"></small><strong id="runtime-trail-capacity"></strong></div>
         <div><small data-i18n="runtime.radialPeriods"></small><strong id="runtime-radial-periods"></strong></div>
+        <div><small data-i18n="runtime.periapsisAdvance"></small><strong id="runtime-periapsis-advance"></strong></div>
       </div></section>` : ""}
       ${this.runtime?.applyOrbit ? `<details class="panel-section control-disclosure scientific-measurements"><summary><span data-i18n="geodesic.title"></span></summary><div class="disclosure-body"><div class="runtime-status geodesic-status" aria-live="polite">
         <div><small data-i18n="geodesic.mass"></small><strong id="geo-mass"></strong></div>
@@ -155,9 +186,11 @@ export class ControlPanel {
       this.root.querySelector("#reset-all").addEventListener("click", this.runtime.resetAll);
       if (!this.runtime.applyOrbit) return;
       const configuration = this.runtime.getOrbitConfiguration();
+      const precession = this.runtime.precessionDemo ?? FALLBACK_PRECESSION_DEMO;
       this.root.querySelector("#orbit-preset").value = configuration.preset;
       this.root.querySelector("#black-hole-mass").value = configuration.massSolar;
       this.root.querySelector("#orbit-radius").value = configuration.radius;
+      this.root.querySelector("#orbit-eccentricity").value = configuration.eccentricity ?? precession.defaultEccentricity;
       this.root.querySelector("#radial-beta").value = configuration.radialBeta;
       this.root.querySelector("#tangential-beta").value = configuration.tangentialBeta;
       this.root.querySelector("#specific-energy").value = configuration.energy;
@@ -218,6 +251,9 @@ export class ControlPanel {
       this.root.querySelector("#runtime-trail-samples").textContent = diagnostics.trailSamples.toLocaleString(getLocale());
       this.root.querySelector("#runtime-trail-capacity").textContent = diagnostics.trailCapacity.toLocaleString(getLocale());
       this.root.querySelector("#runtime-radial-periods").textContent = diagnostics.radialPeriods.toLocaleString(getLocale());
+      this.root.querySelector("#runtime-periapsis-advance").textContent = diagnostics.radialPeriods > 0 && Number.isFinite(diagnostics.periapsisAdvance)
+        ? t("runtime.periapsisAdvanceValue", { value: (diagnostics.periapsisAdvance * 180 / Math.PI).toFixed(2) })
+        : t("runtime.notAvailable");
     }
   }
 
@@ -229,20 +265,58 @@ export class ControlPanel {
     this.#writeGeodesic(snapshot);
   }
 
+  #captureOrbitDraft() {
+    return {
+      radius: this.root.querySelector("#orbit-radius").value,
+      radialBeta: this.root.querySelector("#radial-beta").value,
+      tangentialBeta: this.root.querySelector("#tangential-beta").value,
+      energy: this.root.querySelector("#specific-energy").value,
+      angularMomentum: this.root.querySelector("#specific-angular-momentum").value,
+      radialDirection: this.root.querySelector("#radial-direction").value,
+    };
+  }
+
+  #restoreOrbitDraft(draft) {
+    if (!draft) return;
+    this.root.querySelector("#orbit-radius").value = draft.radius;
+    this.root.querySelector("#radial-beta").value = draft.radialBeta;
+    this.root.querySelector("#tangential-beta").value = draft.tangentialBeta;
+    this.root.querySelector("#specific-energy").value = draft.energy;
+    this.root.querySelector("#specific-angular-momentum").value = draft.angularMomentum;
+    this.root.querySelector("#radial-direction").value = draft.radialDirection;
+  }
+
+  #setDemoInputLock(locked) {
+    ["#orbit-radius", "#radial-beta", "#tangential-beta", "#specific-energy", "#specific-angular-momentum"].forEach((selector) => {
+      const input = this.root.querySelector(selector);
+      input.readOnly = locked;
+      input.disabled = locked;
+      input.setAttribute("aria-readonly", String(locked));
+    });
+    this.root.querySelector("#radial-direction").disabled = locked;
+  }
+
   #syncOrbitInputs() {
     const preset = this.root.querySelector("#orbit-preset").value;
-    if (preset === "precession") {
-      this.root.querySelector("#orbit-radius").value = 6;
-      this.root.querySelector("#specific-energy").value = 0.965;
-      this.root.querySelector("#specific-angular-momentum").value = 2;
-      this.root.querySelector("#radial-direction").value = -1;
+    const enteringPrecession = preset === "precession" && this.activeOrbitPreset !== "precession";
+    const leavingPrecession = preset !== "precession" && this.activeOrbitPreset === "precession";
+    if (enteringPrecession) this.precessionReturnDraft = this.#captureOrbitDraft();
+    if (leavingPrecession) {
+      this.#restoreOrbitDraft(this.precessionReturnDraft);
+      this.precessionReturnDraft = null;
     }
+    this.activeOrbitPreset = preset;
+
+    const isPrecession = preset === "precession";
+    this.root.querySelector(".precession-demo-controls").hidden = !isPrecession;
+    this.root.querySelector(".precession-generated-values").hidden = !isPrecession;
     this.root.querySelector(".orbit-local-inputs").hidden = preset !== "local";
-    this.root.querySelector(".orbit-constant-inputs").hidden = preset !== "constants" && preset !== "precession";
+    this.root.querySelector(".orbit-constant-inputs").hidden = preset !== "constants" && !isPrecession;
+    this.#setDemoInputLock(isPrecession);
     this.#syncOrbitDerived();
   }
 
-  #syncOrbitDerived() {
+  #writeBasicDerived() {
     const massSolar = Number(this.root.querySelector("#black-hole-mass").value);
     const radius = Number(this.root.querySelector("#orbit-radius").value);
     const radiusKm = massSolar * 2.953339382066878 * radius;
@@ -255,12 +329,58 @@ export class ControlPanel {
     });
   }
 
+  #syncPrecessionPreview() {
+    const error = this.root.querySelector("#orbit-error");
+    const eccentricity = Number(this.root.querySelector("#orbit-eccentricity").value);
+    this.root.querySelector("#orbit-eccentricity-value").textContent = eccentricity.toFixed(2);
+    try {
+      const demo = this.runtime.previewPrecessionDemo(eccentricity);
+      this.root.querySelector("#orbit-radius").value = demo.startingRadius.toPrecision(15);
+      this.root.querySelector("#radial-beta").value = demo.radialBeta.toPrecision(15);
+      this.root.querySelector("#tangential-beta").value = demo.tangentialBeta.toPrecision(15);
+      this.root.querySelector("#specific-energy").value = demo.energy.toPrecision(15);
+      this.root.querySelector("#specific-angular-momentum").value = demo.angularMomentum.toPrecision(15);
+      this.root.querySelector("#radial-direction").value = String(demo.radialDirection);
+      this.root.querySelector("#precession-eccentricity").textContent = demo.eccentricity.toFixed(2);
+      this.root.querySelector("#precession-p").textContent = `${demo.semiLatusRectumM.toFixed(2)} GM/c²`;
+      this.root.querySelector("#precession-periapsis").textContent = `${demo.periapsisRadius.toFixed(6)} rₛ`;
+      this.root.querySelector("#precession-apocenter").textContent = `${demo.apocenterRadius.toFixed(6)} rₛ`;
+      this.root.querySelector("#precession-starting-radius").textContent = `${demo.startingRadius.toFixed(6)} rₛ (${t("orbit.periapsisStart")})`;
+      this.root.querySelector("#precession-energy").textContent = demo.energy.toFixed(10);
+      this.root.querySelector("#precession-angular-momentum").textContent = demo.angularMomentum.toFixed(10);
+      this.root.querySelector("#precession-radial-speed").textContent = `${demo.radialBeta.toFixed(6)} c`;
+      this.root.querySelector("#precession-tangential-speed").textContent = `${demo.tangentialBeta.toFixed(6)} c`;
+      this.root.querySelector("#precession-classification").textContent = t(`orbit.classification.${demo.expectedClassification}`);
+      error.hidden = true;
+      this.#writeBasicDerived();
+      return demo;
+    } catch {
+      error.textContent = t("orbit.errorEccentricity", {
+        minimum: this.root.querySelector("#orbit-eccentricity").min,
+        maximum: this.root.querySelector("#orbit-eccentricity").max,
+      });
+      error.hidden = false;
+      return null;
+    }
+  }
+
+  #syncOrbitDerived() {
+    if (this.root.querySelector("#orbit-preset").value === "precession") {
+      this.#syncPrecessionPreview();
+      return;
+    }
+    this.#writeBasicDerived();
+  }
+
   #applyOrbit() {
     const error = this.root.querySelector("#orbit-error");
+    const preset = this.root.querySelector("#orbit-preset").value;
+    if (preset === "precession" && !this.#syncPrecessionPreview()) return;
     const configuration = {
-      preset: this.root.querySelector("#orbit-preset").value,
+      preset,
       massSolar: Number(this.root.querySelector("#black-hole-mass").value),
       radius: Number(this.root.querySelector("#orbit-radius").value),
+      eccentricity: Number(this.root.querySelector("#orbit-eccentricity").value),
       radialBeta: Number(this.root.querySelector("#radial-beta").value),
       tangentialBeta: Number(this.root.querySelector("#tangential-beta").value),
       energy: Number(this.root.querySelector("#specific-energy").value),

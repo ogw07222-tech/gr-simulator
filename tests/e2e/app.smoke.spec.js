@@ -15,7 +15,7 @@ test("preserves simulation behavior while switching scientific UI locales", asyn
   await expect(page.locator("html")).toHaveAttribute("lang", "en");
   await expect(page.locator("#locale-select")).toHaveValue("en");
   await expect(page.getByRole("heading", { name: "Simulation" })).toBeVisible();
-  await expect(page.locator(".version-chip")).toHaveText("v0.7.9");
+  await expect(page.locator(".version-chip")).toHaveText("v0.7.10");
   await expect(page.locator("#geo-classification")).toHaveText("Stable circular");
   await expect(page.locator("#geo-status")).toHaveText("Active");
   await expect(page.locator("#orbit-preset")).toHaveValue("circular");
@@ -83,6 +83,120 @@ test("preserves simulation behavior while switching scientific UI locales", asyn
   await expect(page.locator("#max-fps")).toHaveValue("30");
   await page.locator("#locale-select").selectOption("en");
   await expect(page.getByRole("heading", { name: "Simulation" })).toBeVisible();
+  expect(consoleErrors).toEqual([]);
+});
+
+test("keeps the precession demo eccentricity-controlled, physical, and draft-applied", async ({ page }) => {
+  const consoleErrors = collectErrors(page);
+  await page.goto("/");
+  await page.getByRole("button", { name: "Pause", exact: true }).click();
+  const before = await page.evaluate(() => window.__GR4D_DIAGNOSTICS__.getSnapshot());
+  const initialRadiusDraft = await page.locator("#orbit-radius").inputValue();
+  const initialEnergyDraft = await page.locator("#specific-energy").inputValue();
+  const initialAngularDraft = await page.locator("#specific-angular-momentum").inputValue();
+
+  await page.locator("#orbit-preset").selectOption("precession");
+  await expect(page.locator("#orbit-eccentricity")).toBeEnabled();
+  await expect(page.locator("#orbit-eccentricity")).toHaveAttribute("min", "0.05");
+  await expect(page.locator("#orbit-eccentricity")).toHaveAttribute("max", "0.5");
+  await expect(page.locator("#black-hole-mass")).toBeEnabled();
+  await expect(page.locator("#orbit-radius")).toBeDisabled();
+  await expect(page.locator("#radial-beta")).toBeDisabled();
+  await expect(page.locator("#tangential-beta")).toBeDisabled();
+  await expect(page.locator("#specific-energy")).toBeDisabled();
+  await expect(page.locator("#specific-angular-momentum")).toBeDisabled();
+  await expect(page.locator("#radial-direction")).toBeDisabled();
+  await expect(page.locator(".precession-generated-values")).toBeVisible();
+  await expect(page.getByRole("button", { name: "Explain Orbit eccentricity e" })).toBeVisible();
+  expect((await page.evaluate(() => window.__GR4D_DIAGNOSTICS__.getSnapshot())).physics).toEqual(before.physics);
+
+  const p = 9;
+  let previousRatio = 1;
+  let previousEnergy = null;
+  let previousAngularMomentum = null;
+  for (const eccentricity of [0.1, 0.3, 0.5]) {
+    await page.locator("#orbit-eccentricity").fill(String(eccentricity));
+    const denominator = p - 3 - eccentricity ** 2;
+    const expectedPeriapsis = p / (2 * (1 + eccentricity));
+    const expectedApocenter = p / (2 * (1 - eccentricity));
+    const expectedEnergy = Math.sqrt(
+      ((p - 2 - 2 * eccentricity) * (p - 2 + 2 * eccentricity)) / (p * denominator),
+    );
+    const expectedAngularMomentum = p / (2 * Math.sqrt(denominator));
+    const lapseSquared = 1 - 1 / expectedPeriapsis;
+    const gamma = expectedEnergy / Math.sqrt(lapseSquared);
+    const expectedTangentialBeta = expectedAngularMomentum / (gamma * expectedPeriapsis);
+    const ratio = expectedApocenter / expectedPeriapsis;
+
+    expect(p).toBeGreaterThan(6 + 2 * eccentricity);
+    expect(expectedPeriapsis).toBeGreaterThan(1.001);
+    expect(expectedApocenter).toBeLessThanOrEqual(10);
+    expect(expectedEnergy).toBeLessThan(1);
+    expect(expectedTangentialBeta).toBeLessThan(1);
+    expect(Number(await page.locator("#orbit-radius").inputValue())).toBeCloseTo(expectedPeriapsis, 12);
+    expect(Number(await page.locator("#specific-energy").inputValue())).toBeCloseTo(expectedEnergy, 12);
+    expect(Number(await page.locator("#specific-angular-momentum").inputValue())).toBeCloseTo(expectedAngularMomentum, 12);
+    expect(Number(await page.locator("#radial-beta").inputValue())).toBe(0);
+    expect(Number(await page.locator("#tangential-beta").inputValue())).toBeCloseTo(expectedTangentialBeta, 12);
+    expect(Number.parseFloat(await page.locator("#precession-periapsis").textContent())).toBeCloseTo(expectedPeriapsis, 5);
+    expect(Number.parseFloat(await page.locator("#precession-apocenter").textContent())).toBeCloseTo(expectedApocenter, 5);
+    expect(ratio).toBeGreaterThan(previousRatio);
+    if (previousEnergy !== null) expect(expectedEnergy).not.toBe(previousEnergy);
+    if (previousAngularMomentum !== null) expect(expectedAngularMomentum).not.toBe(previousAngularMomentum);
+    previousRatio = ratio;
+    previousEnergy = expectedEnergy;
+    previousAngularMomentum = expectedAngularMomentum;
+    expect((await page.evaluate(() => window.__GR4D_DIAGNOSTICS__.getSnapshot())).physics).toEqual(before.physics);
+  }
+
+  const expectedAtHalf = {
+    radius: 3,
+    energy: Math.sqrt(((9 - 2 - 1) * (9 - 2 + 1)) / (9 * (9 - 3 - 0.25))),
+    angularMomentum: 9 / (2 * Math.sqrt(9 - 3 - 0.25)),
+  };
+  await page.getByRole("button", { name: "Apply Initial Condition" }).click();
+  const applied = await page.evaluate(() => window.__GR4D_DIAGNOSTICS__.getSnapshot());
+  expect(applied.physics.status).toBe("Active");
+  expect(applied.physics.classification).toBe("BoundNonCircular");
+  expect(applied.physics.radius).toBeCloseTo(expectedAtHalf.radius, 12);
+  expect(applied.physics.energy).toBeCloseTo(expectedAtHalf.energy, 12);
+  expect(applied.physics.angularMomentum).toBeCloseTo(expectedAtHalf.angularMomentum, 12);
+  expect(applied.physics.radialVelocity).toBeCloseTo(0, 10);
+  expect(Math.abs(Number(await page.locator("#geo-normalization").textContent()))).toBeLessThan(1e-10);
+
+  const massBeforeDraft = applied.snapshot.massSolar;
+  await page.locator("#black-hole-mass").fill(String(massBeforeDraft * 2));
+  await page.locator("#orbit-eccentricity").fill("0.3");
+  const beforeMassApply = await page.evaluate(() => window.__GR4D_DIAGNOSTICS__.getSnapshot());
+  expect(beforeMassApply.snapshot.massSolar).toBe(massBeforeDraft);
+  await page.getByRole("button", { name: "Apply Initial Condition" }).click();
+  const massApplied = await page.evaluate(() => window.__GR4D_DIAGNOSTICS__.getSnapshot());
+  expect(massApplied.snapshot.massSolar).toBe(massBeforeDraft * 2);
+  expect(massApplied.physics.radius).toBeCloseTo(9 / (2 * 1.3), 12);
+
+  const validPhysics = massApplied.physics;
+  await page.locator("#orbit-eccentricity").evaluate((input) => {
+    input.max = "0.7";
+    input.value = "0.6";
+    input.dispatchEvent(new Event("input", { bubbles: true }));
+  });
+  await expect(page.locator("#orbit-error")).toBeVisible();
+  await page.getByRole("button", { name: "Apply Initial Condition" }).click();
+  expect((await page.evaluate(() => window.__GR4D_DIAGNOSTICS__.getSnapshot())).physics).toEqual(validPhysics);
+
+  await page.locator("#orbit-preset").selectOption("constants");
+  await expect(page.locator("#orbit-radius")).toBeEnabled();
+  await expect(page.locator("#specific-energy")).toBeEnabled();
+  await expect(page.locator("#specific-angular-momentum")).toBeEnabled();
+  await expect(page.locator("#radial-direction")).toBeEnabled();
+  await expect(page.locator("#orbit-radius")).toHaveValue(initialRadiusDraft);
+  await expect(page.locator("#specific-energy")).toHaveValue(initialEnergyDraft);
+  await expect(page.locator("#specific-angular-momentum")).toHaveValue(initialAngularDraft);
+
+  await page.locator("#locale-select").selectOption("ko");
+  await page.locator("#orbit-preset").selectOption("precession");
+  await expect(page.getByText("궤도 이심률", { exact: true })).toBeVisible();
+  await expect(page.getByText("선택한 이심률에서 자동으로 계산된 물리값입니다.", { exact: true })).toBeVisible();
   expect(consoleErrors).toEqual([]);
 });
 

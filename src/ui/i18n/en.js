@@ -1,6 +1,6 @@
 // Edit English interface copy here. Keep this key structure identical to ko.js.
 export const en = Object.freeze({
-  app: { title: "GR-4D Simulator v0.7.9", description: "Browser-based General Relativity simulation and scientific visualization laboratory", eyebrow: "RELATIVITY RESEARCH CONSOLE" },
+  app: { title: "GR-4D Simulator v0.7.10", description: "Browser-based General Relativity simulation and scientific visualization laboratory", eyebrow: "RELATIVITY RESEARCH CONSOLE" },
   language: { label: "Select language", ko: "한국어", en: "English" },
   status: {
     running: "Running", paused: "Paused", frame: "FRAME", rendererOnline: "Renderer online",
@@ -22,7 +22,12 @@ export const en = Object.freeze({
     title: "Metric Readout", schwarzschildRadius: "Schwarzschild radius", centralLapse: "Central lapse α",
     curvatureProxy: "Curvature proxy", gridVertices: "Grid vertices",
   },
-  runtime: { title: "Runtime Status", state: "State", simulationTime: "Simulation time", timeScale: "Requested time scale", effectiveTimeScale: "Effective time scale", particleCount: "Particle count", trailSamples: "Trail samples", trailCapacity: "Trail capacity", radialPeriods: "Radial periods" },
+  runtime: {
+    title: "Runtime Status", state: "State", simulationTime: "Simulation time", timeScale: "Requested time scale",
+    effectiveTimeScale: "Effective time scale", particleCount: "Particle count", trailSamples: "Trail samples",
+    trailCapacity: "Trail capacity", radialPeriods: "Completed radial periods", periapsisAdvance: "Periapsis advance / orbit",
+    periapsisAdvanceValue: "{value}° / radial period", notAvailable: "—",
+  },
   displayUnits: { section: "Display Units", mode: "Unit system", automatic: "Automatic", si: "SI", astronomical: "Astronomical", note: "Display conversion only; physics always remains in SI units." },
   particle: { outOfDomain: "Outside supported domain" },
   model: {
@@ -58,10 +63,16 @@ export const en = Object.freeze({
     setup: "Schwarzschild Orbit Setup", preset: "Initial condition", circular: "Circular orbit", precessionDemo: "Periapsis Precession Demo",
     localVelocity: "Local static-observer velocity", constants: "Conserved quantities",
     massSolar: "Black-hole mass (M☉)", radiusRs: "Initial radius (rₛ)",
+    eccentricity: "Orbit Eccentricity", eccentricitySymbol: "Eccentricity e", eccentricityLow: "Nearly circular", eccentricityHigh: "Highly eccentric",
     radialVelocity: "Local radial velocity (fraction of c)", tangentialVelocity: "Local tangential velocity (fraction of c)",
     advanced: "Advanced solver inputs", specificEnergy: "Specific energy ε",
     specificAngularMomentum: "Normalized specific angular momentum λ",
     radialDirection: "Initial radial direction", outward: "Outward", inward: "Inward",
+    generatedTitle: "Periapsis Precession Demo", generatedDescription: "These are the physical values generated from the selected eccentricity.",
+    semiLatusRectum: "Fixed orbit scale p", periapsis: "Periapsis", apocenter: "Apocenter", startingRadius: "Starting radius",
+    initialRadialSpeed: "Initial radial speed", initialTangentialSpeed: "Initial tangential speed", expectedClassification: "Expected classification",
+    periapsisStart: "starts at periapsis",
+    precessionPhysicsNote: "The ellipse does not remain closed. General relativity advances successive periapsis directions, producing the observed rosette-like trajectory. The simulator does not force or visually rotate the orbit.",
     maximumSubsteps: "Maximum substeps", step1: "Step 1 · Choose a scenario", step1Description: "Select how the initial state will be specified.",
     step2: "Step 2 · Enter initial conditions", step3: "Step 3 · Validate and apply", step3Description: "Applying replaces the active initial condition atomically; editing does not alter the running simulation.",
     numericalIntegration: "Numerical Integration", fixedTimestep: "Fixed simulation timestep", fixedTimestepValue: "1 / 240 s", normalizedStep: "Maximum normalized solver step", normalizedStepValue: "0.02",
@@ -73,6 +84,7 @@ export const en = Object.freeze({
     errorRadius: "Radius must be outside the horizon and no greater than 10 rₛ.",
     errorCircularRadius: "A timelike circular orbit requires a radius greater than 1.5 rₛ.",
     errorVelocity: "The combined local velocity must remain below the speed of light.",
+    errorEccentricity: "Eccentricity must remain in the validated demo range {minimum} ≤ e ≤ {maximum}.",
     errorInitialCondition: "These conserved quantities do not permit the requested initial state.",
     errorSubsteps: "Maximum substeps must be an integer from 1 to 4096.",
     classification: {
@@ -113,8 +125,8 @@ export const en = Object.freeze({
   guide: {
     open: "Guide", title: "Scientific User Guide", intro: "A practical guide to constructing and interpreting Schwarzschild test-particle experiments.",
     quickStart: { title: "Quick start", body: "1. Choose an initial-condition preset. 2. Enter mass and radius. 3. Apply the condition. 4. Press Play and inspect the measurements." },
-    workflows: { title: "Orbit workflows", body: "Circular orbit derives conserved quantities from radius. Local velocity uses radial and tangential speeds measured by a static observer. Conserved quantities accepts ε and λ directly and requires a radial direction." },
-    examples: { title: "Example experiments", body: "Stable circular: 6 rₛ. Unstable circular: 2.5 rₛ. Radial plunge: local velocity at 4 rₛ with βᵣ = −0.8 and βφ = 0. Bound non-circular: ε = 0.965, λ = 2 at 6 rₛ, inward. Outward domain exit: ε = 1.2, λ = 0 at 5 rₛ, outward." },
+    workflows: { title: "Orbit workflows", body: "Circular orbit derives conserved quantities from radius. Periapsis Precession Demo derives a stable bound Schwarzschild orbit from eccentricity. Local velocity uses radial and tangential speeds measured by a static observer. Conserved quantities accepts ε and λ directly and requires a radial direction." },
+    examples: { title: "Example experiments", body: "Stable circular: 6 rₛ. Periapsis precession: choose the demo and vary eccentricity. Radial plunge: local velocity at 4 rₛ with βᵣ = −0.8 and βφ = 0. Outward domain exit: ε = 1.2, λ = 0 at 5 rₛ, outward." },
     integrator: { title: "Integrator and step controls", body: "The engine uses a fixed 1/240 s runtime step and classical RK4. The solver limits normalized substeps to 0.02 and caps work per update. Raise the cap only when a valid trajectory reports insufficient substeps." },
     measurements: { title: "Measurements and classifications", body: "The HUD reports coordinate and proper time, radius, local speed, conserved quantities, drift, four-velocity residual, substeps, status, and an observational orbit classification." },
     scope: { title: "Scientific scope and limitations", body: "This release integrates timelike test-particle motion in a fixed Schwarzschild spacetime. It is not a numerical-relativity solver and does not model spin, backreaction, radiation reaction, collisions, or extended bodies." },
@@ -124,6 +136,7 @@ export const en = Object.freeze({
     mass: { term: "Black-hole mass", definition: "The central Schwarzschild mass in solar masses (M☉). It sets physical length and time scales, not the dimensionless orbit shape." },
     wSlice: { term: "W visualization slice", definition: "Selects the W position of the educational 4D visualization slice. This changes the displayed deformation proxy, not the Schwarzschild particle physics." },
     schwarzschildRadius: { term: "Schwarzschild radius", definition: "rₛ = 2GM/c². The horizon is at 1 rₛ; initial timelike particles must start outside it." },
+    eccentricity: { term: "Orbit eccentricity e", definition: "Eccentricity describes how elongated the orbit is. e = 0 is circular, while larger values produce increasingly elongated bound orbits. In this demo the simulator automatically calculates a physically consistent Schwarzschild orbit from the selected eccentricity." },
     properTime: { term: "Proper time", definition: "Time measured by a clock moving with the particle along its worldline." }, coordinateTime: { term: "Coordinate time", definition: "Schwarzschild time assigned by a distant static observer; it is not the particle's own clock." },
     specificEnergy: { term: "Specific energy ε", definition: "Conserved dimensionless energy per unit rest mass." }, angularMomentum: { term: "Specific angular momentum λ", definition: "Conserved angular momentum per unit rest mass, normalized by the Schwarzschild length scale." },
     localVelocity: { term: "Local observer velocity", definition: "Physical radial and tangential velocity fractions measured by a static observer." }, integrator: { term: "RK4 integrator", definition: "A fourth-order explicit method. Smaller normalized steps improve accuracy at greater cost." },

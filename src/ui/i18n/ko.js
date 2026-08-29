@@ -1,6 +1,6 @@
 // 한국어 UI 문구는 이 파일에서 관리합니다. 키 구조를 en.js와 동일하게 유지하세요.
 export const ko = Object.freeze({
-  app: { title: "GR-4D Simulator v0.7.9", description: "브라우저 기반 일반상대성이론 시뮬레이션 및 과학 시각화 실험실", eyebrow: "일반상대성이론 연구 콘솔" },
+  app: { title: "GR-4D Simulator v0.7.10", description: "브라우저 기반 일반상대성이론 시뮬레이션 및 과학 시각화 실험실", eyebrow: "일반상대성이론 연구 콘솔" },
   language: { label: "언어 선택", ko: "한국어", en: "English" },
   status: {
     running: "실행 중", paused: "일시정지", frame: "프레임", rendererOnline: "렌더러 정상",
@@ -22,7 +22,12 @@ export const ko = Object.freeze({
     title: "계량 정보", schwarzschildRadius: "슈바르츠실트 반지름", centralLapse: "중심 시간 지연 계수 α",
     curvatureProxy: "곡률 근사값", gridVertices: "격자 정점",
   },
-  runtime: { title: "실행 상태", state: "상태", simulationTime: "시뮬레이션 시간", timeScale: "요청 시간 배속", effectiveTimeScale: "유효 시간 배속", particleCount: "입자 수", trailSamples: "궤적 표본", trailCapacity: "궤적 용량", radialPeriods: "반지름 주기" },
+  runtime: {
+    title: "실행 상태", state: "상태", simulationTime: "시뮬레이션 시간", timeScale: "요청 시간 배속",
+    effectiveTimeScale: "유효 시간 배속", particleCount: "입자 수", trailSamples: "궤적 표본",
+    trailCapacity: "궤적 용량", radialPeriods: "완료된 반지름 주기", periapsisAdvance: "근일점 이동량 / 궤도",
+    periapsisAdvanceValue: "반지름 주기당 {value}°", notAvailable: "—",
+  },
   displayUnits: { section: "표시 단위", mode: "단위 체계", automatic: "자동", si: "SI", astronomical: "천문학", note: "표시만 변환하며 물리 계산은 항상 SI 단위를 유지합니다." },
   particle: { outOfDomain: "지원 영역 이탈" },
   model: {
@@ -58,10 +63,16 @@ export const ko = Object.freeze({
     setup: "슈바르츠실트 궤도 설정", preset: "초기 조건", circular: "원형 궤도", precessionDemo: "근일점 세차 데모",
     localVelocity: "정지 관측자 기준 국소 속도", constants: "보존량 직접 입력",
     massSolar: "블랙홀 질량 (M☉)", radiusRs: "초기 반지름 (rₛ)",
+    eccentricity: "궤도 이심률", eccentricitySymbol: "이심률 e", eccentricityLow: "원궤도에 가까움", eccentricityHigh: "높은 이심률",
     radialVelocity: "국소 방사 속도 (광속 비율)", tangentialVelocity: "국소 접선 속도 (광속 비율)",
     advanced: "고급 적분기 입력", specificEnergy: "비에너지 ε",
     specificAngularMomentum: "정규화 비각운동량 λ",
     radialDirection: "초기 방사 방향", outward: "바깥쪽", inward: "안쪽",
+    generatedTitle: "근일점 세차 데모", generatedDescription: "선택한 이심률에서 자동으로 계산된 물리값입니다.",
+    semiLatusRectum: "고정 궤도 척도 p", periapsis: "근일점", apocenter: "원일점", startingRadius: "시작 반지름",
+    initialRadialSpeed: "초기 방사 속도", initialTangentialSpeed: "초기 접선 속도", expectedClassification: "예상 궤도 분류",
+    periapsisStart: "근일점에서 시작",
+    precessionPhysicsNote: "타원은 닫힌 채로 유지되지 않습니다. 일반상대성이론 때문에 연속된 근일점 방향이 전진하여 장미꽃 모양의 궤적이 나타납니다. 시뮬레이터는 궤도를 강제로 회전시키거나 시각적으로 세차를 덧붙이지 않습니다.",
     maximumSubsteps: "최대 서브스텝 수", step1: "1단계 · 시나리오 선택", step1Description: "초기 상태를 지정할 방법을 선택합니다.",
     step2: "2단계 · 초기 조건 입력", step3: "3단계 · 검증 후 적용", step3Description: "적용하면 활성 초기 조건이 한 번에 교체됩니다. 편집 중에는 실행 상태가 바뀌지 않습니다.",
     numericalIntegration: "수치 적분", fixedTimestep: "고정 시뮬레이션 시간 간격", fixedTimestepValue: "1 / 240초", normalizedStep: "최대 정규화 솔버 스텝", normalizedStepValue: "0.02",
@@ -73,6 +84,7 @@ export const ko = Object.freeze({
     errorRadius: "반지름은 사건의 지평선 밖이며 10 rₛ 이하여야 합니다.",
     errorCircularRadius: "시간꼴 원형 궤도에는 1.5 rₛ보다 큰 반지름이 필요합니다.",
     errorVelocity: "합성 국소 속도는 광속보다 작아야 합니다.",
+    errorEccentricity: "이심률은 검증된 데모 범위 {minimum} ≤ e ≤ {maximum} 안에 있어야 합니다.",
     errorInitialCondition: "입력한 보존량으로는 요청한 초기 상태가 허용되지 않습니다.",
     errorSubsteps: "최대 서브스텝 수는 1~4096 사이의 정수여야 합니다.",
     classification: {
@@ -112,8 +124,8 @@ export const ko = Object.freeze({
   guide: {
     open: "사용 안내", title: "과학 사용자 안내서", intro: "슈바르츠실트 시험 입자 실험을 구성하고 해석하는 실용 안내서입니다.",
     quickStart: { title: "빠른 시작", body: "1. 초기 조건 프리셋을 고릅니다. 2. 질량과 반지름을 입력합니다. 3. 초기 조건을 적용합니다. 4. 재생을 누르고 측정값을 확인합니다." },
-    workflows: { title: "궤도 설정 방식", body: "원형 궤도는 반지름에서 보존량을 계산합니다. 국소 속도는 정지 관측자가 측정한 방사·접선 속도를 사용합니다. 보존량 방식은 ε와 λ를 직접 입력하고 방사 방향을 정합니다." },
-    examples: { title: "실험 예시", body: "안정 원형: 6 rₛ. 불안정 원형: 2.5 rₛ. 방사 낙하: 4 rₛ에서 βᵣ = −0.8, βφ = 0. 속박 비원형: 6 rₛ에서 ε = 0.965, λ = 2, 안쪽 방향. 바깥 경계 이탈: 5 rₛ에서 ε = 1.2, λ = 0, 바깥 방향." },
+    workflows: { title: "궤도 설정 방식", body: "원형 궤도는 반지름에서 보존량을 계산합니다. 근일점 세차 데모는 이심률에서 안정한 속박 슈바르츠실트 궤도를 계산합니다. 국소 속도는 정지 관측자가 측정한 방사·접선 속도를 사용합니다. 보존량 방식은 ε와 λ를 직접 입력하고 방사 방향을 정합니다." },
+    examples: { title: "실험 예시", body: "안정 원형: 6 rₛ. 근일점 세차: 데모를 선택하고 이심률을 바꿉니다. 방사 낙하: 4 rₛ에서 βᵣ = −0.8, βφ = 0. 바깥 경계 이탈: 5 rₛ에서 ε = 1.2, λ = 0, 바깥 방향." },
     integrator: { title: "적분기와 스텝 제어", body: "엔진은 1/240초 고정 런타임 스텝과 고전적 RK4를 사용합니다. 솔버는 정규화 하위 스텝을 0.02로 제한하고 업데이트당 계산량을 제한합니다." },
     measurements: { title: "측정값과 분류", body: "HUD는 좌표·고유 시간, 반지름, 국소 속도, 보존량, 드리프트, 4-속도 잔차, 하위 스텝, 상태와 관측적 궤도 분류를 표시합니다." },
     scope: { title: "과학적 범위와 한계", body: "고정된 슈바르츠실트 시공간에서 시간꼴 시험 입자 운동을 적분합니다. 수치 상대론 솔버가 아니며 회전, 역반응, 복사 반작용, 충돌, 유한 크기 천체는 모델링하지 않습니다." },
@@ -123,6 +135,7 @@ export const ko = Object.freeze({
     mass: { term: "블랙홀 질량", definition: "태양 질량(M☉) 단위의 중심 슈바르츠실트 질량입니다. 물리적 길이와 시간 척도를 정하지만 무차원 궤도 모양은 바꾸지 않습니다." },
     wSlice: { term: "W 시각화 슬라이스", definition: "교육용 4차원 시각화 슬라이스의 W 위치를 선택합니다. 표시되는 변형 프록시만 바꾸며 슈바르츠실트 입자 물리 계산은 바꾸지 않습니다." },
     schwarzschildRadius: { term: "슈바르츠실트 반지름", definition: "rₛ = 2GM/c²입니다. 사건의 지평선은 1 rₛ에 있으며 시간꼴 입자는 그 바깥에서 시작해야 합니다." },
+    eccentricity: { term: "궤도 이심률 e", definition: "이심률은 궤도가 얼마나 길쭉한지를 나타냅니다. e = 0은 원궤도이며 값이 커질수록 궤도가 더 길쭉해집니다. 이 데모에서는 선택한 이심률에 맞는 슈바르츠실트 궤도의 물리량을 시뮬레이터가 자동으로 계산합니다." },
     properTime: { term: "고유 시간", definition: "입자의 세계선을 따라 함께 움직이는 시계가 측정하는 시간입니다." }, coordinateTime: { term: "좌표 시간", definition: "멀리 떨어진 정지 관측자가 부여하는 슈바르츠실트 시간입니다." },
     specificEnergy: { term: "비에너지 ε", definition: "단위 정지 질량당 보존되는 무차원 에너지입니다." }, angularMomentum: { term: "비각운동량 λ", definition: "슈바르츠실트 길이 척도로 정규화한 단위 정지 질량당 보존 각운동량입니다." },
     localVelocity: { term: "국소 관측자 속도", definition: "정지 관측자가 측정한 물리적 방사·접선 속도의 광속 대비 비율입니다." }, integrator: { term: "RK4 적분기", definition: "4차 명시적 수치 적분법입니다. 정규화 스텝이 작을수록 정확도와 계산 비용이 증가합니다." },
