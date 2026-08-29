@@ -1,0 +1,18 @@
+name: Temporary Photon Stage E Validation v2
+on:
+  push:
+    branches: [tmp/photon-stage-e-validation]
+permissions:
+  contents: read
+jobs:
+  validate:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npm run lint
+      - run: npx vitest run tests/physics/schwarzschild-photon-deflection.test.js tests/physics/schwarzschild-photon-reference.test.js tests/physics/schwarzschild-null-validation.test.js tests/unit/photon-deflection-subsystem.test.js
