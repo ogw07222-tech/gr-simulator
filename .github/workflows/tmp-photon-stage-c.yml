@@ -1,0 +1,291 @@
+name: Temporary Photon Stage C Validation
+on:
+  push:
+    branches: [tmp/photon-stage-c-validation]
+permissions:
+  contents: write
+jobs:
+  validate:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with: { fetch-depth: 0 }
+      - uses: actions/setup-node@v4
+        with: { node-version: 24, cache: npm }
+      - name: Apply Stage C candidate
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          Path('src/physics/relativity/SchwarzschildPhotonInitialConditions.js').write_text('''import { nullRadialVelocity } from "./SchwarzschildNullGeodesicSystem.js";
+
+          export const PHOTON_PRESETS = Object.freeze({
+            weak: Object.freeze({ name: "Weak Deflection", radius: 40, phi: 0, impactParameter: 10, radialDirection: -1, angularDirection: 1 }),
+            strong: Object.freeze({ name: "Strong Deflection", radius: 20, phi: 0, impactParameter: 3, radialDirection: -1, angularDirection: 1 }),
+            nearCritical: Object.freeze({ name: "Near Critical", radius: 20, phi: 0, impactParameter: 2.62, radialDirection: -1, angularDirection: 1 }),
+            capture: Object.freeze({ name: "Capture", radius: 20, phi: 0, impactParameter: 2.4, radialDirection: -1, angularDirection: 1 }),
+          });
+
+          export function createPhotonInitialCondition({
+            radius,
+            phi = 0,
+            impactParameter,
+            radialDirection = -1,
+            angularDirection = 1,
+            energy = 1,
+          }) {
+            if (!(radius > 1) || !Number.isFinite(radius)) throw new RangeError("Photon launch radius must satisfy r > r_s.");
+            if (!(impactParameter >= 0) || !Number.isFinite(impactParameter)) throw new RangeError("Photon impact parameter must be finite and non-negative.");
+            if (!Number.isFinite(phi) || ![1, -1].includes(Math.sign(radialDirection)) || ![1, -1].includes(Math.sign(angularDirection))) {
+              throw new RangeError("Photon launch directions must be finite signed directions.");
+            }
+            const angularMomentum = impactParameter * energy * Math.sign(angularDirection);
+            return Object.freeze({
+              radius,
+              phi,
+              energy,
+              angularMomentum,
+              radialVelocity: nullRadialVelocity(radius, energy, angularMomentum, radialDirection),
+              affineParameter: 0,
+              time: 0,
+              impactParameter,
+              radialDirection: Math.sign(radialDirection),
+              angularDirection: Math.sign(angularDirection),
+            });
+          }
+
+          export function photonPreset(key) {
+            const preset = PHOTON_PRESETS[key];
+            if (!preset) throw new RangeError(`Unknown photon preset: ${key}`);
+            return preset;
+          }
+          '''.replace('          ', ''))
+
+          p = Path('src/physics/relativity/index.js'); s = p.read_text()
+          marker = 'export { SchwarzschildNullGeodesicSystem, nullRadialVelocity } from "./SchwarzschildNullGeodesicSystem.js";\n'
+          addition = marker + 'export { PHOTON_PRESETS, createPhotonInitialCondition, photonPreset } from "./SchwarzschildPhotonInitialConditions.js";\n'
+          if 'SchwarzschildPhotonInitialConditions' not in s: s = s.replace(marker, addition)
+          p.write_text(s)
+
+          Path('src/systems/photons/PhotonSubsystem.js').write_text('''import {
+            NullGeodesicStateIndex,
+            PhotonStatus,
+            PHOTON_PRESETS,
+            SchwarzschildNullGeodesicSystem,
+            SchwarzschildUnits,
+            createPhotonInitialCondition,
+            photonPreset,
+            solarMassesToKilograms,
+          } from "../../physics/index.js";
+
+          export class PhotonSubsystem {
+            constructor({ enabled = false, massSolar = 4e6, maximumRadius = 60, maximumAffineStep = 0.02 } = {}) {
+              this.order = 70;
+              this.enabled = Boolean(enabled);
+              this.maximumRadius = maximumRadius;
+              this.maximumAffineStep = maximumAffineStep;
+              this.configuration = { preset: "weak", massSolar, ...PHOTON_PRESETS.weak };
+              this.position = { x: 0, y: 0, z: 0 };
+              this.work = { integrationPasses: 0, trajectoryUpdates: 0, trailUpdates: 0, diagnosticUpdates: 0, renderBufferUpdates: 0 };
+              this.apply(this.configuration);
+            }
+
+            setEnabled(enabled) { this.enabled = Boolean(enabled); return this.enabled; }
+
+            setMassSolar(massSolar) {
+              if (!(massSolar > 0) || !Number.isFinite(massSolar)) throw new RangeError("Photon central mass must be positive and finite.");
+              return this.apply({ ...this.configuration, massSolar });
+            }
+
+            applyPreset(key) {
+              const preset = photonPreset(key);
+              return this.apply({ ...preset, preset: key, massSolar: this.configuration.massSolar });
+            }
+
+            apply(configuration) {
+              const next = { ...this.configuration, ...configuration };
+              const initial = createPhotonInitialCondition(next);
+              const units = new SchwarzschildUnits(solarMassesToKilograms(next.massSolar));
+              const maximumRadius = Math.max(this.maximumRadius, next.radius * 1.25);
+              const geodesic = new SchwarzschildNullGeodesicSystem({ units, maximumRadius, maximumAffineStep: this.maximumAffineStep });
+              geodesic.initialize(initial);
+              this.configuration = next;
+              this.units = units;
+              this.geodesic = geodesic;
+              this.#syncPosition();
+              return this;
+            }
+
+            reset() { return this.apply(this.configuration); }
+
+            update(deltaSeconds) {
+              if (!this.enabled || this.geodesic.status !== PhotonStatus.ACTIVE) return 0;
+              if (!(deltaSeconds >= 0) || !Number.isFinite(deltaSeconds)) throw new RangeError("Photon update delta must be finite and non-negative.");
+              if (deltaSeconds === 0) return 0;
+              const deltaAffine = this.units.siTimeToNormalized(deltaSeconds);
+              const completed = this.geodesic.advanceAffine(deltaAffine);
+              this.work.integrationPasses += 1;
+              this.work.diagnosticUpdates += 1;
+              if (completed > 0 || this.geodesic.status !== PhotonStatus.ACTIVE) {
+                this.#syncPosition();
+                this.work.trajectoryUpdates += 1;
+              }
+              return completed;
+            }
+
+            render() {
+              if (!this.enabled) return 0;
+              return 0;
+            }
+
+            writeSnapshot(target = {}) {
+              const values = this.geodesic.state.values;
+              target.id = "photon-0";
+              target.physicsModel = "Schwarzschild null geodesic";
+              target.status = this.geodesic.status;
+              target.radiusRs = values[NullGeodesicStateIndex.RADIUS];
+              target.radiusMetres = this.units.normalizedRadiusToSI(target.radiusRs);
+              target.impactParameterRs = this.geodesic.impactParameterRs();
+              target.affineParameter = values[NullGeodesicStateIndex.AFFINE_PARAMETER];
+              target.coordinateTime = this.geodesic.coordinateTimeSI();
+              target.energy = this.geodesic.state.energy;
+              target.angularMomentum = this.geodesic.state.angularMomentum;
+              target.radialDirection = Math.sign(values[NullGeodesicStateIndex.RADIAL_VELOCITY]) || 0;
+              target.nullConditionError = this.geodesic.diagnostics.lastRelativeNullError;
+              target.integrationSubsteps = this.geodesic.diagnostics.substeps;
+              target.x = this.position.x; target.y = this.position.y; target.z = this.position.z;
+              return target;
+            }
+
+            resetWorkCounters() { for (const key of Object.keys(this.work)) this.work[key] = 0; }
+            getDiagnostics() { return { enabled: this.enabled, ...this.work, status: this.geodesic.status, affineParameter: this.geodesic.affineParameter() }; }
+
+            #syncPosition() { this.geodesic.writeRenderPosition(this.position, 1); }
+          }
+          '''.replace('          ', ''))
+
+          Path('src/ui/PhotonControls.js').write_text('''import { subscribeLocale, t } from "./i18n.js";
+
+          export class PhotonControls {
+            constructor(root, { enabled = false, onToggle = null, onPreset = null, onApply = null, getConfiguration = null } = {}) {
+              this.root = root; this.enabled = Boolean(enabled); this.onToggle = onToggle; this.onPreset = onPreset; this.onApply = onApply; this.getConfiguration = getConfiguration;
+              this.element = document.createElement("div");
+              this.element.className = "photon-controls";
+              this.element.innerHTML = `<div class="photon-controls-row"><span class="photon-controls-label"></span><button class="photon-toggle" type="button"></button></div>
+                <details class="photon-setup" hidden><summary data-role="setup-label"></summary><div class="photon-setup-body">
+                  <label><span data-role="preset-label"></span><select class="photon-preset"><option value="weak"></option><option value="strong"></option><option value="nearCritical"></option><option value="capture"></option></select></label>
+                  <details class="photon-advanced"><summary data-role="advanced-label"></summary><div class="photon-advanced-grid">
+                    <label><span data-role="radius-label"></span><input class="photon-radius" type="number" min="1.001" step="0.1"></label>
+                    <label><span data-role="phi-label"></span><input class="photon-phi" type="number" step="0.01"></label>
+                    <label><span data-role="impact-label"></span><input class="photon-impact" type="number" min="0" step="0.01"></label>
+                    <label><span data-role="radial-label"></span><select class="photon-radial"><option value="-1"></option><option value="1"></option></select></label>
+                    <label><span data-role="angular-label"></span><select class="photon-angular"><option value="1"></option><option value="-1"></option></select></label>
+                    <button class="photon-apply" type="button"></button>
+                  </div></details>
+                </div></details>`;
+              this.button = this.element.querySelector(".photon-toggle"); this.setup = this.element.querySelector(".photon-setup"); this.preset = this.element.querySelector(".photon-preset");
+              this.radius = this.element.querySelector(".photon-radius"); this.phi = this.element.querySelector(".photon-phi"); this.impact = this.element.querySelector(".photon-impact"); this.radial = this.element.querySelector(".photon-radial"); this.angular = this.element.querySelector(".photon-angular");
+              this.handleClick = () => { this.setEnabled(!this.enabled); this.onToggle?.(this.enabled); };
+              this.handlePreset = () => { const configuration = this.onPreset?.(this.preset.value); if (configuration) this.setConfiguration(configuration); };
+              this.handleApply = () => { const configuration = this.onApply?.({ preset: "custom", radius: Number(this.radius.value), phi: Number(this.phi.value), impactParameter: Number(this.impact.value), radialDirection: Number(this.radial.value), angularDirection: Number(this.angular.value) }); if (configuration) this.setConfiguration(configuration); };
+              this.button.addEventListener("click", this.handleClick); this.preset.addEventListener("change", this.handlePreset); this.element.querySelector(".photon-apply").addEventListener("click", this.handleApply);
+              this.root.append(this.element); this.unsubscribeLocale = subscribeLocale(() => this.localize()); this.localize(); this.setEnabled(this.enabled); this.setConfiguration(this.getConfiguration?.());
+            }
+
+            setEnabled(enabled) { this.enabled = Boolean(enabled); this.button.setAttribute("aria-pressed", String(this.enabled)); this.button.textContent = t(this.enabled ? "photon.controls.on" : "photon.controls.off"); this.setup.hidden = !this.enabled; return this.enabled; }
+            setConfiguration(configuration) { if (!configuration) return; if (["weak", "strong", "nearCritical", "capture"].includes(configuration.preset)) this.preset.value = configuration.preset; this.radius.value = configuration.radius; this.phi.value = configuration.phi ?? 0; this.impact.value = configuration.impactParameter; this.radial.value = String(configuration.radialDirection); this.angular.value = String(configuration.angularDirection); }
+            localize() {
+              const q = (role) => this.element.querySelector(`[data-role="${role}"]`);
+              this.element.querySelector(".photon-controls-label").textContent = t("photon.controls.title"); q("setup-label").textContent = t("photon.controls.setup"); q("preset-label").textContent = t("photon.controls.preset"); q("advanced-label").textContent = t("photon.controls.advanced"); q("radius-label").textContent = t("photon.controls.radius"); q("phi-label").textContent = t("photon.controls.phi"); q("impact-label").textContent = t("photon.controls.impactParameter"); q("radial-label").textContent = t("photon.controls.radialDirection"); q("angular-label").textContent = t("photon.controls.angularDirection");
+              for (const option of this.preset.options) option.textContent = t(`photon.presets.${option.value}`);
+              this.radial.options[0].textContent = t("photon.controls.inward"); this.radial.options[1].textContent = t("photon.controls.outward"); this.angular.options[0].textContent = t("photon.controls.counterclockwise"); this.angular.options[1].textContent = t("photon.controls.clockwise"); this.element.querySelector(".photon-apply").textContent = t("photon.controls.apply"); this.setEnabled(this.enabled);
+            }
+            dispose() { this.unsubscribeLocale?.(); this.button.removeEventListener("click", this.handleClick); this.preset.removeEventListener("change", this.handlePreset); this.element.querySelector(".photon-apply").removeEventListener("click", this.handleApply); this.element.remove(); }
+          }
+          '''.replace('          ', ''))
+
+          for path, old, new in [
+            ('src/ui/i18n/en.js', '  photon: { controls: { title: "Photons", off: "OFF", on: "ON" } },', '  photon: { controls: { title: "Photons", off: "OFF", on: "ON", setup: "Photon Setup", preset: "Preset", advanced: "Advanced launch settings", radius: "Start radius (rₛ)", phi: "Start azimuth φ", impactParameter: "Impact parameter b (rₛ)", radialDirection: "Radial direction", angularDirection: "Propagation sense", inward: "Inward", outward: "Outward", counterclockwise: "Counterclockwise", clockwise: "Clockwise", apply: "Apply launch" }, presets: { weak: "Weak Deflection", strong: "Strong Deflection", nearCritical: "Near Critical", capture: "Capture" } },'),
+            ('src/ui/i18n/ko.js', '  photon: { controls: { title: "광자", off: "꺼짐", on: "켜짐" } },', '  photon: { controls: { title: "광자", off: "꺼짐", on: "켜짐", setup: "광자 설정", preset: "프리셋", advanced: "고급 발사 설정", radius: "시작 반지름 (rₛ)", phi: "시작 방위각 φ", impactParameter: "충돌 매개변수 b (rₛ)", radialDirection: "방사 방향", angularDirection: "진행 회전 방향", inward: "안쪽", outward: "바깥쪽", counterclockwise: "반시계", clockwise: "시계", apply: "발사 적용" }, presets: { weak: "약한 편향", strong: "강한 편향", nearCritical: "임계값 근처", capture: "포획" } },'),
+          ]:
+              p = Path(path); s = p.read_text();
+              if old not in s: raise SystemExit(f'missing photon locale marker in {path}')
+              p.write_text(s.replace(old, new))
+
+          p = Path('src/main.js'); s = p.read_text()
+          s = s.replace('const photonSubsystem = new PhotonSubsystem();', 'const photonSubsystem = new PhotonSubsystem({ massSolar: geodesicSubsystem.configuration.massSolar });')
+          old = '{ enabled: photonSubsystem.enabled, onToggle: (enabled) => photonSubsystem.setEnabled(enabled) },'
+          new = '''{
+              enabled: photonSubsystem.enabled,
+              onToggle: (enabled) => photonSubsystem.setEnabled(enabled),
+              onPreset: (preset) => { photonSubsystem.applyPreset(preset); return photonSubsystem.configuration; },
+              onApply: (configuration) => { photonSubsystem.apply(configuration); return photonSubsystem.configuration; },
+              getConfiguration: () => photonSubsystem.configuration,
+            },'''
+          if old not in s: raise SystemExit('missing photon controls wiring')
+          s = s.replace(old, new)
+          s = s.replace('    geodesicSubsystem.apply(configuration);\n', '    geodesicSubsystem.apply(configuration);\n    photonSubsystem.setMassSolar(geodesicSubsystem.configuration.massSolar);\n')
+          s = s.replace('    geodesicSubsystem.reset();\n    refreshPresentationSnapshot(true);\n', '    geodesicSubsystem.reset();\n    photonSubsystem.reset();\n    refreshPresentationSnapshot(true);\n')
+          p.write_text(s)
+
+          p = Path('src/ui/main.css'); s = p.read_text()
+          if '.photon-setup-body' not in s:
+              s += '''
+          .photon-controls { flex-direction: column; align-items: stretch; max-width: min(18rem, calc(100vw - 1.5rem)); }
+          .photon-controls-row { display: flex; align-items: center; justify-content: space-between; gap: 0.45rem; }
+          .photon-setup { font-size: 0.72rem; }
+          .photon-setup-body, .photon-advanced-grid { display: grid; gap: 0.4rem; margin-top: 0.4rem; }
+          .photon-setup label, .photon-advanced-grid label { display: grid; gap: 0.2rem; }
+          .photon-setup select, .photon-setup input { width: 100%; }
+          '''.replace('          ', '')
+          p.write_text(s)
+
+          Path('tests/unit/photon-initial-conditions.test.js').write_text('''import { describe, expect, it } from "vitest";
+          import { PHOTON_PRESETS, createPhotonInitialCondition } from "../../src/physics/index.js";
+
+          describe("photon initial conditions", () => {
+            it("constructs null launch data with b = L/E and explicit radial/angular directions", () => {
+              const initial = createPhotonInitialCondition({ radius: 12, phi: 0.4, impactParameter: 3, radialDirection: -1, angularDirection: -1, energy: 1 });
+              expect(initial.phi).toBe(0.4); expect(initial.angularMomentum).toBe(-3); expect(initial.radialVelocity).toBeLessThan(0);
+              const f = 1 - 1 / initial.radius;
+              expect(initial.radialVelocity ** 2 + f * initial.angularMomentum ** 2 / initial.radius ** 2).toBeCloseTo(initial.energy ** 2, 12);
+            });
+            it("supports inward and outward launches", () => {
+              const inward = createPhotonInitialCondition({ radius: 10, impactParameter: 2, radialDirection: -1 });
+              const outward = createPhotonInitialCondition({ radius: 10, impactParameter: 2, radialDirection: 1 });
+              expect(inward.radialVelocity).toBeLessThan(0); expect(outward.radialVelocity).toBeGreaterThan(0);
+            });
+            it("provides the four compact scientific presets", () => {
+              expect(Object.keys(PHOTON_PRESETS)).toEqual(["weak", "strong", "nearCritical", "capture"]);
+              for (const preset of Object.values(PHOTON_PRESETS)) expect(() => createPhotonInitialCondition(preset)).not.toThrow();
+            });
+          });
+          '''.replace('          ', ''))
+
+          Path('tests/unit/photon-subsystem.test.js').write_text('''import { describe, expect, it } from "vitest";
+          import { PhotonSubsystem } from "../../src/systems/index.js";
+
+          describe("PhotonSubsystem single-photon launch", () => {
+            it("remains frozen while OFF and advances affine parameter only after ON", () => {
+              const photons = new PhotonSubsystem({ massSolar: 4e6 });
+              const before = photons.geodesic.affineParameter(); photons.update(1); expect(photons.geodesic.affineParameter()).toBe(before);
+              photons.setEnabled(true); photons.update(1); expect(photons.geodesic.affineParameter()).toBeGreaterThan(before);
+            });
+            it("applies each launch preset through the same null solver", () => {
+              const photons = new PhotonSubsystem();
+              for (const preset of ["weak", "strong", "nearCritical", "capture"]) { photons.applyPreset(preset); expect(photons.configuration.preset).toBe(preset); expect(photons.geodesic.diagnostics.lastRelativeNullError).toBeLessThan(1e-12); }
+            });
+          });
+          '''.replace('          ', ''))
+          PY
+      - run: npm ci
+      - run: npm run lint
+      - run: npx vitest run tests/unit/photon-initial-conditions.test.js tests/unit/photon-subsystem.test.js tests/unit/photon-performance-gate.test.js tests/unit/i18n.test.js
+      - name: Commit validated Stage C patch
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add src tests
+          git commit -m 'feat(physics): add photon launch presets'
+          git push origin HEAD:tmp/photon-stage-c-validation
