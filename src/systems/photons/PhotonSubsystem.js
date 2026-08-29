@@ -5,8 +5,11 @@ import {
   SchwarzschildNullGeodesicSystem,
   SchwarzschildUnits,
   createPhotonInitialCondition,
+  nullSpatialHeading,
   photonPreset,
   solarMassesToKilograms,
+  writeNullSpatialDirection,
+  writePhotonDeflectionMeasurement,
 } from "../../physics/index.js";
 
 export class PhotonSubsystem {
@@ -43,6 +46,19 @@ export class PhotonSubsystem {
     this.configuration = next;
     this.units = units;
     this.geodesic = geodesic;
+    this.initialDeflectionState = new Float64Array(geodesic.state.values);
+    this.deflectionMeasurement = {
+      incomingDirection: { x: 0, z: 0 },
+      outgoingDirection: { x: Number.NaN, z: Number.NaN },
+      incomingHeading: nullSpatialHeading(this.initialDeflectionState, geodesic.state.angularMomentum),
+      outgoingHeading: Number.NaN,
+      deflectionAngleRadians: Number.NaN,
+    };
+    writeNullSpatialDirection(
+      this.initialDeflectionState,
+      geodesic.state.angularMomentum,
+      this.deflectionMeasurement.incomingDirection,
+    );
     this.#syncPosition();
     return this;
   }
@@ -54,7 +70,16 @@ export class PhotonSubsystem {
     if (!(deltaSeconds >= 0) || !Number.isFinite(deltaSeconds)) throw new RangeError("Photon update delta must be finite and non-negative.");
     if (deltaSeconds === 0) return 0;
     const deltaAffine = this.units.siTimeToNormalized(deltaSeconds);
+    const previousStatus = this.geodesic.status;
     const completed = this.geodesic.advanceAffine(deltaAffine);
+    if (previousStatus === PhotonStatus.ACTIVE && this.geodesic.status === PhotonStatus.ESCAPED) {
+      writePhotonDeflectionMeasurement(
+        this.initialDeflectionState,
+        this.geodesic.state.values,
+        this.geodesic.state.angularMomentum,
+        this.deflectionMeasurement,
+      );
+    }
     this.work.integrationPasses += 1;
     this.work.diagnosticUpdates += 1;
     if (completed > 0 || this.geodesic.status !== PhotonStatus.ACTIVE) {
@@ -84,12 +109,25 @@ export class PhotonSubsystem {
     target.radialDirection = Math.sign(values[NullGeodesicStateIndex.RADIAL_VELOCITY]) || 0;
     target.nullConditionError = this.geodesic.diagnostics.lastRelativeNullError;
     target.integrationSubsteps = this.geodesic.diagnostics.substeps;
+    target.incomingAsymptoticDirectionX = this.deflectionMeasurement.incomingDirection.x;
+    target.incomingAsymptoticDirectionZ = this.deflectionMeasurement.incomingDirection.z;
+    target.outgoingAsymptoticDirectionX = this.deflectionMeasurement.outgoingDirection.x;
+    target.outgoingAsymptoticDirectionZ = this.deflectionMeasurement.outgoingDirection.z;
+    target.deflectionAngleRadians = this.deflectionMeasurement.deflectionAngleRadians;
     target.x = this.position.x; target.y = this.position.y; target.z = this.position.z;
     return target;
   }
 
   resetWorkCounters() { for (const key of Object.keys(this.work)) this.work[key] = 0; }
-  getDiagnostics() { return { enabled: this.enabled, ...this.work, status: this.geodesic.status, affineParameter: this.geodesic.affineParameter() }; }
+  getDiagnostics() {
+    return {
+      enabled: this.enabled,
+      ...this.work,
+      status: this.geodesic.status,
+      affineParameter: this.geodesic.affineParameter(),
+      deflectionAngleRadians: this.deflectionMeasurement.deflectionAngleRadians,
+    };
+  }
 
   #syncPosition() { this.geodesic.writeRenderPosition(this.position, 1); }
 }
