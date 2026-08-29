@@ -43,10 +43,14 @@ export class ParticleInspector {
     this.pointerStartY = 0;
     this.valuesDirty = true;
     this.cardSizeDirty = true;
+    this.edgeSizeDirty = true;
     this.lastSnapshotRevision = -1;
     this.lastParticleRevision = -1;
     this.cardWidth = 250;
     this.cardHeight = 220;
+    this.edgeWidth = 190;
+    this.edgeHeight = 40;
+    this.edgeBaseStatus = "";
     this.mode = "hidden";
     this.screenX = Number.NaN;
     this.screenY = Number.NaN;
@@ -58,6 +62,7 @@ export class ParticleInspector {
       projected: false,
       behind: false,
       inside: false,
+      renderVisible: false,
       screenX: 0,
       screenY: 0,
       directionX: 0,
@@ -72,6 +77,7 @@ export class ParticleInspector {
       this.#localize();
       this.valuesDirty = true;
       this.cardSizeDirty = true;
+      this.edgeSizeDirty = true;
     });
     this.unsubscribeUnits = unitFormatter?.subscribe(() => {
       this.valuesDirty = true;
@@ -145,7 +151,7 @@ export class ParticleInspector {
       else this.deselect();
     };
     this.handlePointerCancel = () => { this.pointerId = null; };
-    this.handleResize = () => { this.cardSizeDirty = true; };
+    this.handleResize = () => { this.cardSizeDirty = true; this.edgeSizeDirty = true; };
     this.canvas.addEventListener("pointerdown", this.handlePointerDown);
     this.canvas.addEventListener("pointerup", this.handlePointerUp);
     this.canvas.addEventListener("pointercancel", this.handlePointerCancel);
@@ -244,7 +250,8 @@ export class ParticleInspector {
     this.#write("apoapsis", hasGeodesicSnapshot && Number.isFinite(snapshot.apocenterRadiusRs) ? `${this.#number(snapshot.apocenterRadiusRs)} rₛ` : unavailable);
     this.#write("particleState", this.#translatedValue("inspector.state", particle.state));
     this.#write("integrationStatus", hasGeodesicSnapshot ? this.#translatedValue("orbit.status", snapshot.geodesicStatus) : unavailable);
-    this.#write("edgeStatus", hasGeodesicSnapshot ? this.#translatedValue("orbit.classification", snapshot.orbitClassification) : this.#translatedValue("inspector.state", particle.state));
+    this.edgeBaseStatus = hasGeodesicSnapshot ? this.#translatedValue("orbit.classification", snapshot.orbitClassification) : this.#translatedValue("inspector.state", particle.state);
+    this.#write("edgeStatus", this.edgeBaseStatus);
   }
 
   #translatedValue(prefix, value) {
@@ -261,6 +268,7 @@ export class ParticleInspector {
     if (this.lastText[field] === value) return;
     this.lastText[field] = value;
     this.fields[field].textContent = value;
+    if (field === "edgeId" || field === "edgeStatus") this.edgeSizeDirty = true;
   }
 
   #findParticleIndex(id) {
@@ -285,6 +293,7 @@ export class ParticleInspector {
     target.projected = false;
     target.behind = false;
     target.inside = false;
+    target.renderVisible = false;
     target.screenX = 0;
     target.screenY = 0;
     target.directionX = 0;
@@ -304,13 +313,13 @@ export class ParticleInspector {
     this.ndcPosition.copy(this.worldPosition).project(this.camera);
     if (!isFiniteVector(this.ndcPosition.x, this.ndcPosition.y, this.ndcPosition.z)) return target;
     target.projected = true;
+    target.renderVisible = this.ndcPosition.z >= -1 && this.ndcPosition.z <= 1;
     target.screenX = (this.ndcPosition.x * 0.5 + 0.5) * rect.width;
     target.screenY = (-this.ndcPosition.y * 0.5 + 0.5) * rect.height;
     target.directionX = this.ndcPosition.x;
     target.directionY = -this.ndcPosition.y;
     target.inside = this.ndcPosition.x >= -1 && this.ndcPosition.x <= 1
-      && this.ndcPosition.y >= -1 && this.ndcPosition.y <= 1
-      && this.ndcPosition.z >= -1 && this.ndcPosition.z <= 1;
+      && this.ndcPosition.y >= -1 && this.ndcPosition.y <= 1;
     return target;
   }
 
@@ -358,6 +367,7 @@ export class ParticleInspector {
       dy = projection.directionY;
       this.#write("edgeStatus", t("inspector.behindCamera"));
     } else if (projection.projected) {
+      this.#write("edgeStatus", this.edgeBaseStatus);
       dx = projection.screenX - canvasRect.width * 0.5;
       dy = projection.screenY - canvasRect.height * 0.5;
     } else {
@@ -366,11 +376,16 @@ export class ParticleInspector {
       this.#write("edgeStatus", t("inspector.outsideViewport"));
     }
 
+    if (this.edgeSizeDirty) {
+      this.edgeWidth = this.edge.offsetWidth || this.edgeWidth;
+      this.edgeHeight = this.edge.offsetHeight || this.edgeHeight;
+      this.edgeSizeDirty = false;
+    }
     const hasDirection = Math.abs(dx) + Math.abs(dy) > DIRECTION_EPSILON;
     this.edgeArrow.hidden = !hasDirection;
     if (!hasDirection) { dx = 0; dy = -1; }
-    const halfWidth = Math.max(1, canvasRect.width * 0.5 - SAFE_EDGE_CSS_PIXELS);
-    const halfHeight = Math.max(1, canvasRect.height * 0.5 - SAFE_EDGE_CSS_PIXELS);
+    const halfWidth = Math.max(1, canvasRect.width * 0.5 - this.edgeWidth * 0.5 - SAFE_EDGE_CSS_PIXELS);
+    const halfHeight = Math.max(1, canvasRect.height * 0.5 - this.edgeHeight * 0.5 - SAFE_EDGE_CSS_PIXELS);
     const edgeScale = 1 / Math.max(Math.abs(dx) / halfWidth, Math.abs(dy) / halfHeight, DIRECTION_EPSILON);
     const x = centerX + dx * edgeScale;
     const y = centerY + dy * edgeScale;
@@ -400,7 +415,7 @@ export class ParticleInspector {
         this.particleRenderer.positions[offset + 2],
         rect,
       );
-      if (!projection.projected || !projection.inside) continue;
+      if (!projection.projected || !projection.inside || !projection.renderVisible) continue;
       const dx = projection.screenX - x;
       const dy = projection.screenY - y;
       const distanceSquared = dx * dx + dy * dy;

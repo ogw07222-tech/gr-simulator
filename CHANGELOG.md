@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+### v0.7.11
+
+- Added a bilingual screen-space Particle Inspector selected by click/touch, with constant CSS-pixel sizing, camera/particle-following projection, drag-safe OrbitControls coexistence, explicit behind-camera handling, and a persistent off-screen edge indicator that reuses the existing Focus Particle camera behavior.
+- Reused authoritative Schwarzschild snapshots for radius, local speed, proper/coordinate time, classification, conserved quantities, local radial/tangential velocity components, and available turning radii; selection and inspection do not mutate geodesic state, timestep, conserved quantities, camera scale semantics, or grid buffers.
+
 ### v0.7.10
 
 - Converted Periapsis Precession Demo into a draft-controlled Schwarzschild demonstration with one editable eccentricity parameter, `0.05 ≤ e ≤ 0.50`, while generated radius, conserved quantities, radial direction, and local velocity remain visible read-only results until Apply.

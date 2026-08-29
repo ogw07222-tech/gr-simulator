@@ -67,7 +67,7 @@ describe("UI localization", () => {
     const i18n = await loadI18n();
     i18n.setLocale("en");
     expect(document.documentElement.lang).toBe("en");
-    expect(document.title).toBe("GR-4D Simulator v0.7.10");
+    expect(document.title).toBe("GR-4D Simulator v0.7.11");
     expect(document.querySelector('meta[name="description"]').content).toContain("General Relativity");
   });
 

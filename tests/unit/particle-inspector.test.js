@@ -129,6 +129,17 @@ describe("ParticleInspector", () => {
     expect(focusParticle.mock.calls[0][0]).toBe(100);
   });
 
+  it("keeps an in-front far-plane selection anchored by its screen projection", () => {
+    const { inspector, particles, particleRenderer } = harness;
+    inspector.select("p-1");
+    particleRenderer.positions[0] = 0;
+    particleRenderer.positions[1] = 0;
+    particleRenderer.positions[2] = -1000;
+    inspector.update(snapshot(), 1, particles.revision());
+    expect(inspector.getDiagnostics()).toMatchObject({ selectedId: "p-1", mode: "anchored" });
+    expect(inspector.getProjectedParticlePosition("p-1")).not.toBeNull();
+  });
+
   it("handles behind-camera particles explicitly and relocalizes the existing card", () => {
     const { inspector, particles, particleRenderer, root } = harness;
     inspector.select("p-1");
