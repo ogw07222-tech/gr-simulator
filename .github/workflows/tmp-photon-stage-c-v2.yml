@@ -1,0 +1,80 @@
+name: Temporary Photon Stage C Validation v2
+on:
+  push:
+    branches: [tmp/photon-stage-c-validation]
+permissions:
+  contents: write
+jobs:
+  validate:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with: { fetch-depth: 0 }
+      - uses: actions/setup-node@v4
+        with: { node-version: 24, cache: npm }
+      - name: Apply Stage C candidate
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import re, textwrap
+          source = Path('.github/workflows/tmp-photon-stage-c.yml').read_text()
+          match = re.search(r"python - <<'PY'\n(.*?)\n          PY", source, re.S)
+          if not match: raise SystemExit('cannot extract Stage C transformation')
+          exec(compile(textwrap.dedent(match.group(1)), '<stage-c>', 'exec'), {})
+
+          Path('tests/unit/photon-performance-gate.test.js').write_text('''import { describe, expect, it, vi } from "vitest";
+          import { PhotonSubsystem, SubsystemManager } from "../../src/systems/index.js";
+
+          describe("Photon performance gate", () => {
+            it("does zero recurring photon work while OFF", () => {
+              const photons = new PhotonSubsystem();
+              const beforeAffine = photons.geodesic.affineParameter();
+              photons.update(1 / 240, {}, {});
+              photons.render(1 / 60, {}, {});
+              const diagnostics = photons.getDiagnostics();
+              expect(diagnostics.enabled).toBe(false);
+              expect(diagnostics.integrationPasses).toBe(0);
+              expect(diagnostics.trajectoryUpdates).toBe(0);
+              expect(diagnostics.trailUpdates).toBe(0);
+              expect(diagnostics.diagnosticUpdates).toBe(0);
+              expect(diagnostics.renderBufferUpdates).toBe(0);
+              expect(diagnostics.affineParameter).toBe(beforeAffine);
+            });
+
+            it("does not stop massive-particle subsystem updates while photons are OFF", () => {
+              const massiveUpdate = vi.fn();
+              const manager = new SubsystemManager([{ order: 60, update: massiveUpdate }, new PhotonSubsystem()]);
+              manager.initialize({});
+              manager.update(1 / 240, {}, {});
+              expect(massiveUpdate).toHaveBeenCalledTimes(1);
+            });
+
+            it("does real photon integration only after the gate is enabled", () => {
+              const photons = new PhotonSubsystem();
+              photons.setEnabled(true);
+              const beforeAffine = photons.geodesic.affineParameter();
+              photons.update(1e-5, {}, {});
+              photons.render(1 / 60, {}, {});
+              const diagnostics = photons.getDiagnostics();
+              expect(diagnostics.affineParameter).toBeGreaterThan(beforeAffine);
+              expect(diagnostics.integrationPasses).toBe(1);
+              expect(diagnostics.trajectoryUpdates).toBe(1);
+              expect(diagnostics.diagnosticUpdates).toBe(1);
+              expect(diagnostics.trailUpdates).toBe(0);
+              expect(diagnostics.renderBufferUpdates).toBe(0);
+            });
+          });
+          '''.replace('          ', ''))
+          PY
+      - run: npm ci
+      - run: npm run lint
+      - run: npx vitest run tests/unit/photon-initial-conditions.test.js tests/unit/photon-subsystem.test.js tests/unit/photon-performance-gate.test.js tests/unit/i18n.test.js
+      - run: npx vitest run tests/physics/schwarzschild-null-validation.test.js
+      - name: Commit validated Stage C patch
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add src tests
+          git commit -m 'feat(physics): add photon launch presets'
+          git push origin HEAD:tmp/photon-stage-c-validation
