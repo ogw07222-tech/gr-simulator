@@ -11,23 +11,47 @@ import {
   writeNullSpatialDirection,
   writePhotonDeflectionMeasurement,
 } from "../../physics/index.js";
+import { PhotonTrail } from "./PhotonTrail.js";
 
 export class PhotonSubsystem {
-  constructor({ enabled = false, massSolar = 4e6, maximumRadius = 60, maximumAffineStep = 0.02 } = {}) {
+  constructor({
+    enabled = false,
+    massSolar = 4e6,
+    maximumRadius = 60,
+    maximumAffineStep = 0.02,
+    maxTrailLength = 128,
+    renderer = null,
+  } = {}) {
     this.order = 70;
     this.enabled = Boolean(enabled);
     this.maximumRadius = maximumRadius;
     this.maximumAffineStep = maximumAffineStep;
+    this.renderer = renderer;
     this.configuration = { preset: "weak", massSolar, ...PHOTON_PRESETS.weak };
     this.position = { x: 0, y: 0, z: 0 };
-    this.work = { integrationPasses: 0, trajectoryUpdates: 0, trailUpdates: 0, diagnosticUpdates: 0, renderBufferUpdates: 0 };
+    this.trail = new PhotonTrail(maxTrailLength);
+    this.revisionCounter = 0;
+    this.work = {
+      integrationPasses: 0,
+      trajectoryUpdates: 0,
+      trailUpdates: 0,
+      diagnosticUpdates: 0,
+      renderBufferUpdates: 0,
+    };
     this.apply(this.configuration);
+    this.renderer?.setEnabled(this.enabled);
   }
 
-  setEnabled(enabled) { this.enabled = Boolean(enabled); return this.enabled; }
+  setEnabled(enabled) {
+    this.enabled = Boolean(enabled);
+    this.renderer?.setEnabled(this.enabled);
+    return this.enabled;
+  }
 
   setMassSolar(massSolar) {
-    if (!(massSolar > 0) || !Number.isFinite(massSolar)) throw new RangeError("Photon central mass must be positive and finite.");
+    if (!(massSolar > 0) || !Number.isFinite(massSolar)) {
+      throw new RangeError("Photon central mass must be positive and finite.");
+    }
     return this.apply({ ...this.configuration, massSolar });
   }
 
@@ -41,7 +65,11 @@ export class PhotonSubsystem {
     const initial = createPhotonInitialCondition(next);
     const units = new SchwarzschildUnits(solarMassesToKilograms(next.massSolar));
     const maximumRadius = Math.max(this.maximumRadius, next.radius * 1.25);
-    const geodesic = new SchwarzschildNullGeodesicSystem({ units, maximumRadius, maximumAffineStep: this.maximumAffineStep });
+    const geodesic = new SchwarzschildNullGeodesicSystem({
+      units,
+      maximumRadius,
+      maximumAffineStep: this.maximumAffineStep,
+    });
     geodesic.initialize(initial);
     this.configuration = next;
     this.units = units;
@@ -60,6 +88,9 @@ export class PhotonSubsystem {
       this.deflectionMeasurement.incomingDirection,
     );
     this.#syncPosition();
+    this.trail.clear();
+    this.trail.append(this.position.x, this.position.y, this.position.z);
+    this.revisionCounter += 1;
     return this;
   }
 
@@ -67,7 +98,9 @@ export class PhotonSubsystem {
 
   update(deltaSeconds) {
     if (!this.enabled || this.geodesic.status !== PhotonStatus.ACTIVE) return 0;
-    if (!(deltaSeconds >= 0) || !Number.isFinite(deltaSeconds)) throw new RangeError("Photon update delta must be finite and non-negative.");
+    if (!(deltaSeconds >= 0) || !Number.isFinite(deltaSeconds)) {
+      throw new RangeError("Photon update delta must be finite and non-negative.");
+    }
     if (deltaSeconds === 0) return 0;
     const deltaAffine = this.units.siTimeToNormalized(deltaSeconds);
     const previousStatus = this.geodesic.status;
@@ -85,13 +118,20 @@ export class PhotonSubsystem {
     if (completed > 0 || this.geodesic.status !== PhotonStatus.ACTIVE) {
       this.#syncPosition();
       this.work.trajectoryUpdates += 1;
+      if (completed > 0) {
+        this.trail.append(this.position.x, this.position.y, this.position.z);
+        this.work.trailUpdates += 1;
+      }
+      this.revisionCounter += 1;
     }
     return completed;
   }
 
   render() {
-    if (!this.enabled) return 0;
-    return 0;
+    if (!this.enabled || !this.renderer) return 0;
+    if (!this.renderer.sync(this)) return 0;
+    this.work.renderBufferUpdates += 1;
+    return 1;
   }
 
   writeSnapshot(target = {}) {
@@ -114,11 +154,18 @@ export class PhotonSubsystem {
     target.outgoingAsymptoticDirectionX = this.deflectionMeasurement.outgoingDirection.x;
     target.outgoingAsymptoticDirectionZ = this.deflectionMeasurement.outgoingDirection.z;
     target.deflectionAngleRadians = this.deflectionMeasurement.deflectionAngleRadians;
-    target.x = this.position.x; target.y = this.position.y; target.z = this.position.z;
+    target.x = this.position.x;
+    target.y = this.position.y;
+    target.z = this.position.z;
     return target;
   }
 
-  resetWorkCounters() { for (const key of Object.keys(this.work)) this.work[key] = 0; }
+  revision() { return this.revisionCounter; }
+
+  resetWorkCounters() {
+    for (const key of Object.keys(this.work)) this.work[key] = 0;
+  }
+
   getDiagnostics() {
     return {
       enabled: this.enabled,
@@ -126,6 +173,8 @@ export class PhotonSubsystem {
       status: this.geodesic.status,
       affineParameter: this.geodesic.affineParameter(),
       deflectionAngleRadians: this.deflectionMeasurement.deflectionAngleRadians,
+      trailSamples: this.trail.count,
+      trailCapacity: this.trail.maxLength,
     };
   }
 
