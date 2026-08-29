@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+### v0.7.10
+
+- Converted Periapsis Precession Demo into a draft-controlled Schwarzschild demonstration with one editable eccentricity parameter, `0.05 ≤ e ≤ 0.50`, while generated radius, conserved quantities, radial direction, and local velocity remain visible read-only results until Apply.
+- Fixed the demo orbit scale at standard Darwin `p = 9 GM/c²`; explicit `r_s = 2GM/c²` conversion gives `r_peri = p/[2(1+e)]` and `r_apo = p/[2(1-e)]`, with conserved `ε` and `λ=L/(c r_s)` derived from the same convention and validated outside the `p=6+2e` separatrix and inside the `10 r_s` solver domain.
+- Reused the existing radial-turning-point diagnostic to display measured periapsis advance per completed radial period; no trail rotation, angular-momentum forcing, periapsis reset, or presentation-only precession was added.
+
 ### v0.7.9
 
 - Made the particle marker a bounded 4–24 CSS-pixel presentation control using native non-attenuated Three.js points, keeping apparent size stable across camera distance, FOV, device pixel ratio, and render-scale modes without changing particle physics or trail geometry.
