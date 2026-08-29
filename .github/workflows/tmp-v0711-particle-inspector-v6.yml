@@ -1,0 +1,173 @@
+name: Temporary v0.7.11 Particle Inspector v6
+
+on:
+  push:
+    branches: [feature/gr-v0.7.11-particle-inspector]
+
+permissions:
+  contents: write
+
+jobs:
+  patch-and-validate:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref_name }}
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - name: Apply v0.7.11 feature and boundary fixes
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import re, textwrap
+
+          # Reuse the already-reviewed focused feature transformation while the branch is still staging-only.
+          if '0.7.11' not in Path('package.json').read_text():
+              source = Path('.github/workflows/tmp-v0711-particle-inspector.yml').read_text()
+              match = re.search(r"python - <<'PY'\n(.*?)\n          PY\n          npm version", source, re.S)
+              if not match:
+                  raise SystemExit('Could not extract v0.7.11 patch script')
+              script = textwrap.dedent(match.group(1))
+              script = script.replace("return s + r'''\\n\\ntest(\"Particle Inspector", "return s + '''\\n\\ntest(\"Particle Inspector")
+              script = script.replace('new PointerEvent(', 'new window.PointerEvent(')
+              script = script.replace(
+                  '  await page.mouse.move(point.x, point.y);\\n  await page.mouse.down();\\n  await page.mouse.move(point.x + 90, point.y + 45, { steps: 5 });\\n  await page.mouse.up();\\n',
+                  '  const orbitStart = { x: bounds.x + bounds.width * 0.76, y: bounds.y + bounds.height * 0.28 };\\n  await page.mouse.move(orbitStart.x, orbitStart.y);\\n  await page.mouse.down();\\n  await page.mouse.move(orbitStart.x - 140, orbitStart.y + 90, { steps: 8 });\\n  await page.mouse.up();\\n',
+              )
+              script = script.replace(
+                  '  expect(Math.abs(cardAfterOrbit.x - cardBefore.x) + Math.abs(cardAfterOrbit.y - cardBefore.y)).toBeGreaterThan(1);\\n',
+                  '  const projectedAfterOrbit = await page.evaluate(() => window.__GR4D_DIAGNOSTICS__.getParticleScreenPosition("default-particle"));\\n  expect(projectedAfterOrbit).not.toBeNull();\\n',
+              )
+              exec(compile(script, '<v0711-patch>', 'exec'), {})
+
+          # ParticleInspector boundary correctness: far clip must not discard a selected screen projection;
+          # edge indicators must be fully clamped inside the actual viewport.
+          p = Path('src/ui/ParticleInspector.js')
+          s = p.read_text()
+          if 'renderVisible: false' not in s:
+              s = s.replace(
+                  '      projected: false,\n      behind: false,\n      inside: false,\n',
+                  '      projected: false,\n      behind: false,\n      inside: false,\n      renderVisible: false,\n',
+                  1,
+              )
+              s = s.replace(
+                  '    target.projected = false;\n    target.behind = false;\n    target.inside = false;\n',
+                  '    target.projected = false;\n    target.behind = false;\n    target.inside = false;\n    target.renderVisible = false;\n',
+                  1,
+              )
+              s = s.replace(
+                  '    target.projected = true;\n    target.screenX = (this.ndcPosition.x * 0.5 + 0.5) * rect.width;\n',
+                  '    target.projected = true;\n    target.renderVisible = this.ndcPosition.z >= -1 && this.ndcPosition.z <= 1;\n    target.screenX = (this.ndcPosition.x * 0.5 + 0.5) * rect.width;\n',
+                  1,
+              )
+              s = s.replace(
+                  '    target.inside = this.ndcPosition.x >= -1 && this.ndcPosition.x <= 1\n      && this.ndcPosition.y >= -1 && this.ndcPosition.y <= 1\n      && this.ndcPosition.z >= -1 && this.ndcPosition.z <= 1;\n',
+                  '    target.inside = this.ndcPosition.x >= -1 && this.ndcPosition.x <= 1\n      && this.ndcPosition.y >= -1 && this.ndcPosition.y <= 1;\n',
+                  1,
+              )
+              s = s.replace(
+                  '      if (!projection.projected || !projection.inside) continue;\n',
+                  '      if (!projection.projected || !projection.inside || !projection.renderVisible) continue;\n',
+                  1,
+              )
+
+          if 'this.edgeSizeDirty = true;' not in s:
+              s = s.replace(
+                  '    this.cardSizeDirty = true;\n    this.lastSnapshotRevision = -1;\n',
+                  '    this.cardSizeDirty = true;\n    this.edgeSizeDirty = true;\n    this.lastSnapshotRevision = -1;\n',
+                  1,
+              )
+              s = s.replace(
+                  '    this.cardWidth = 250;\n    this.cardHeight = 220;\n',
+                  '    this.cardWidth = 250;\n    this.cardHeight = 220;\n    this.edgeWidth = 190;\n    this.edgeHeight = 40;\n    this.edgeBaseStatus = "";\n',
+                  1,
+              )
+              s = s.replace(
+                  '      this.valuesDirty = true;\n      this.cardSizeDirty = true;\n    });\n',
+                  '      this.valuesDirty = true;\n      this.cardSizeDirty = true;\n      this.edgeSizeDirty = true;\n    });\n',
+                  1,
+              )
+              s = s.replace(
+                  '    this.handleResize = () => { this.cardSizeDirty = true; };\n',
+                  '    this.handleResize = () => { this.cardSizeDirty = true; this.edgeSizeDirty = true; };\n',
+                  1,
+              )
+              s = s.replace(
+                  '    this.#write("integrationStatus", hasGeodesicSnapshot ? this.#translatedValue("orbit.status", snapshot.geodesicStatus) : unavailable);\n    this.#write("edgeStatus", hasGeodesicSnapshot ? this.#translatedValue("orbit.classification", snapshot.orbitClassification) : this.#translatedValue("inspector.state", particle.state));\n',
+                  '    this.#write("integrationStatus", hasGeodesicSnapshot ? this.#translatedValue("orbit.status", snapshot.geodesicStatus) : unavailable);\n    this.edgeBaseStatus = hasGeodesicSnapshot ? this.#translatedValue("orbit.classification", snapshot.orbitClassification) : this.#translatedValue("inspector.state", particle.state);\n    this.#write("edgeStatus", this.edgeBaseStatus);\n',
+                  1,
+              )
+              s = s.replace(
+                  '    this.lastText[field] = value;\n    this.fields[field].textContent = value;\n',
+                  '    this.lastText[field] = value;\n    this.fields[field].textContent = value;\n    if (field === "edgeId" || field === "edgeStatus") this.edgeSizeDirty = true;\n',
+                  1,
+              )
+              s = s.replace(
+                  '    } else if (projection.projected) {\n      dx = projection.screenX - canvasRect.width * 0.5;\n      dy = projection.screenY - canvasRect.height * 0.5;\n',
+                  '    } else if (projection.projected) {\n      this.#write("edgeStatus", this.edgeBaseStatus);\n      dx = projection.screenX - canvasRect.width * 0.5;\n      dy = projection.screenY - canvasRect.height * 0.5;\n',
+                  1,
+              )
+              s = s.replace(
+                  '    const hasDirection = Math.abs(dx) + Math.abs(dy) > DIRECTION_EPSILON;\n    this.edgeArrow.hidden = !hasDirection;\n',
+                  '    if (this.edgeSizeDirty) {\n      this.edgeWidth = this.edge.offsetWidth || this.edgeWidth;\n      this.edgeHeight = this.edge.offsetHeight || this.edgeHeight;\n      this.edgeSizeDirty = false;\n    }\n    const hasDirection = Math.abs(dx) + Math.abs(dy) > DIRECTION_EPSILON;\n    this.edgeArrow.hidden = !hasDirection;\n',
+                  1,
+              )
+              s = s.replace(
+                  '    const halfWidth = Math.max(1, canvasRect.width * 0.5 - SAFE_EDGE_CSS_PIXELS);\n    const halfHeight = Math.max(1, canvasRect.height * 0.5 - SAFE_EDGE_CSS_PIXELS);\n',
+                  '    const halfWidth = Math.max(1, canvasRect.width * 0.5 - this.edgeWidth * 0.5 - SAFE_EDGE_CSS_PIXELS);\n    const halfHeight = Math.max(1, canvasRect.height * 0.5 - this.edgeHeight * 0.5 - SAFE_EDGE_CSS_PIXELS);\n',
+                  1,
+              )
+          p.write_text(s)
+
+          # Strengthen unit coverage for selected particles beyond the camera far plane.
+          p = Path('tests/unit/particle-inspector.test.js')
+          s = p.read_text()
+          if 'keeps an in-front far-plane selection anchored' not in s:
+              marker = '  it("handles behind-camera particles explicitly and relocalizes the existing card", () => {'
+              test = '''  it("keeps an in-front far-plane selection anchored by its screen projection", () => {\n    const { inspector, particles, particleRenderer } = harness;\n    inspector.select("p-1");\n    particleRenderer.positions[0] = 0;\n    particleRenderer.positions[1] = 0;\n    particleRenderer.positions[2] = -1000;\n    inspector.update(snapshot(), 1, particles.revision());\n    expect(inspector.getDiagnostics()).toMatchObject({ selectedId: "p-1", mode: "anchored" });\n    expect(inspector.getProjectedParticlePosition("p-1")).not.toBeNull();\n  });\n\n'''
+              s = s.replace(marker, test + marker, 1)
+          p.write_text(s)
+
+          # Browser smoke: verify the edge indicator itself is fully inside the canvas safe viewport.
+          p = Path('tests/e2e/app.smoke.spec.js')
+          s = p.read_text()
+          if 'edgeBox.x' not in s:
+              needle = '  await expect(page.locator(".particle-edge-indicator")).toBeVisible();\n  expect((await page.evaluate(() => window.__GR4D_DIAGNOSTICS__.getSnapshot().inspector)).selectedId).toBe("default-particle");\n'
+              replacement = '''  await expect(page.locator(".particle-edge-indicator")).toBeVisible();\n  const edgeBox = await page.locator(".particle-edge-indicator").boundingBox();\n  const edgeCanvas = await canvas.boundingBox();\n  expect(edgeBox.x).toBeGreaterThanOrEqual(edgeCanvas.x);\n  expect(edgeBox.y).toBeGreaterThanOrEqual(edgeCanvas.y);\n  expect(edgeBox.x + edgeBox.width).toBeLessThanOrEqual(edgeCanvas.x + edgeCanvas.width);\n  expect(edgeBox.y + edgeBox.height).toBeLessThanOrEqual(edgeCanvas.y + edgeCanvas.height);\n  expect((await page.evaluate(() => window.__GR4D_DIAGNOSTICS__.getSnapshot().inspector)).selectedId).toBe("default-particle");\n'''
+              if needle not in s:
+                  raise SystemExit('edge smoke insertion marker missing')
+              s = s.replace(needle, replacement, 1)
+          p.write_text(s)
+          PY
+          npm version 0.7.11 --no-git-tag-version
+      - name: Focused source audit
+        run: |
+          git diff --check
+          test "$(node -p 'require("./package.json").version')" = "0.7.11"
+          grep -q 'ParticleInspector' src/main.js
+          grep -q 'sizeAttenuation: false' src/systems/particles/ParticleRenderer.js
+          grep -q 'renderVisible' src/ui/ParticleInspector.js
+          if git diff origin/main -- src/physics | grep -q '^[-+]'; then
+            echo 'Unexpected src/physics modification.' >&2
+            exit 1
+          fi
+      - run: npm ci
+      - run: npm run lint
+      - run: npm run test
+      - run: npm run build
+      - run: npx playwright install --with-deps chromium
+      - name: Lightweight desktop + mobile inspector smoke
+        run: npx playwright test tests/e2e/app.smoke.spec.js --grep "Particle Inspector follows the selected particle"
+      - name: Commit validated patch
+        run: |
+          git add CHANGELOG.md README.md docs/UI_ARCHITECTURE.md index.html package.json package-lock.json src tests
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git commit -m 'feat(ui): add particle inspector overlay'
+          git push origin HEAD:${{ github.ref_name }}
