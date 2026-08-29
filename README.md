@@ -91,7 +91,7 @@ The scale selector is a presentation boundary. Normalized mode maps one world un
 
 | Normalized (English) | Physical (English) | Auto-fit physical (Korean) | Physical mobile (Korean) |
 | --- | --- | --- | --- |
-| ![Normalized scale view](docs/screenshots/v0.7.3/normalized-en-desktop.png) | ![Physical scale view](docs/screenshots/v0.7.3/physical-en-desktop.png) | ![Auto-fit physical scale view](docs/screenshots/v0.7.3/auto-fit-ko-desktop.png) | ![Mobile physical scale view](docs/screenshots/v0.7.3/physical-ko-mobile.png) |
+| ![Normalized scale view](docs/screenshots/v0.7.10/normalized-en-desktop.png) | ![Physical scale view](docs/screenshots/v0.7.10/physical-en-desktop.png) | ![Auto-fit physical scale view](docs/screenshots/v0.7.10/auto-fit-ko-desktop.png) | ![Mobile physical scale view](docs/screenshots/v0.7.10/physical-ko-mobile-portrait.png) |
 
 The v0.6.2 interface uses an original scientific-dashboard design language: compact telemetry, restrained accents, a viewport-first layout, and separate simulation and presentation controls. Grid deformation and trail speed include explicit legends. Desktop uses persistent side panels; tablet and mobile use keyboard- and touch-accessible drawers.
 
@@ -103,7 +103,7 @@ Screenshots are maintained in `docs/screenshots/` for desktop, tablet, and mobil
 
 | Desktop | Tablet portrait | Mobile portrait |
 | --- | --- | --- |
-| ![Desktop scientific dashboard](docs/screenshots/desktop.png) | ![Tablet viewport layout](docs/screenshots/tablet.png) | ![Mobile viewport layout](docs/screenshots/mobile.png) |
+| ![Desktop scientific dashboard](docs/screenshots/v0.7.10/normalized-en-desktop.png) | ![Tablet viewport layout](docs/screenshots/v0.7.10/normalized-en-tablet-portrait.png) | ![Mobile viewport layout](docs/screenshots/v0.7.10/physical-ko-mobile-portrait.png) |
 
 ## Architecture
 
