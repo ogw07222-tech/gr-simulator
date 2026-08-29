@@ -49,9 +49,9 @@ This backlog describes future work; this architecture PR does not implement new 
 
 ## P0 — Regression safety
 
-- [x] Add unit tests for Schwarzschild radius, effective radius, lapse, curvature proxy, and displacement.
+- [x] Add unit tests for Schwarzschild radius, ordinary 3D spatial radius, lapse, curvature proxy, and displacement.
 - [x] Add Store state-copy, subscription, unsubscription, and update tests.
-- [x] Add a browser smoke test for mode selection, sliders, HUD metrics, and camera startup.
+- [x] Add a browser smoke test for the 3D grid, controls, HUD metrics, and camera startup.
 - [x] Add CI for lint, unit tests, production build, and browser smoke tests.
 - [ ] Capture baseline bundle size, frame time, grid-update time, heap allocation, and draw calls.
 

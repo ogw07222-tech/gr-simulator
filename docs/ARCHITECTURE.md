@@ -2,15 +2,14 @@
 
 ## Current system
 
-`main.js` is the composition root. It creates the Store, Schwarzschild model, renderer, grid, mass representation, and control panel. State changes synchronously update the grid; requestAnimationFrame updates the mass representation and renders the scene. A beforeunload handler releases all owned resources.
+`main.js` is the composition root. It creates the Schwarzschild model, geodesic subsystem, renderer, grid, mass representation, and control panels. Orbit commands update the geodesic subsystem through explicit runtime callbacks; rendering settings update the grid through presentation callbacks. A beforeunload handler releases all owned resources.
 
 ```text
-ControlPanel → Store → main.js → VolumetricGrid
-                         │
-                         └→ MassObject → Renderer
+ControlPanel → SchwarzschildParticleSubsystem → snapshots → Renderer
+VisualSettingsPanel ───────────────→ main.js → VolumetricGrid
 ```
 
-This is appropriately small for v0.1 but concentrates orchestration and timing in one file. Store broadcasts clone the full state, VolumetricGrid combines topology/sampling/deformation/upload, and ControlPanel combines input commands with read-only metrics.
+`VolumetricGrid` combines topology, sampling, deformation, and GPU upload for the educational 3D grid proxy. `ControlPanel` combines validated runtime/orbit commands with read-only metrics; production no longer carries the retired visualization-mode Store path.
 
 ## Target dependency direction
 

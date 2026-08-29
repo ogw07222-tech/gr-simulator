@@ -141,12 +141,11 @@ export class VolumetricGrid {
   }
 
   update(model, {
-    w, mode, warpScale, maxDisplacement, massSolar = 0, renderScale = 1, visualDeformationGain = 1,
+    warpScale, maxDisplacement, massSolar = 0, renderScale = 1, visualDeformationGain = 1,
   }) {
-    const signature = `${w}|${mode}|${warpScale}|${maxDisplacement}|${massSolar}|${renderScale}|${visualDeformationGain}`;
+    const signature = `${warpScale}|${maxDisplacement}|${massSolar}|${renderScale}|${visualDeformationGain}`;
     if (signature === this.lastInputSignature) return false;
     this.lastInputSignature = signature;
-    const useW = mode === "GR_W";
     // The grid is expressed in Schwarzschild-normalized display coordinates: r_s = 1.
     const mass = model.c * model.c / (2 * model.G);
     const schwarzschildRadius = model.schwarzschildRadius(mass);
@@ -162,13 +161,13 @@ export class VolumetricGrid {
       const x = this.basePositions[offset];
       const y = this.basePositions[offset + 1];
       const z = this.basePositions[offset + 2];
-      const radius = model.effectiveRadius(x, y, z, w, useW);
-      const raw = model.displacementMagnitude(mass, Math.max(radius, boundaryRadius), warpScale);
+      const radius = model.spatialRadius(x, y, z);
+      const softenedRadius = Math.sqrt(radius * radius + model.softening ** 2);
+      const raw = model.displacementMagnitude(mass, Math.max(softenedRadius, boundaryRadius), warpScale);
       const normalized = normalizeAsinh(raw, rawMaximum);
       this.rawDisplacements[vertex] = Number.isFinite(raw) ? raw : 0;
       this.displayValues[vertex] = normalized;
-      const spatialRadius = Math.sqrt(x * x + y * y + z * z);
-      const ratio = spatialRadius > 0 ? maxDisplacement * visualDeformationGain * normalized / spatialRadius : 0;
+      const ratio = radius > 0 ? maxDisplacement * visualDeformationGain * normalized / radius : 0;
       this.positions[offset] = x * (1 - ratio) * renderScale;
       this.positions[offset + 1] = y * (1 - ratio) * renderScale;
       this.positions[offset + 2] = z * (1 - ratio) * renderScale;
@@ -187,7 +186,6 @@ export class VolumetricGrid {
     this.diagnostics.recomputations += 1;
     this.diagnostics.bufferUploads += 2;
     const center = Math.floor(this.rawDisplacements.length / 2);
-    this.diagnostics.sliceW = useW ? w : 0;
     this.diagnostics.centralRawDeformation = this.rawDisplacements[center];
     this.diagnostics.centralDisplayDeformation = this.displayValues[center];
     this.diagnostics.appliedMassSolar = massSolar;

@@ -86,21 +86,14 @@ describe("scientific visualization mappings", () => {
     expect(diagnostics.bufferUploads).toBe(uploads);
   });
 
-  it("treats W as a symmetric visualization slice with bounded recomputation", () => {
+  it("uses ordinary 3D spatial distance with bounded recomputation", () => {
     const grid = new VolumetricGrid();
     const model = new SchwarzschildModel(PHYSICS_DEFAULTS);
-    const slice = { ...state, mode: "GR_W", w: 0 };
-    expect(grid.update(model, slice)).toBe(true);
-    const atZero = grid.getDiagnostics().centralRawDeformation;
+    expect(model.spatialRadius(3, 4, 12)).toBe(13);
+    expect(grid.update(model, state)).toBe(true);
     const recomputations = grid.getDiagnostics().recomputations;
-    expect(grid.update(model, { ...slice, w: 10 })).toBe(true);
-    const atPositive = grid.getDiagnostics().centralRawDeformation;
-    expect(atPositive).toBeLessThan(atZero);
-    expect(grid.getDiagnostics().recomputations).toBe(recomputations + 1);
-    expect(grid.update(model, { ...slice, w: 10 })).toBe(false);
-    expect(grid.getDiagnostics().recomputations).toBe(recomputations + 1);
-    grid.update(model, { ...slice, w: -10 });
-    expect(grid.getDiagnostics().centralRawDeformation).toBeCloseTo(atPositive, 12);
+    expect(grid.update(model, state)).toBe(false);
+    expect(grid.getDiagnostics().recomputations).toBe(recomputations);
   });
 
   it("invalidates once for applied mass or physical scale and preserves normalized shape", () => {

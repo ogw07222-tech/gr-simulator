@@ -10,9 +10,8 @@ const FALLBACK_PRECESSION_DEMO = Object.freeze({
 });
 
 export class ControlPanel {
-  constructor(root, store, model, grid, runtime = null, unitFormatter = null) {
+  constructor(root, model, grid, runtime = null, unitFormatter = null) {
     this.root = root;
-    this.store = store;
     this.model = model;
     this.grid = grid;
     this.runtime = runtime;
@@ -23,10 +22,9 @@ export class ControlPanel {
     this.precessionReturnDraft = null;
     this.render();
     this.bind();
-    this.unsubscribe = store.subscribe((state) => this.sync(state));
     this.unsubscribeLocale = subscribeLocale(() => this.localize());
     this.localize();
-    this.sync(store.getState());
+    this.sync();
   }
 
   render() {
@@ -48,12 +46,6 @@ export class ControlPanel {
         <div id="custom-time-scale-controls" class="numeric-control" hidden><label for="custom-time-scale"><span data-i18n="controls.customTimeScale"></span><input id="custom-time-scale" type="number" min="${MIN_TIME_SCALE}" max="${MAX_TIME_SCALE}" step="any" inputmode="decimal" /></label><button id="apply-time-scale" type="button" data-i18n="controls.applyTimeScale"></button></div>
         <p id="time-scale-error" class="input-error" role="alert" hidden></p>
       </div></details>` : ""}
-      <details class="panel-section control-disclosure" open><summary><span data-i18n="controls.centralBody"></span></summary><div class="disclosure-body"><h3 data-i18n="controls.physicsInputs"></h3>
-        <div class="mode-switch" role="group" data-i18n-aria="controls.distanceMode">
-          <button data-mode="GR" type="button">GR 3D</button><button data-mode="GR_W" type="button">GR + W</button>
-        </div>
-        <label class="range-control" for="w"><span><span data-i18n="controls.wSlice"></span>${helpButton("wSlice")}</span><output id="w-value"></output><input id="w" type="range" min="-25" max="25" step="0.25" /></label>
-      </div></details>
       <section class="panel-section"><h3 data-i18n="metrics.title"></h3><div class="metrics">
         <div><small data-i18n="metrics.schwarzschildRadius"></small><strong id="rs"></strong></div>
         <div><small data-i18n="metrics.centralLapse"></small><strong id="lapse"></strong></div>
@@ -166,10 +158,6 @@ export class ControlPanel {
   }
 
   bind() {
-    this.root.querySelectorAll("[data-mode]").forEach((button) => {
-      button.addEventListener("click", () => this.store.setState({ mode: button.dataset.mode }));
-    });
-    this.root.querySelector("#w").addEventListener("input", (event) => this.store.setState({ w: Number(event.target.value) }));
     if (this.runtime) {
       this.root.querySelector("#play").addEventListener("click", this.runtime.play);
       this.root.querySelector("#pause").addEventListener("click", this.runtime.pause);
@@ -205,16 +193,9 @@ export class ControlPanel {
     }
   }
 
-  sync(state) {
-    const useW = state.mode === "GR_W";
-    this.root.querySelectorAll("[data-mode]").forEach((button) => button.classList.toggle("active", button.dataset.mode === state.mode));
-    const wInput = this.root.querySelector("#w");
-    wInput.value = state.w;
-    wInput.disabled = !useW;
-    this.root.querySelector("#w-value").textContent = state.w.toFixed(2);
-
+  sync() {
     const normalizedMass = this.model.c * this.model.c / (2 * this.model.G);
-    const sampleRadius = this.model.effectiveRadius(1, 1, 1, state.w, useW);
+    const sampleRadius = this.model.spatialRadius(1, 1, 1);
     this.root.querySelector("#rs").textContent = this.model.schwarzschildRadius(normalizedMass).toFixed(3);
     this.root.querySelector("#lapse").textContent = this.model.lapse(normalizedMass, sampleRadius).toFixed(3);
     this.root.querySelector("#curvature").textContent = this.model.curvatureProxy(normalizedMass, sampleRadius).toFixed(3);
@@ -437,5 +418,5 @@ export class ControlPanel {
     return true;
   }
 
-  dispose() { this.unsubscribe?.(); this.unsubscribeLocale?.(); }
+  dispose() { this.unsubscribeLocale?.(); }
 }

@@ -29,10 +29,6 @@ test("preserves simulation behavior while switching scientific UI locales", asyn
   await page.mouse.up();
   await page.mouse.wheel(0, -120);
 
-  await page.getByRole("button", { name: "GR 3D" }).click();
-  await expect(page.locator("#w")).toBeDisabled();
-  await page.getByRole("button", { name: "GR + W" }).click();
-  await expect(page.locator("#w")).toBeEnabled();
   await expect(page.locator("#mass")).toHaveCount(0);
   await expect(page.locator("#black-hole-mass")).toHaveAttribute("type", "number");
   await expect(page.locator("#rs")).toHaveText("1.000");
@@ -200,7 +196,7 @@ test("keeps the precession demo eccentricity-controlled, physical, and draft-app
   expect(consoleErrors).toEqual([]);
 });
 
-test("applies one numeric mass input and keeps W isolated to the grid", async ({ page }) => {
+test("applies one numeric mass input without mutating the active orbit draft", async ({ page }) => {
   const consoleErrors = collectErrors(page);
   await page.goto("/");
   await page.getByRole("button", { name: "Pause", exact: true }).click();
@@ -224,14 +220,8 @@ test("applies one numeric mass input and keeps W isolated to the grid", async ({
   await expect(page.locator("#orbit-error")).toBeVisible();
   await mass.fill("1.25e7");
 
-  const physicsBeforeW = await page.evaluate(() => window.__GR4D_DIAGNOSTICS__.getSnapshot().physics);
-  const gridBeforeW = await page.evaluate(() => window.__GR4D_DIAGNOSTICS__.getSnapshot().grid);
-  await page.locator("#w").fill("10");
-  const afterW = await page.evaluate(() => window.__GR4D_DIAGNOSTICS__.getSnapshot());
-  expect(afterW.grid.centralRawDeformation).toBeLessThan(gridBeforeW.centralRawDeformation);
-  expect(afterW.grid.recomputations).toBe(gridBeforeW.recomputations + 1);
-  expect(afterW.physics).toEqual(physicsBeforeW);
-  await expect(page.getByRole("button", { name: "Explain W visualization slice" })).toBeVisible();
+  const afterInvalidDraft = await page.evaluate(() => window.__GR4D_DIAGNOSTICS__.getSnapshot());
+  expect(afterInvalidDraft.physics).toEqual(applied.physics);
   expect(consoleErrors).toEqual([]);
 });
 
