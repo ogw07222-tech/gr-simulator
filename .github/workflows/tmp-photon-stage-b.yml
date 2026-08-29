@@ -1,0 +1,244 @@
+name: Temporary Photon Stage B Validation
+on:
+  push:
+    branches: [tmp/photon-stage-b-validation]
+permissions:
+  contents: write
+jobs:
+  validate:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - name: Apply Stage B candidate
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          Path('src/systems/photons').mkdir(parents=True, exist_ok=True)
+          Path('src/systems/photons/PhotonSubsystem.js').write_text('''export class PhotonSubsystem {
+            constructor({ enabled = false, operations = {} } = {}) {
+              this.order = 70;
+              this.enabled = Boolean(enabled);
+              this.operations = operations;
+              this.work = {
+                integrationPasses: 0,
+                trajectoryUpdates: 0,
+                trailUpdates: 0,
+                diagnosticUpdates: 0,
+                renderBufferUpdates: 0,
+              };
+            }
+
+            setEnabled(enabled) {
+              this.enabled = Boolean(enabled);
+              return this.enabled;
+            }
+
+            update(delta, state, snapshot) {
+              if (!this.enabled) return 0;
+              let work = 0;
+              work += this.#run("integrate", "integrationPasses", delta, state, snapshot);
+              work += this.#run("trajectory", "trajectoryUpdates", delta, state, snapshot);
+              work += this.#run("trail", "trailUpdates", delta, state, snapshot);
+              work += this.#run("diagnostics", "diagnosticUpdates", delta, state, snapshot);
+              return work;
+            }
+
+            render(delta, state, snapshot) {
+              if (!this.enabled) return 0;
+              return this.#run("renderBuffers", "renderBufferUpdates", delta, state, snapshot);
+            }
+
+            resetWorkCounters() {
+              for (const key of Object.keys(this.work)) this.work[key] = 0;
+            }
+
+            getDiagnostics() {
+              return { enabled: this.enabled, ...this.work };
+            }
+
+            #run(operation, counter, ...args) {
+              const callback = this.operations[operation];
+              if (typeof callback !== "function") return 0;
+              callback(...args);
+              this.work[counter] += 1;
+              return 1;
+            }
+          }
+          '''.replace('          ', ''))
+          Path('src/systems/photons/index.js').write_text('export { PhotonSubsystem } from "./PhotonSubsystem.js";\n')
+
+          p = Path('src/systems/index.js'); s = p.read_text()
+          marker = 'export { SubsystemManager } from "./SubsystemManager.js";\n'
+          if '"./photons/index.js"' not in s:
+              s = s.replace(marker, marker + 'export { PhotonSubsystem } from "./photons/index.js";\n')
+          p.write_text(s)
+
+          Path('src/ui/PhotonControls.js').write_text('''import { subscribeLocale, t } from "./i18n.js";
+
+          export class PhotonControls {
+            constructor(root, { enabled = false, onToggle = null } = {}) {
+              this.root = root;
+              this.enabled = Boolean(enabled);
+              this.onToggle = onToggle;
+              this.element = document.createElement("div");
+              this.element.className = "photon-controls";
+              this.element.innerHTML = `<span class="photon-controls-label"></span><button class="photon-toggle" type="button"></button>`;
+              this.label = this.element.querySelector(".photon-controls-label");
+              this.button = this.element.querySelector(".photon-toggle");
+              this.handleClick = () => {
+                this.setEnabled(!this.enabled);
+                this.onToggle?.(this.enabled);
+              };
+              this.button.addEventListener("click", this.handleClick);
+              this.root.append(this.element);
+              this.unsubscribeLocale = subscribeLocale(() => this.localize());
+              this.localize();
+            }
+
+            setEnabled(enabled) {
+              this.enabled = Boolean(enabled);
+              this.button.setAttribute("aria-pressed", String(this.enabled));
+              this.button.textContent = t(this.enabled ? "photon.controls.on" : "photon.controls.off");
+              return this.enabled;
+            }
+
+            localize() {
+              this.label.textContent = t("photon.controls.title");
+              this.setEnabled(this.enabled);
+            }
+
+            dispose() {
+              this.unsubscribeLocale?.();
+              this.button.removeEventListener("click", this.handleClick);
+              this.element.remove();
+            }
+          }
+          '''.replace('          ', ''))
+
+          p = Path('src/ui/index.js'); s = p.read_text()
+          marker = 'export { ParticleInspector } from "./ParticleInspector.js";\n'
+          if 'PhotonControls' not in s:
+              s = s.replace(marker, marker + 'export { PhotonControls } from "./PhotonControls.js";\n')
+          p.write_text(s)
+
+          for path, line in [
+              ('src/ui/i18n/en.js', '  photon: { controls: { title: "Photons", off: "OFF", on: "ON" } },\n'),
+              ('src/ui/i18n/ko.js', '  photon: { controls: { title: "광자", off: "꺼짐", on: "켜짐" } },\n'),
+          ]:
+              p = Path(path); s = p.read_text()
+              marker = '  particle: {'
+              idx = s.find(marker)
+              if idx < 0: raise SystemExit(f'missing particle locale marker in {path}')
+              end = s.find('\n', idx) + 1
+              if '  photon: {' not in s:
+                  s = s[:end] + line + s[end:]
+              p.write_text(s)
+
+          p = Path('src/main.js'); s = p.read_text()
+          s = s.replace('  ParticleManager,\n  ParticleRenderer,\n', '  ParticleManager,\n  ParticleRenderer,\n  PhotonSubsystem,\n')
+          s = s.replace('import { AppShell, ControlPanel, ParticleInspector, ScaleIndicator, VisualSettingsPanel } from "./ui/index.js";', 'import { AppShell, ControlPanel, ParticleInspector, PhotonControls, ScaleIndicator, VisualSettingsPanel } from "./ui/index.js";')
+          anchor = '''const particleInspector = resources.register(new ParticleInspector(
+            document.querySelector("#viewport-shell"),
+            {
+              renderer, particleRenderer, particles, unitFormatter,
+              snapshotParticleId: geodesicSubsystem.particleId,
+              focusParticle: (x, y, z) => renderer.focusPoint(x, y, z),
+            },
+          ));
+          '''.replace('          ', '')
+          addition = anchor + '''const photonSubsystem = new PhotonSubsystem();
+          const photonControls = resources.register(new PhotonControls(
+            document.querySelector("#viewport-shell"),
+            { enabled: photonSubsystem.enabled, onToggle: (enabled) => photonSubsystem.setEnabled(enabled) },
+          ));
+          '''.replace('          ', '')
+          if 'const photonSubsystem = new PhotonSubsystem();' not in s:
+              if anchor not in s: raise SystemExit('missing inspector anchor')
+              s = s.replace(anchor, addition)
+          s = s.replace('const subsystems = new SubsystemManager([particleSubsystem, renderingSubsystem]);', 'const subsystems = new SubsystemManager([particleSubsystem, photonSubsystem, renderingSubsystem]);')
+          s = s.replace('      inspector: particleInspector.getDiagnostics(),\n', '      inspector: particleInspector.getDiagnostics(),\n      photons: photonSubsystem.getDiagnostics(),\n')
+          p.write_text(s)
+
+          p = Path('src/ui/main.css'); s = p.read_text()
+          css = '''
+          .photon-controls {
+            position: absolute;
+            top: 0.75rem;
+            right: 0.75rem;
+            z-index: 12;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.45rem;
+            padding: 0.35rem 0.45rem;
+            border: 1px solid var(--line, rgba(255,255,255,0.18));
+            background: rgba(8, 12, 18, 0.78);
+            backdrop-filter: blur(8px);
+          }
+          .photon-controls-label { font-size: 0.72rem; font-weight: 700; letter-spacing: 0.06em; }
+          .photon-toggle { min-width: 3.4rem; padding: 0.25rem 0.45rem; font-size: 0.72rem; }
+          '''.replace('          ', '')
+          if '.photon-controls {' not in s: s += css
+          p.write_text(s)
+
+          Path('tests/unit/photon-performance-gate.test.js').write_text('''import { describe, expect, it, vi } from "vitest";
+          import { PhotonSubsystem, SubsystemManager } from "../../src/systems/index.js";
+
+          describe("Photon performance gate", () => {
+            it("does zero recurring photon work while OFF", () => {
+              const operations = {
+                integrate: vi.fn(), trajectory: vi.fn(), trail: vi.fn(), diagnostics: vi.fn(), renderBuffers: vi.fn(),
+              };
+              const photons = new PhotonSubsystem({ operations });
+              photons.update(1 / 240, {}, {});
+              photons.render(1 / 60, {}, {});
+              expect(photons.getDiagnostics()).toEqual({
+                enabled: false,
+                integrationPasses: 0,
+                trajectoryUpdates: 0,
+                trailUpdates: 0,
+                diagnosticUpdates: 0,
+                renderBufferUpdates: 0,
+              });
+              for (const callback of Object.values(operations)) expect(callback).not.toHaveBeenCalled();
+            });
+
+            it("does not stop massive-particle subsystem updates while photons are OFF", () => {
+              const massiveUpdate = vi.fn();
+              const manager = new SubsystemManager([{ order: 60, update: massiveUpdate }, new PhotonSubsystem()]);
+              manager.initialize({});
+              manager.update(1 / 240, {}, {});
+              expect(massiveUpdate).toHaveBeenCalledTimes(1);
+            });
+
+            it("only invokes photon work hooks after the gate is enabled", () => {
+              const integrate = vi.fn();
+              const renderBuffers = vi.fn();
+              const photons = new PhotonSubsystem({ operations: { integrate, renderBuffers } });
+              photons.setEnabled(true);
+              photons.update(0.1, {}, {});
+              photons.render(0.1, {}, {});
+              expect(integrate).toHaveBeenCalledTimes(1);
+              expect(renderBuffers).toHaveBeenCalledTimes(1);
+              expect(photons.getDiagnostics().integrationPasses).toBe(1);
+              expect(photons.getDiagnostics().renderBufferUpdates).toBe(1);
+            });
+          });
+          '''.replace('          ', ''))
+          PY
+      - run: npm ci
+      - run: npm run lint
+      - run: npx vitest run tests/unit/photon-performance-gate.test.js tests/unit/i18n.test.js
+      - name: Commit validated Stage B patch
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add src tests
+          git commit -m 'feat(ui): add photon performance gate'
+          git push origin HEAD:tmp/photon-stage-b-validation
