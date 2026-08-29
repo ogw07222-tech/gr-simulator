@@ -228,6 +228,8 @@ export class SchwarzschildParticleSubsystem {
     target.properTime = this.geodesic.properTimeSI();
     target.localSpeedFraction = speedFraction;
     target.localSpeedMetresPerSecond = speedFraction * PHYSICAL_CONSTANTS.speedOfLight;
+    target.radialSpeedFraction = radialBeta;
+    target.tangentialSpeedFraction = tangentialBeta;
     target.energy = this.geodesic.state.energy;
     target.angularMomentum = this.geodesic.state.angularMomentum;
     target.angularMomentumSI = this.units.normalizedSpecificAngularMomentumToSI(this.geodesic.state.angularMomentum);
@@ -238,6 +240,9 @@ export class SchwarzschildParticleSubsystem {
     target.radialPeriods = this.geodesic.diagnostics.radialPeriods;
     target.minimumRadiusRs = this.geodesic.diagnostics.minimumRadius;
     target.maximumRadiusRs = this.geodesic.diagnostics.maximumRadius;
+    const circularRadius = this.configuration.preset === "circular" ? this.configuration.radius : Number.NaN;
+    target.periapsisRadiusRs = Number.isFinite(this.configuration.periapsisRadius) ? this.configuration.periapsisRadius : circularRadius;
+    target.apocenterRadiusRs = Number.isFinite(this.configuration.apocenterRadius) ? this.configuration.apocenterRadius : circularRadius;
     target.renderX = this.particle.position.x;
     target.renderY = this.particle.position.y;
     target.renderZ = this.particle.position.z;

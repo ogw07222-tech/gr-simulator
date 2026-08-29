@@ -1,6 +1,6 @@
 # GR-4D Simulator
 
-A browser-based General Relativity visualization laboratory built with Three.js. Version 0.7.4 adds configurable simulation time scaling and adaptive scientific display units while preserving the v0.7 Schwarzschild physics and SI state.
+A browser-based General Relativity visualization laboratory built with Three.js. Version 0.7.11 adds a screen-space Particle Inspector while preserving the v0.7 Schwarzschild physics, conserved quantities, and SI state.
 
 User documentation: [scientific user guide](docs/USER_GUIDE.md) · [glossary](docs/GLOSSARY.md)
 
@@ -17,6 +17,7 @@ User documentation: [scientific user guide](docs/USER_GUIDE.md) · [glossary](do
 - OrbitControls camera navigation
 - Fixed-timestep runtime controls and one default test particle
 - GPU-buffered particle trail rendering
+- Click/touch Particle Inspector with constant-pixel anchored readout and off-screen edge indicator
 - Responsive simulation and visual-settings panels
 - Presentation-only particle, trail, grid, and mass-rendering controls
 - Live Korean/English interface switching with persisted language preference

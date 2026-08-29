@@ -15,7 +15,7 @@ test("preserves simulation behavior while switching scientific UI locales", asyn
   await expect(page.locator("html")).toHaveAttribute("lang", "en");
   await expect(page.locator("#locale-select")).toHaveValue("en");
   await expect(page.getByRole("heading", { name: "Simulation" })).toBeVisible();
-  await expect(page.locator(".version-chip")).toHaveText("v0.7.10");
+  await expect(page.locator(".version-chip")).toHaveText("v0.7.11");
   await expect(page.locator("#geo-classification")).toHaveText("Stable circular");
   await expect(page.locator("#geo-status")).toHaveText("Active");
   await expect(page.locator("#orbit-preset")).toHaveValue("circular");
@@ -430,5 +430,81 @@ test("switches normalized, physical, and auto-fit views without changing physics
   await expect(page.locator("#scale-mode")).toHaveValue("physical");
   await expect(page.locator("#orbit-radius-km")).toContainText("물리 반지름");
   expect(await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth)).toBeLessThanOrEqual(0);
+  expect(consoleErrors).toEqual([]);
+});
+
+
+test("Particle Inspector follows the selected particle without changing physics", async ({ page }) => {
+  const consoleErrors = collectErrors(page);
+  await page.setViewportSize({ width: 1280, height: 800 });
+  await page.goto("/");
+  await page.locator("#pause").click();
+  const physicsBefore = await page.evaluate(() => window.__GR4D_DIAGNOSTICS__.getSnapshot().physics);
+  const point = await page.evaluate(() => window.__GR4D_DIAGNOSTICS__.getParticleScreenPosition("default-particle"));
+  expect(point).not.toBeNull();
+  await page.mouse.click(point.x, point.y);
+  await expect(page.locator(".particle-inspector")).toBeVisible();
+  await expect(page.locator('[data-field="id"]')).toContainText("default-particle");
+  let diagnostics = await page.evaluate(() => window.__GR4D_DIAGNOSTICS__.getSnapshot().inspector);
+  expect(diagnostics).toMatchObject({ selectedId: "default-particle", mode: "anchored" });
+
+  const cardBefore = await page.locator(".particle-inspector").boundingBox();
+  const canvas = page.locator("#viewport canvas");
+  const bounds = await canvas.boundingBox();
+  const orbitStart = { x: bounds.x + bounds.width * 0.76, y: bounds.y + bounds.height * 0.28 };
+  await page.mouse.move(orbitStart.x, orbitStart.y);
+  await page.mouse.down();
+  await page.mouse.move(orbitStart.x - 140, orbitStart.y + 90, { steps: 8 });
+  await page.mouse.up();
+  await page.waitForTimeout(120);
+  diagnostics = await page.evaluate(() => window.__GR4D_DIAGNOSTICS__.getSnapshot().inspector);
+  expect(diagnostics.selectedId).toBe("default-particle");
+  const cardAfterOrbit = await page.locator(".particle-inspector").boundingBox();
+  expect(Math.abs(cardAfterOrbit.width - cardBefore.width)).toBeLessThanOrEqual(1);
+  expect(Math.abs(cardAfterOrbit.height - cardBefore.height)).toBeLessThanOrEqual(1);
+  const projectedAfterOrbit = await page.evaluate(() => window.__GR4D_DIAGNOSTICS__.getParticleScreenPosition("default-particle"));
+  expect(projectedAfterOrbit).not.toBeNull();
+
+  await page.mouse.move(bounds.x + bounds.width / 2, bounds.y + bounds.height / 2);
+  await page.mouse.wheel(0, 1400);
+  await page.waitForTimeout(120);
+  const cardFar = await page.locator(".particle-inspector").boundingBox();
+  expect(Math.abs(cardFar.width - cardBefore.width)).toBeLessThanOrEqual(1);
+  expect(Math.abs(cardFar.height - cardBefore.height)).toBeLessThanOrEqual(1);
+  expect((await page.evaluate(() => window.__GR4D_DIAGNOSTICS__.getSnapshot().inspector)).selectedId).toBe("default-particle");
+
+  for (const mode of ["normalized", "physical", "auto-fit-physical"]) {
+    await page.locator("#scale-mode").selectOption(mode);
+    await page.waitForTimeout(80);
+    expect((await page.evaluate(() => window.__GR4D_DIAGNOSTICS__.getSnapshot().inspector)).selectedId).toBe("default-particle");
+  }
+  expect(await page.evaluate(() => window.__GR4D_DIAGNOSTICS__.getSnapshot().physics)).toEqual(physicsBefore);
+
+  await page.locator("#locale-select").selectOption("ko");
+  await expect(page.locator(".particle-inspector-kicker")).toHaveText("입자 검사기");
+  await expect(page.locator(".particle-inspector-details summary")).toHaveText("상세 정보");
+
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.reload();
+  await page.evaluate(() => document.querySelector("#pause")?.click());
+  const mobilePoint = await page.evaluate(() => window.__GR4D_DIAGNOSTICS__.getParticleScreenPosition("default-particle"));
+  expect(mobilePoint).not.toBeNull();
+  await page.evaluate(({ x, y }) => {
+    const target = document.querySelector("#viewport canvas");
+    const originalSetPointerCapture = target.setPointerCapture;
+    const originalReleasePointerCapture = target.releasePointerCapture;
+    target.setPointerCapture = () => {};
+    target.releasePointerCapture = () => {};
+    try {
+      const init = { bubbles: true, pointerId: 71, pointerType: "touch", isPrimary: true, button: 0, clientX: x, clientY: y };
+      target.dispatchEvent(new window.PointerEvent("pointerdown", init));
+      target.dispatchEvent(new window.PointerEvent("pointerup", init));
+    } finally {
+      target.setPointerCapture = originalSetPointerCapture;
+      target.releasePointerCapture = originalReleasePointerCapture;
+    }
+  }, mobilePoint);
+  await expect(page.locator(".particle-inspector")).toBeVisible();
+  expect((await page.evaluate(() => window.__GR4D_DIAGNOSTICS__.getSnapshot().inspector)).selectedId).toBe("default-particle");
   expect(consoleErrors).toEqual([]);
 });

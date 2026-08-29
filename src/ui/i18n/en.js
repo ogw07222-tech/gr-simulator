@@ -1,6 +1,6 @@
 // Edit English interface copy here. Keep this key structure identical to ko.js.
 export const en = Object.freeze({
-  app: { title: "GR-4D Simulator v0.7.10", description: "Browser-based General Relativity simulation and scientific visualization laboratory", eyebrow: "RELATIVITY RESEARCH CONSOLE" },
+  app: { title: "GR-4D Simulator v0.7.11", description: "Browser-based General Relativity simulation and scientific visualization laboratory", eyebrow: "RELATIVITY RESEARCH CONSOLE" },
   language: { label: "Select language", ko: "한국어", en: "English" },
   status: {
     running: "Running", paused: "Paused", frame: "FRAME", rendererOnline: "Renderer online",
@@ -29,6 +29,16 @@ export const en = Object.freeze({
   },
   displayUnits: { section: "Display Units", mode: "Unit system", automatic: "Automatic", si: "SI", astronomical: "Astronomical", note: "Display conversion only; physics always remains in SI units." },
   particle: { outOfDomain: "Outside supported domain" },
+  inspector: {
+    title: "Particle Inspector", close: "Close particle inspector", physicsModel: "Physics model",
+    identifierValue: "Particle {id}", modelSchwarzschild: "Schwarzschild · timelike test particle", modelParticle: "Particle",
+    radius: "Radial distance r", localSpeed: "Local / current speed", properTime: "Proper time τ", coordinateTime: "Coordinate time t", classification: "Orbit classification",
+    details: "Details", specificEnergy: "Specific energy ε", angularMomentum: "Angular momentum λ", radialVelocity: "Radial velocity βᵣ", tangentialVelocity: "Tangential velocity βφ",
+    periapsis: "Periapsis", apoapsis: "Apoapsis", particleState: "Particle state", integrationStatus: "Integration status",
+    dimensionlessValue: "{value} (dimensionless)", cFractionValue: "{value} c", behindCamera: "Behind camera", outsideViewport: "Outside viewport",
+    focusSelected: "Focus selected particle {id}",
+    state: { Idle: "Idle", Moving: "Moving", Orbiting: "Bound / orbiting", Escaping: "Escape", Captured: "Captured", Absorbed: "Absorbed", OutOfDomain: "Out of domain" },
+  },
   model: {
     scope: "Model scope", scopeDescription: "Educational Schwarzschild metric visualization; not a numerical 3+1D Einstein solver.",
     active: "ACTIVE MODEL", name: "Schwarzschild · Educational",
