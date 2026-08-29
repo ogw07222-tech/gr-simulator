@@ -7,6 +7,7 @@ import {
   FrameRateController,
   ParticleManager,
   ParticleRenderer,
+  PhotonRenderer,
   PhotonSubsystem,
   SchwarzschildParticleSubsystem,
   SimulationClock,
@@ -136,11 +137,18 @@ const particleRenderer = resources.register(new ParticleRenderer({
   maxTrailLength: particles.maxTrailLength,
   scaleTransform,
 }));
+const photonRenderer = resources.register(new PhotonRenderer({
+  maxTrailLength: 128,
+  pointSize: 8,
+  scaleTransform,
+}));
 renderer.add(grid.object);
 renderer.add(massObject.group);
 renderer.add(particleRenderer.object);
 renderer.add(particleRenderer.haloObject);
 renderer.add(particleRenderer.trailObject);
+renderer.add(photonRenderer.markerObject);
+renderer.add(photonRenderer.trailObject);
 
 const geodesicSubsystem = new SchwarzschildParticleSubsystem({ particles });
 clock.setHighSpeedDelta(geodesicSubsystem.maximumSafeAdvanceSeconds());
@@ -156,7 +164,11 @@ const particleInspector = resources.register(new ParticleInspector(
     focusParticle: (x, y, z) => renderer.focusPoint(x, y, z),
   },
 ));
-const photonSubsystem = new PhotonSubsystem({ massSolar: geodesicSubsystem.configuration.massSolar });
+const photonSubsystem = new PhotonSubsystem({
+  massSolar: geodesicSubsystem.configuration.massSolar,
+  maxTrailLength: photonRenderer.maxTrailLength,
+  renderer: photonRenderer,
+});
 resources.register(new PhotonControls(
   document.querySelector("#viewport-shell"),
   {
@@ -457,6 +469,16 @@ window.__GR4D_DIAGNOSTICS__ = Object.freeze({
       },
       inspector: particleInspector.getDiagnostics(),
       photons: photonSubsystem.getDiagnostics(),
+      photonRenderer: {
+      markerVisible: photonRenderer.markerObject.visible,
+      trailVisible: photonRenderer.trailObject.visible,
+      markerSizeCssPixels: photonRenderer.markerMaterial.size,
+      sizeAttenuation: photonRenderer.markerMaterial.sizeAttenuation,
+      markerX: photonRenderer.markerPositions[0],
+      markerY: photonRenderer.markerPositions[1],
+      markerZ: photonRenderer.markerPositions[2],
+      trailVertices: photonRenderer.trailGeometry.drawRange.count,
+    },
       scale: {
         mode: scaleTransform.mode,
         metresPerWorldUnit: scaleTransform.metresPerWorldUnit,
