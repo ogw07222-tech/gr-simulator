@@ -29,7 +29,7 @@ export const en = Object.freeze({
   },
   displayUnits: { section: "Display Units", mode: "Unit system", automatic: "Automatic", si: "SI", astronomical: "Astronomical", note: "Display conversion only; physics always remains in SI units." },
   particle: { outOfDomain: "Outside supported domain" },
-  photon: { controls: { title: "Photons", off: "OFF", on: "ON" } },
+  photon: { controls: { title: "Photons", off: "OFF", on: "ON", setup: "Photon Setup", preset: "Preset", advanced: "Advanced launch settings", radius: "Start radius (rₛ)", phi: "Start azimuth φ", impactParameter: "Impact parameter b (rₛ)", radialDirection: "Radial direction", angularDirection: "Propagation sense", inward: "Inward", outward: "Outward", counterclockwise: "Counterclockwise", clockwise: "Clockwise", apply: "Apply launch" }, presets: { weak: "Weak Deflection", strong: "Strong Deflection", nearCritical: "Near Critical", capture: "Capture" } },
   inspector: {
     title: "Particle Inspector", close: "Close particle inspector", physicsModel: "Physics model",
     identifierValue: "Particle {id}", modelSchwarzschild: "Schwarzschild · timelike test particle", modelParticle: "Particle",

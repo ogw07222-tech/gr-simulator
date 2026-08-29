@@ -156,10 +156,16 @@ const particleInspector = resources.register(new ParticleInspector(
     focusParticle: (x, y, z) => renderer.focusPoint(x, y, z),
   },
 ));
-const photonSubsystem = new PhotonSubsystem();
+const photonSubsystem = new PhotonSubsystem({ massSolar: geodesicSubsystem.configuration.massSolar });
 resources.register(new PhotonControls(
   document.querySelector("#viewport-shell"),
-  { enabled: photonSubsystem.enabled, onToggle: (enabled) => photonSubsystem.setEnabled(enabled) },
+  {
+    enabled: photonSubsystem.enabled,
+    onToggle: (enabled) => photonSubsystem.setEnabled(enabled),
+    onPreset: (preset) => { photonSubsystem.applyPreset(preset); return photonSubsystem.configuration; },
+    onApply: (configuration) => { photonSubsystem.apply(configuration); return photonSubsystem.configuration; },
+    getConfiguration: () => photonSubsystem.configuration,
+  },
 ));
 
 const snapshotRenderPosition = { x: 0, y: 0, z: 0 };
@@ -222,6 +228,7 @@ const runtimeControls = {
       radiusRs: previous.radiusRs,
     } : null;
     geodesicSubsystem.apply(configuration);
+    photonSubsystem.setMassSolar(geodesicSubsystem.configuration.massSolar);
     clock.setHighSpeedDelta(geodesicSubsystem.maximumSafeAdvanceSeconds());
     const current = refreshPresentationSnapshot(true);
     applyGridVisualization();
@@ -238,6 +245,7 @@ const runtimeControls = {
   resetAll: () => {
     clock.reset();
     geodesicSubsystem.reset();
+    photonSubsystem.reset();
     refreshPresentationSnapshot(true);
   },
 };

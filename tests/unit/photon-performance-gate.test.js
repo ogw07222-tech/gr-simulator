@@ -3,21 +3,18 @@ import { PhotonSubsystem, SubsystemManager } from "../../src/systems/index.js";
 
 describe("Photon performance gate", () => {
   it("does zero recurring photon work while OFF", () => {
-    const operations = {
-      integrate: vi.fn(), trajectory: vi.fn(), trail: vi.fn(), diagnostics: vi.fn(), renderBuffers: vi.fn(),
-    };
-    const photons = new PhotonSubsystem({ operations });
+    const photons = new PhotonSubsystem();
+    const beforeAffine = photons.geodesic.affineParameter();
     photons.update(1 / 240, {}, {});
     photons.render(1 / 60, {}, {});
-    expect(photons.getDiagnostics()).toEqual({
-      enabled: false,
-      integrationPasses: 0,
-      trajectoryUpdates: 0,
-      trailUpdates: 0,
-      diagnosticUpdates: 0,
-      renderBufferUpdates: 0,
-    });
-    for (const callback of Object.values(operations)) expect(callback).not.toHaveBeenCalled();
+    const diagnostics = photons.getDiagnostics();
+    expect(diagnostics.enabled).toBe(false);
+    expect(diagnostics.integrationPasses).toBe(0);
+    expect(diagnostics.trajectoryUpdates).toBe(0);
+    expect(diagnostics.trailUpdates).toBe(0);
+    expect(diagnostics.diagnosticUpdates).toBe(0);
+    expect(diagnostics.renderBufferUpdates).toBe(0);
+    expect(diagnostics.affineParameter).toBe(beforeAffine);
   });
 
   it("does not stop massive-particle subsystem updates while photons are OFF", () => {
@@ -28,16 +25,18 @@ describe("Photon performance gate", () => {
     expect(massiveUpdate).toHaveBeenCalledTimes(1);
   });
 
-  it("only invokes photon work hooks after the gate is enabled", () => {
-    const integrate = vi.fn();
-    const renderBuffers = vi.fn();
-    const photons = new PhotonSubsystem({ operations: { integrate, renderBuffers } });
+  it("does real photon integration only after the gate is enabled", () => {
+    const photons = new PhotonSubsystem();
     photons.setEnabled(true);
-    photons.update(0.1, {}, {});
-    photons.render(0.1, {}, {});
-    expect(integrate).toHaveBeenCalledTimes(1);
-    expect(renderBuffers).toHaveBeenCalledTimes(1);
-    expect(photons.getDiagnostics().integrationPasses).toBe(1);
-    expect(photons.getDiagnostics().renderBufferUpdates).toBe(1);
+    const beforeAffine = photons.geodesic.affineParameter();
+    photons.update(1e-5, {}, {});
+    photons.render(1 / 60, {}, {});
+    const diagnostics = photons.getDiagnostics();
+    expect(diagnostics.affineParameter).toBeGreaterThan(beforeAffine);
+    expect(diagnostics.integrationPasses).toBe(1);
+    expect(diagnostics.trajectoryUpdates).toBe(1);
+    expect(diagnostics.diagnosticUpdates).toBe(1);
+    expect(diagnostics.trailUpdates).toBe(0);
+    expect(diagnostics.renderBufferUpdates).toBe(0);
   });
 });

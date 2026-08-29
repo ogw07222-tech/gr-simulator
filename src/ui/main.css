@@ -297,3 +297,10 @@ select { min-width: 94px; padding: 7px 28px 7px 9px; border: 1px solid var(--pan
 }
 .photon-controls-label { font-size: 0.72rem; font-weight: 700; letter-spacing: 0.06em; }
 .photon-toggle { min-width: 3.4rem; padding: 0.25rem 0.45rem; font-size: 0.72rem; }
+
+.photon-controls { flex-direction: column; align-items: stretch; max-width: min(18rem, calc(100vw - 1.5rem)); }
+.photon-controls-row { display: flex; align-items: center; justify-content: space-between; gap: 0.45rem; }
+.photon-setup { font-size: 0.72rem; }
+.photon-setup-body, .photon-advanced-grid { display: grid; gap: 0.4rem; margin-top: 0.4rem; }
+.photon-setup label, .photon-advanced-grid label { display: grid; gap: 0.2rem; }
+.photon-setup select, .photon-setup input { width: 100%; }
