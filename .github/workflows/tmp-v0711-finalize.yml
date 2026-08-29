@@ -49,6 +49,33 @@ jobs:
           if mobile_before not in s:
               raise SystemExit('Could not locate mobile pause harness')
           s = s.replace(mobile_before, mobile_after, 1)
+
+          touch_before = '''  await page.evaluate(({ x, y }) => {
+    const target = document.querySelector("#viewport canvas");
+    const init = { bubbles: true, pointerId: 71, pointerType: "touch", isPrimary: true, button: 0, clientX: x, clientY: y };
+    target.dispatchEvent(new window.PointerEvent("pointerdown", init));
+    target.dispatchEvent(new window.PointerEvent("pointerup", init));
+  }, mobilePoint);
+'''
+          touch_after = '''  await page.evaluate(({ x, y }) => {
+    const target = document.querySelector("#viewport canvas");
+    const originalSetPointerCapture = target.setPointerCapture;
+    const originalReleasePointerCapture = target.releasePointerCapture;
+    target.setPointerCapture = () => {};
+    target.releasePointerCapture = () => {};
+    try {
+      const init = { bubbles: true, pointerId: 71, pointerType: "touch", isPrimary: true, button: 0, clientX: x, clientY: y };
+      target.dispatchEvent(new window.PointerEvent("pointerdown", init));
+      target.dispatchEvent(new window.PointerEvent("pointerup", init));
+    } finally {
+      target.setPointerCapture = originalSetPointerCapture;
+      target.releasePointerCapture = originalReleasePointerCapture;
+    }
+  }, mobilePoint);
+'''
+          if touch_before not in s:
+              raise SystemExit('Could not locate synthetic touch harness')
+          s = s.replace(touch_before, touch_after, 1)
           p.write_text(s)
           PY
           npm version 0.7.11 --no-git-tag-version
