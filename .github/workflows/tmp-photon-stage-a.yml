@@ -1,0 +1,19 @@
+name: Temporary Photon Stage A Validation
+on:
+  push:
+    branches: [tmp/photon-stage-a-validation]
+permissions:
+  contents: read
+jobs:
+  validate:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npx eslint src/physics/relativity/PhotonStatus.js src/physics/relativity/SchwarzschildNullGeodesicState.js src/physics/relativity/SchwarzschildNullGeodesicSystem.js tests/physics/schwarzschild-null-validation.test.js
+      - run: npx vitest run tests/physics/schwarzschild-null-validation.test.js
+      - run: npm run test:physics
