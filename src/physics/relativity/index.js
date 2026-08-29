@@ -13,4 +13,5 @@ export { SchwarzschildGeodesicState, GeodesicStateIndex } from "./SchwarzschildG
 export { SchwarzschildGeodesicSystem } from "./SchwarzschildGeodesicSystem.js";
 export { SchwarzschildNullGeodesicState, NullGeodesicStateIndex } from "./SchwarzschildNullGeodesicState.js";
 export { SchwarzschildNullGeodesicSystem, nullRadialVelocity } from "./SchwarzschildNullGeodesicSystem.js";
+export { PHOTON_PRESETS, createPhotonInitialCondition, photonPreset } from "./SchwarzschildPhotonInitialConditions.js";
 export { classifyOrbit, OrbitClassification } from "./SchwarzschildOrbitClassifier.js";

@@ -1,50 +1,95 @@
+import {
+  NullGeodesicStateIndex,
+  PhotonStatus,
+  PHOTON_PRESETS,
+  SchwarzschildNullGeodesicSystem,
+  SchwarzschildUnits,
+  createPhotonInitialCondition,
+  photonPreset,
+  solarMassesToKilograms,
+} from "../../physics/index.js";
+
 export class PhotonSubsystem {
-  constructor({ enabled = false, operations = {} } = {}) {
+  constructor({ enabled = false, massSolar = 4e6, maximumRadius = 60, maximumAffineStep = 0.02 } = {}) {
     this.order = 70;
     this.enabled = Boolean(enabled);
-    this.operations = operations;
-    this.work = {
-      integrationPasses: 0,
-      trajectoryUpdates: 0,
-      trailUpdates: 0,
-      diagnosticUpdates: 0,
-      renderBufferUpdates: 0,
-    };
+    this.maximumRadius = maximumRadius;
+    this.maximumAffineStep = maximumAffineStep;
+    this.configuration = { preset: "weak", massSolar, ...PHOTON_PRESETS.weak };
+    this.position = { x: 0, y: 0, z: 0 };
+    this.work = { integrationPasses: 0, trajectoryUpdates: 0, trailUpdates: 0, diagnosticUpdates: 0, renderBufferUpdates: 0 };
+    this.apply(this.configuration);
   }
 
-  setEnabled(enabled) {
-    this.enabled = Boolean(enabled);
-    return this.enabled;
+  setEnabled(enabled) { this.enabled = Boolean(enabled); return this.enabled; }
+
+  setMassSolar(massSolar) {
+    if (!(massSolar > 0) || !Number.isFinite(massSolar)) throw new RangeError("Photon central mass must be positive and finite.");
+    return this.apply({ ...this.configuration, massSolar });
   }
 
-  update(delta, state, snapshot) {
+  applyPreset(key) {
+    const preset = photonPreset(key);
+    return this.apply({ ...preset, preset: key, massSolar: this.configuration.massSolar });
+  }
+
+  apply(configuration) {
+    const next = { ...this.configuration, ...configuration };
+    const initial = createPhotonInitialCondition(next);
+    const units = new SchwarzschildUnits(solarMassesToKilograms(next.massSolar));
+    const maximumRadius = Math.max(this.maximumRadius, next.radius * 1.25);
+    const geodesic = new SchwarzschildNullGeodesicSystem({ units, maximumRadius, maximumAffineStep: this.maximumAffineStep });
+    geodesic.initialize(initial);
+    this.configuration = next;
+    this.units = units;
+    this.geodesic = geodesic;
+    this.#syncPosition();
+    return this;
+  }
+
+  reset() { return this.apply(this.configuration); }
+
+  update(deltaSeconds) {
+    if (!this.enabled || this.geodesic.status !== PhotonStatus.ACTIVE) return 0;
+    if (!(deltaSeconds >= 0) || !Number.isFinite(deltaSeconds)) throw new RangeError("Photon update delta must be finite and non-negative.");
+    if (deltaSeconds === 0) return 0;
+    const deltaAffine = this.units.siTimeToNormalized(deltaSeconds);
+    const completed = this.geodesic.advanceAffine(deltaAffine);
+    this.work.integrationPasses += 1;
+    this.work.diagnosticUpdates += 1;
+    if (completed > 0 || this.geodesic.status !== PhotonStatus.ACTIVE) {
+      this.#syncPosition();
+      this.work.trajectoryUpdates += 1;
+    }
+    return completed;
+  }
+
+  render() {
     if (!this.enabled) return 0;
-    let work = 0;
-    work += this.#run("integrate", "integrationPasses", delta, state, snapshot);
-    work += this.#run("trajectory", "trajectoryUpdates", delta, state, snapshot);
-    work += this.#run("trail", "trailUpdates", delta, state, snapshot);
-    work += this.#run("diagnostics", "diagnosticUpdates", delta, state, snapshot);
-    return work;
+    return 0;
   }
 
-  render(delta, state, snapshot) {
-    if (!this.enabled) return 0;
-    return this.#run("renderBuffers", "renderBufferUpdates", delta, state, snapshot);
+  writeSnapshot(target = {}) {
+    const values = this.geodesic.state.values;
+    target.id = "photon-0";
+    target.physicsModel = "Schwarzschild null geodesic";
+    target.status = this.geodesic.status;
+    target.radiusRs = values[NullGeodesicStateIndex.RADIUS];
+    target.radiusMetres = this.units.normalizedRadiusToSI(target.radiusRs);
+    target.impactParameterRs = this.geodesic.impactParameterRs();
+    target.affineParameter = values[NullGeodesicStateIndex.AFFINE_PARAMETER];
+    target.coordinateTime = this.geodesic.coordinateTimeSI();
+    target.energy = this.geodesic.state.energy;
+    target.angularMomentum = this.geodesic.state.angularMomentum;
+    target.radialDirection = Math.sign(values[NullGeodesicStateIndex.RADIAL_VELOCITY]) || 0;
+    target.nullConditionError = this.geodesic.diagnostics.lastRelativeNullError;
+    target.integrationSubsteps = this.geodesic.diagnostics.substeps;
+    target.x = this.position.x; target.y = this.position.y; target.z = this.position.z;
+    return target;
   }
 
-  resetWorkCounters() {
-    for (const key of Object.keys(this.work)) this.work[key] = 0;
-  }
+  resetWorkCounters() { for (const key of Object.keys(this.work)) this.work[key] = 0; }
+  getDiagnostics() { return { enabled: this.enabled, ...this.work, status: this.geodesic.status, affineParameter: this.geodesic.affineParameter() }; }
 
-  getDiagnostics() {
-    return { enabled: this.enabled, ...this.work };
-  }
-
-  #run(operation, counter, ...args) {
-    const callback = this.operations[operation];
-    if (typeof callback !== "function") return 0;
-    callback(...args);
-    this.work[counter] += 1;
-    return 1;
-  }
+  #syncPosition() { this.geodesic.writeRenderPosition(this.position, 1); }
 }
