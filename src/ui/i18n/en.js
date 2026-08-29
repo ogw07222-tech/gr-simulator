@@ -29,6 +29,7 @@ export const en = Object.freeze({
   },
   displayUnits: { section: "Display Units", mode: "Unit system", automatic: "Automatic", si: "SI", astronomical: "Astronomical", note: "Display conversion only; physics always remains in SI units." },
   particle: { outOfDomain: "Outside supported domain" },
+  photon: { controls: { title: "Photons", off: "OFF", on: "ON" } },
   inspector: {
     title: "Particle Inspector", close: "Close particle inspector", physicsModel: "Physics model",
     identifierValue: "Particle {id}", modelSchwarzschild: "Schwarzschild · timelike test particle", modelParticle: "Particle",

@@ -29,6 +29,7 @@ export const ko = Object.freeze({
   },
   displayUnits: { section: "표시 단위", mode: "단위 체계", automatic: "자동", si: "SI", astronomical: "천문학", note: "표시만 변환하며 물리 계산은 항상 SI 단위를 유지합니다." },
   particle: { outOfDomain: "지원 영역 이탈" },
+  photon: { controls: { title: "광자", off: "꺼짐", on: "켜짐" } },
   inspector: {
     title: "입자 검사기", close: "입자 검사기 닫기", physicsModel: "물리 모델",
     identifierValue: "입자 {id}", modelSchwarzschild: "슈바르츠실트 · 시간꼴 시험 입자", modelParticle: "입자",

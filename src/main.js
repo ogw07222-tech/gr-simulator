@@ -7,6 +7,7 @@ import {
   FrameRateController,
   ParticleManager,
   ParticleRenderer,
+  PhotonSubsystem,
   SchwarzschildParticleSubsystem,
   SimulationClock,
   SimulationState,
@@ -14,7 +15,7 @@ import {
   SnapshotManager,
   SubsystemManager,
 } from "./systems/index.js";
-import { AppShell, ControlPanel, ParticleInspector, ScaleIndicator, VisualSettingsPanel } from "./ui/index.js";
+import { AppShell, ControlPanel, ParticleInspector, PhotonControls, ScaleIndicator, VisualSettingsPanel } from "./ui/index.js";
 import { UnitFormatter } from "./ui/units/index.js";
 import { getLocale } from "./ui/i18n.js";
 
@@ -154,6 +155,11 @@ const particleInspector = resources.register(new ParticleInspector(
     snapshotParticleId: geodesicSubsystem.particleId,
     focusParticle: (x, y, z) => renderer.focusPoint(x, y, z),
   },
+));
+const photonSubsystem = new PhotonSubsystem();
+resources.register(new PhotonControls(
+  document.querySelector("#viewport-shell"),
+  { enabled: photonSubsystem.enabled, onToggle: (enabled) => photonSubsystem.setEnabled(enabled) },
 ));
 
 const snapshotRenderPosition = { x: 0, y: 0, z: 0 };
@@ -339,7 +345,7 @@ const particleSubsystem = {
   },
 };
 
-const subsystems = new SubsystemManager([particleSubsystem, renderingSubsystem]);
+const subsystems = new SubsystemManager([particleSubsystem, photonSubsystem, renderingSubsystem]);
 subsystems.initialize({ resources, snapshots });
 
 let animationId;
@@ -442,6 +448,7 @@ window.__GR4D_DIAGNOSTICS__ = Object.freeze({
         sizeAttenuation: particleRenderer.material.sizeAttenuation,
       },
       inspector: particleInspector.getDiagnostics(),
+      photons: photonSubsystem.getDiagnostics(),
       scale: {
         mode: scaleTransform.mode,
         metresPerWorldUnit: scaleTransform.metresPerWorldUnit,
