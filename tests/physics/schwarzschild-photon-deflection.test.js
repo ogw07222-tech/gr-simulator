@@ -42,7 +42,6 @@ describe("Schwarzschild photon deflection diagnostics", () => {
     const { system, measurement } = scatteringMeasurement({ impactParameter });
     const weakField = weakFieldDeflectionRadians(impactParameter);
     const relativeDifference = Math.abs(measurement.deflectionAngleRadians - weakField) / weakField;
-    console.log(JSON.stringify({ numerical: measurement.deflectionAngleRadians, weakField, relativeDifference }));
     expect(system.status).toBe(PhotonStatus.ESCAPED);
     // For b = 25 r_s, the known O((r_s/b)^2) Schwarzschild term alone is
     // (15*pi/16)(r_s/b)^2 ~= 5.9% of the first-order 2 r_s/b term.
