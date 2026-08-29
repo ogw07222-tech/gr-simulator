@@ -34,8 +34,6 @@ jobs:
           script = textwrap.dedent(match.group(1))
           exec(compile(script, '<v0711-final-candidate>', 'exec'), {})
 
-          # Keep the browser smoke narrow and deterministic. Edge/behind/far-plane/focus
-          # behavior is covered by ParticleInspector unit tests on the same candidate.
           p = Path('tests/e2e/app.smoke.spec.js')
           s = p.read_text()
           start = s.find('  for (let attempt = 0; attempt < 5 && !(await page.locator(".particle-edge-indicator").isVisible()); attempt += 1) {')
@@ -46,17 +44,11 @@ jobs:
                   raise SystemExit('Could not locate edge smoke block end')
               s = s[:start] + s[end + len(end_marker):]
 
-          mobile_pause = '''  await page.setViewportSize({ width: 390, height: 844 });
-  await page.reload();
-  await page.locator("#pause").click();
-'''
-          mobile_pause_test_only = '''  await page.setViewportSize({ width: 390, height: 844 });
-  await page.reload();
-  await page.evaluate(() => document.querySelector("#pause")?.click());
-'''
-          if mobile_pause not in s:
+          mobile_before = '  await page.setViewportSize({ width: 390, height: 844 });\n  await page.reload();\n  await page.locator("#pause").click();\n'
+          mobile_after = '  await page.setViewportSize({ width: 390, height: 844 });\n  await page.reload();\n  await page.evaluate(() => document.querySelector("#pause")?.click());\n'
+          if mobile_before not in s:
               raise SystemExit('Could not locate mobile pause harness')
-          s = s.replace(mobile_pause, mobile_pause_test_only, 1)
+          s = s.replace(mobile_before, mobile_after, 1)
           p.write_text(s)
           PY
           npm version 0.7.11 --no-git-tag-version
