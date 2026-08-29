@@ -108,14 +108,12 @@ function createInitialCondition(configuration) {
 }
 
 function withoutDemoMetadata(configuration) {
-  const {
-    semiLatusRectumM: _semiLatusRectumM,
-    periapsisRadius: _periapsisRadius,
-    apocenterRadius: _apocenterRadius,
-    startingPoint: _startingPoint,
-    ...rest
-  } = configuration;
-  return rest;
+  const next = { ...configuration };
+  delete next.semiLatusRectumM;
+  delete next.periapsisRadius;
+  delete next.apocenterRadius;
+  delete next.startingPoint;
+  return next;
 }
 
 function resolveInitialCondition(configuration) {
