@@ -1,0 +1,41 @@
+name: Temporary Photon Stage B Validation v2
+on:
+  push:
+    branches: [tmp/photon-stage-b-validation]
+permissions:
+  contents: write
+jobs:
+  validate:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - name: Apply corrected Stage B candidate
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import re, textwrap
+          source = Path('.github/workflows/tmp-photon-stage-b.yml').read_text()
+          match = re.search(r"python - <<'PY'\n(.*?)\n          PY", source, re.S)
+          if not match: raise SystemExit('cannot extract Stage B transformation')
+          exec(compile(textwrap.dedent(match.group(1)), '<stage-b>', 'exec'), {})
+          p = Path('src/main.js'); s = p.read_text()
+          s = s.replace('const photonControls = resources.register(new PhotonControls(', 'resources.register(new PhotonControls(')
+          p.write_text(s)
+          PY
+      - run: npm ci
+      - run: npm run lint
+      - run: npx vitest run tests/unit/photon-performance-gate.test.js tests/unit/i18n.test.js
+      - name: Commit validated Stage B patch
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add src tests
+          git commit -m 'feat(ui): add photon performance gate'
+          git push origin HEAD:tmp/photon-stage-b-validation
