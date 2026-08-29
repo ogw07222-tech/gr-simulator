@@ -1,0 +1,212 @@
+name: Temporary v0.7.11 Particle Inspector
+
+on:
+  push:
+    branches: [feature/gr-v0.7.11-particle-inspector]
+
+permissions:
+  contents: write
+
+jobs:
+  patch-and-validate:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref_name }}
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - name: Apply focused v0.7.11 wiring
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          def edit(path, fn):
+              p = Path(path)
+              before = p.read_text()
+              after = fn(before)
+              if after == before:
+                  print(f'unchanged: {path}')
+              p.write_text(after)
+
+          def replace_once(text, old, new, label):
+              count = text.count(old)
+              if count != 1:
+                  raise SystemExit(f'{label}: expected one match, got {count}')
+              return text.replace(old, new, 1)
+
+          # Release identity.
+          edit('src/core/constants.js', lambda s: replace_once(s, 'export const VERSION = "0.7.10";', 'export const VERSION = "0.7.11";', 'VERSION'))
+          edit('index.html', lambda s: replace_once(s, '<title>GR-4D Simulator v0.7.10</title>', '<title>GR-4D Simulator v0.7.11</title>', 'index title'))
+
+          # UI export.
+          edit('src/ui/index.js', lambda s: replace_once(
+              s,
+              'export { ControlPanel } from "./ControlPanel.js";\n',
+              'export { ControlPanel } from "./ControlPanel.js";\nexport { ParticleInspector } from "./ParticleInspector.js";\n',
+              'ParticleInspector export',
+          ))
+
+          # Authoritative snapshot: expose quantities already computed by the subsystem.
+          def patch_subsystem(s):
+              s = replace_once(
+                  s,
+                  '    target.localSpeedFraction = speedFraction;\n    target.localSpeedMetresPerSecond = speedFraction * PHYSICAL_CONSTANTS.speedOfLight;\n',
+                  '    target.localSpeedFraction = speedFraction;\n    target.localSpeedMetresPerSecond = speedFraction * PHYSICAL_CONSTANTS.speedOfLight;\n    target.radialSpeedFraction = radialBeta;\n    target.tangentialSpeedFraction = tangentialBeta;\n',
+                  'snapshot velocity components',
+              )
+              s = replace_once(
+                  s,
+                  '    target.maximumRadiusRs = this.geodesic.diagnostics.maximumRadius;\n    target.renderX = this.particle.position.x;\n',
+                  '    target.maximumRadiusRs = this.geodesic.diagnostics.maximumRadius;\n    const circularRadius = this.configuration.preset === "circular" ? this.configuration.radius : Number.NaN;\n    target.periapsisRadiusRs = Number.isFinite(this.configuration.periapsisRadius) ? this.configuration.periapsisRadius : circularRadius;\n    target.apocenterRadiusRs = Number.isFinite(this.configuration.apocenterRadius) ? this.configuration.apocenterRadius : circularRadius;\n    target.renderX = this.particle.position.x;\n',
+                  'snapshot turning radii',
+              )
+              return s
+          edit('src/systems/SchwarzschildParticleSubsystem.js', patch_subsystem)
+
+          # Composition root: add snapshot fields, one inspector instance, and render-frame projection update.
+          def patch_main(s):
+              s = replace_once(
+                  s,
+                  'import { AppShell, ControlPanel, ScaleIndicator, VisualSettingsPanel } from "./ui/index.js";',
+                  'import { AppShell, ControlPanel, ParticleInspector, ScaleIndicator, VisualSettingsPanel } from "./ui/index.js";',
+                  'main UI import',
+              )
+              s = replace_once(
+                  s,
+                  '    coordinateTime: 0, properTime: 0, localSpeedFraction: 0, localSpeedMetresPerSecond: 0,\n    energy: 0, angularMomentum: 0, angularMomentumSI: 0, energyDrift: 0,\n',
+                  '    coordinateTime: 0, properTime: 0, localSpeedFraction: 0, localSpeedMetresPerSecond: 0,\n    radialSpeedFraction: 0, tangentialSpeedFraction: 0,\n    energy: 0, angularMomentum: 0, angularMomentumSI: 0, energyDrift: 0,\n',
+                  'snapshot buffer velocities',
+              )
+              s = replace_once(
+                  s,
+                  '    minimumRadiusRs: 0, maximumRadiusRs: 0, radialPeriods: 0,\n',
+                  '    minimumRadiusRs: 0, maximumRadiusRs: 0, radialPeriods: 0,\n    periapsisRadiusRs: Number.NaN, apocenterRadiusRs: Number.NaN,\n',
+                  'snapshot buffer turning radii',
+              )
+              s = replace_once(
+                  s,
+                  '    get localSpeedMetresPerSecond() { return data.localSpeedMetresPerSecond; },\n    get energy() { return data.energy; },\n',
+                  '    get localSpeedMetresPerSecond() { return data.localSpeedMetresPerSecond; },\n    get radialSpeedFraction() { return data.radialSpeedFraction; },\n    get tangentialSpeedFraction() { return data.tangentialSpeedFraction; },\n    get energy() { return data.energy; },\n',
+                  'snapshot getters velocities',
+              )
+              s = replace_once(
+                  s,
+                  '    get radialPeriods() { return data.radialPeriods; },\n    get normalizedX() { return data.normalizedX; },\n',
+                  '    get radialPeriods() { return data.radialPeriods; },\n    get periapsisRadiusRs() { return data.periapsisRadiusRs; },\n    get apocenterRadiusRs() { return data.apocenterRadiusRs; },\n    get normalizedX() { return data.normalizedX; },\n',
+                  'snapshot getters turning radii',
+              )
+              s = replace_once(
+                  s,
+                  '  target.localSpeedMetresPerSecond = source.localSpeedMetresPerSecond;\n  target.energy = source.energy;\n',
+                  '  target.localSpeedMetresPerSecond = source.localSpeedMetresPerSecond;\n  target.radialSpeedFraction = source.radialSpeedFraction;\n  target.tangentialSpeedFraction = source.tangentialSpeedFraction;\n  target.energy = source.energy;\n',
+                  'snapshot copy velocities',
+              )
+              s = replace_once(
+                  s,
+                  '  target.radialPeriods = source.radialPeriods;\n  target.normalizedX = source.normalizedX;\n',
+                  '  target.radialPeriods = source.radialPeriods;\n  target.periapsisRadiusRs = source.periapsisRadiusRs;\n  target.apocenterRadiusRs = source.apocenterRadiusRs;\n  target.normalizedX = source.normalizedX;\n',
+                  'snapshot copy turning radii',
+              )
+              marker = '''const scaleIndicator = resources.register(new ScaleIndicator(\n  document.querySelector("#viewport-shell"), scaleTransform, unitFormatter,\n));\n'''
+              addition = marker + '''const particleInspector = resources.register(new ParticleInspector(\n  document.querySelector("#viewport-shell"),\n  {\n    renderer, particleRenderer, particles, unitFormatter,\n    snapshotParticleId: geodesicSubsystem.particleId,\n    focusParticle: (x, y, z) => renderer.focusPoint(x, y, z),\n  },\n));\n'''
+              s = replace_once(s, marker, addition, 'inspector construction')
+              s = replace_once(
+                  s,
+                  '    renderer.render(prepareGridView);\n    appShell.update(renderDelta, simulationState);\n',
+                  '    renderer.render(prepareGridView);\n    particleInspector.update(snapshot, snapshots.revision(), particles.revision());\n    appShell.update(renderDelta, simulationState);\n',
+                  'inspector render update',
+              )
+              s = replace_once(
+                  s,
+                  'window.__GR4D_DIAGNOSTICS__ = Object.freeze({\n  getSnapshot() {\n',
+                  'window.__GR4D_DIAGNOSTICS__ = Object.freeze({\n  getParticleScreenPosition(id) { return particleInspector.getProjectedParticlePosition(id); },\n  getSnapshot() {\n',
+                  'diagnostic projection accessor',
+              )
+              s = replace_once(
+                  s,
+                  '      particleRenderer: {\n        revision: particleRenderer.lastRevision,\n        x: particleRenderer.positions[0],\n        y: particleRenderer.positions[1],\n        z: particleRenderer.positions[2],\n        apparentSizeCssPixels: particleRenderer.material.size,\n        sizeAttenuation: particleRenderer.material.sizeAttenuation,\n      },\n',
+                  '      particleRenderer: {\n        revision: particleRenderer.lastRevision,\n        x: particleRenderer.positions[0],\n        y: particleRenderer.positions[1],\n        z: particleRenderer.positions[2],\n        apparentSizeCssPixels: particleRenderer.material.size,\n        sizeAttenuation: particleRenderer.material.sizeAttenuation,\n      },\n      inspector: particleInspector.getDiagnostics(),\n',
+                  'inspector diagnostics',
+              )
+              return s
+          edit('src/main.js', patch_main)
+
+          # Locales: one central key structure for both languages.
+          en_block = '''  inspector: {\n    title: "Particle Inspector", close: "Close particle inspector", physicsModel: "Physics model",\n    identifierValue: "Particle {id}", modelSchwarzschild: "Schwarzschild · timelike test particle", modelParticle: "Particle",\n    radius: "Radial distance r", localSpeed: "Local / current speed", properTime: "Proper time τ", coordinateTime: "Coordinate time t", classification: "Orbit classification",\n    details: "Details", specificEnergy: "Specific energy ε", angularMomentum: "Angular momentum λ", radialVelocity: "Radial velocity βᵣ", tangentialVelocity: "Tangential velocity βφ",\n    periapsis: "Periapsis", apoapsis: "Apoapsis", particleState: "Particle state", integrationStatus: "Integration status",\n    dimensionlessValue: "{value} (dimensionless)", cFractionValue: "{value} c", behindCamera: "Behind camera", outsideViewport: "Outside viewport",\n    focusSelected: "Focus selected particle {id}",\n    state: { Idle: "Idle", Moving: "Moving", Orbiting: "Bound / orbiting", Escaping: "Escape", Captured: "Captured", Absorbed: "Absorbed", OutOfDomain: "Out of domain" },\n  },\n'''
+          ko_block = '''  inspector: {\n    title: "입자 검사기", close: "입자 검사기 닫기", physicsModel: "물리 모델",\n    identifierValue: "입자 {id}", modelSchwarzschild: "슈바르츠실트 · 시간꼴 시험 입자", modelParticle: "입자",\n    radius: "방사 거리 r", localSpeed: "국소 / 현재 속도", properTime: "고유시간 τ", coordinateTime: "좌표시간 t", classification: "궤도 분류",\n    details: "상세 정보", specificEnergy: "비에너지 ε", angularMomentum: "각운동량 λ", radialVelocity: "방사 속도 βᵣ", tangentialVelocity: "접선 속도 βφ",\n    periapsis: "근일점", apoapsis: "원일점", particleState: "입자 상태", integrationStatus: "적분 상태",\n    dimensionlessValue: "{value} (무차원)", cFractionValue: "{value} c", behindCamera: "카메라 뒤쪽", outsideViewport: "화면 밖",\n    focusSelected: "선택한 입자 {id} 찾기",\n    state: { Idle: "대기", Moving: "이동", Orbiting: "속박 / 공전", Escaping: "탈출", Captured: "포획", Absorbed: "흡수", OutOfDomain: "지원 영역 이탈" },\n  },\n'''
+          for path, block in [('src/ui/i18n/en.js', en_block), ('src/ui/i18n/ko.js', ko_block)]:
+              def locale_patch(s, block=block):
+                  s = s.replace('GR-4D Simulator v0.7.10', 'GR-4D Simulator v0.7.11', 1)
+                  marker = '  particle: { outOfDomain: '
+                  start = s.find(marker)
+                  if start < 0: raise SystemExit(f'locale particle marker missing: {path}')
+                  end = s.find('\n', start) + 1
+                  if '  inspector: {' in s: raise SystemExit(f'inspector already present: {path}')
+                  return s[:end] + block + s[end:]
+              edit(path, locale_patch)
+
+          # Sharp screen-space instrument styling; no 3D text and no distance-based scaling.
+          css = '''\n\n/* v0.7.11 Particle Inspector: screen-space UI only. */\n#viewport-shell { position: relative; }\n.particle-inspector-layer { position: absolute; z-index: 8; inset: 0; overflow: hidden; pointer-events: none; }\n.particle-inspector { position: absolute; top: 0; left: 0; width: 250px; max-width: calc(100% - 28px); padding: 10px 11px; border: 1px solid rgba(52,210,218,.48); border-radius: var(--control-radius); background: rgba(5,14,23,.94); box-shadow: 0 12px 34px rgba(0,0,0,.42); color: var(--text); pointer-events: auto; will-change: transform; }\n.particle-inspector header { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; padding-bottom: 7px; border-bottom: 1px solid rgba(143,163,189,.15); }\n.particle-inspector header > div { display: grid; gap: 1px; min-width: 0; }\n.particle-inspector-kicker { color: var(--cyan); font: 700 .56rem ui-monospace, monospace; letter-spacing: .11em; text-transform: uppercase; }\n.particle-inspector header strong { overflow-wrap: anywhere; font: 700 .72rem ui-monospace, monospace; }\n.particle-inspector-close { width: 28px; min-width: 28px; min-height: 28px; height: 28px; padding: 0; font: 700 .86rem ui-monospace, monospace; }\n.particle-inspector-model { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; padding: 7px 0 4px; color: var(--subtle); font-size: .56rem; }\n.particle-inspector-model strong { color: var(--muted); text-align: right; font-size: .58rem; }\n.particle-inspector-readout { margin: 0; }\n.particle-inspector-readout div { display: grid; grid-template-columns: minmax(82px, .8fr) minmax(0, 1.2fr); gap: 8px; padding: 3px 0; border-top: 1px solid rgba(143,163,189,.08); font-size: .58rem; }\n.particle-inspector-readout dt { color: var(--subtle); }\n.particle-inspector-readout dd { margin: 0; overflow-wrap: anywhere; color: var(--text); text-align: right; font: 600 .58rem ui-monospace, monospace; font-variant-numeric: tabular-nums; }\n.particle-inspector-details { margin-top: 5px; border-top: 1px solid rgba(52,210,218,.18); }\n.particle-inspector-details summary { padding: 6px 0 1px; color: var(--cyan); cursor: pointer; font-size: .58rem; font-weight: 700; }\n.particle-inspector-advanced { padding-top: 5px; }\n.particle-edge-indicator { position: absolute; top: 0; left: 0; display: flex; align-items: center; gap: 7px; min-height: 36px; max-width: 190px; padding: 5px 9px; border-color: rgba(52,210,218,.5); border-radius: var(--control-radius); background: rgba(5,14,23,.94); box-shadow: 0 8px 24px rgba(0,0,0,.38); pointer-events: auto; will-change: transform; }\n.particle-edge-arrow { display: inline-grid; place-items: center; width: 18px; min-width: 18px; color: var(--cyan); font: 700 .9rem ui-monospace, monospace; }\n.particle-edge-copy { display: grid; min-width: 0; text-align: left; }\n.particle-edge-copy strong { overflow: hidden; color: var(--text); font: 700 .6rem ui-monospace, monospace; text-overflow: ellipsis; white-space: nowrap; }\n.particle-edge-copy small { overflow: hidden; color: var(--muted); font-size: .52rem; text-overflow: ellipsis; white-space: nowrap; }\n@media (max-width: 520px) {\n  .particle-inspector { width: min(236px, calc(100% - 20px)); padding: 9px; }\n  .particle-inspector-readout div { grid-template-columns: 76px minmax(0, 1fr); }\n  .particle-edge-indicator { max-width: 160px; min-height: 38px; }\n}\n'''
+          edit('src/ui/main.css', lambda s: s + css if 'v0.7.11 Particle Inspector' not in s else s)
+
+          # Existing version assertions and a focused browser interaction test.
+          edit('tests/unit/i18n.test.js', lambda s: s.replace('GR-4D Simulator v0.7.10', 'GR-4D Simulator v0.7.11'))
+          def e2e_patch(s):
+              s = s.replace('toHaveText("v0.7.10")', 'toHaveText("v0.7.11")', 1)
+              if 'Particle Inspector follows the selected particle' in s: return s
+              return s + r'''\n\ntest("Particle Inspector follows the selected particle without changing physics", async ({ page }) => {\n  const consoleErrors = collectErrors(page);\n  await page.setViewportSize({ width: 1280, height: 800 });\n  await page.goto("/");\n  await page.locator("#pause").click();\n  const physicsBefore = await page.evaluate(() => window.__GR4D_DIAGNOSTICS__.getSnapshot().physics);\n  const point = await page.evaluate(() => window.__GR4D_DIAGNOSTICS__.getParticleScreenPosition("default-particle"));\n  expect(point).not.toBeNull();\n  await page.mouse.click(point.x, point.y);\n  await expect(page.locator(".particle-inspector")).toBeVisible();\n  await expect(page.locator('[data-field="id"]')).toContainText("default-particle");\n  let diagnostics = await page.evaluate(() => window.__GR4D_DIAGNOSTICS__.getSnapshot().inspector);\n  expect(diagnostics).toMatchObject({ selectedId: "default-particle", mode: "anchored" });\n\n  const cardBefore = await page.locator(".particle-inspector").boundingBox();\n  const canvas = page.locator("#viewport canvas");\n  const bounds = await canvas.boundingBox();\n  await page.mouse.move(point.x, point.y);\n  await page.mouse.down();\n  await page.mouse.move(point.x + 90, point.y + 45, { steps: 5 });\n  await page.mouse.up();\n  await page.waitForTimeout(120);\n  diagnostics = await page.evaluate(() => window.__GR4D_DIAGNOSTICS__.getSnapshot().inspector);\n  expect(diagnostics.selectedId).toBe("default-particle");\n  const cardAfterOrbit = await page.locator(".particle-inspector").boundingBox();\n  expect(Math.abs(cardAfterOrbit.width - cardBefore.width)).toBeLessThanOrEqual(1);\n  expect(Math.abs(cardAfterOrbit.height - cardBefore.height)).toBeLessThanOrEqual(1);\n  expect(Math.abs(cardAfterOrbit.x - cardBefore.x) + Math.abs(cardAfterOrbit.y - cardBefore.y)).toBeGreaterThan(1);\n\n  await page.mouse.move(bounds.x + bounds.width / 2, bounds.y + bounds.height / 2);\n  await page.mouse.wheel(0, 1400);\n  await page.waitForTimeout(120);\n  const cardFar = await page.locator(".particle-inspector").boundingBox();\n  expect(Math.abs(cardFar.width - cardBefore.width)).toBeLessThanOrEqual(1);\n  expect(Math.abs(cardFar.height - cardBefore.height)).toBeLessThanOrEqual(1);\n  expect((await page.evaluate(() => window.__GR4D_DIAGNOSTICS__.getSnapshot().inspector)).selectedId).toBe("default-particle");\n\n  for (const mode of ["normalized", "physical", "auto-fit-physical"]) {\n    await page.locator("#scale-mode").selectOption(mode);\n    await page.waitForTimeout(80);\n    expect((await page.evaluate(() => window.__GR4D_DIAGNOSTICS__.getSnapshot().inspector)).selectedId).toBe("default-particle");\n  }\n  expect(await page.evaluate(() => window.__GR4D_DIAGNOSTICS__.getSnapshot().physics)).toEqual(physicsBefore);\n\n  for (let attempt = 0; attempt < 5 && !(await page.locator(".particle-edge-indicator").isVisible()); attempt += 1) {\n    const currentBounds = await canvas.boundingBox();\n    await page.mouse.move(currentBounds.x + currentBounds.width * 0.55, currentBounds.y + currentBounds.height * 0.5);\n    await page.mouse.down({ button: "right" });\n    await page.mouse.move(currentBounds.x + currentBounds.width * 0.12, currentBounds.y + currentBounds.height * 0.5, { steps: 4 });\n    await page.mouse.up({ button: "right" });\n    await page.waitForTimeout(80);\n  }\n  await expect(page.locator(".particle-edge-indicator")).toBeVisible();\n  expect((await page.evaluate(() => window.__GR4D_DIAGNOSTICS__.getSnapshot().inspector)).selectedId).toBe("default-particle");\n  await page.locator(".particle-edge-indicator").click();\n  await expect(page.locator(".particle-inspector")).toBeVisible();\n\n  await page.locator("#locale-select").selectOption("ko");\n  await expect(page.locator(".particle-inspector-kicker")).toHaveText("입자 검사기");\n  await expect(page.locator(".particle-inspector-details summary")).toHaveText("상세 정보");\n\n  await page.setViewportSize({ width: 390, height: 844 });\n  await page.reload();\n  await page.locator("#pause").click();\n  const mobilePoint = await page.evaluate(() => window.__GR4D_DIAGNOSTICS__.getParticleScreenPosition("default-particle"));\n  expect(mobilePoint).not.toBeNull();\n  await page.evaluate(({ x, y }) => {\n    const target = document.querySelector("#viewport canvas");\n    const init = { bubbles: true, pointerId: 71, pointerType: "touch", isPrimary: true, button: 0, clientX: x, clientY: y };\n    target.dispatchEvent(new PointerEvent("pointerdown", init));\n    target.dispatchEvent(new PointerEvent("pointerup", init));\n  }, mobilePoint);\n  await expect(page.locator(".particle-inspector")).toBeVisible();\n  expect((await page.evaluate(() => window.__GR4D_DIAGNOSTICS__.getSnapshot().inspector)).selectedId).toBe("default-particle");\n  expect(consoleErrors).toEqual([]);\n});\n'''
+          edit('tests/e2e/app.smoke.spec.js', e2e_patch)
+
+          # Current docs and release notes.
+          def readme_patch(s):
+              old = 'A browser-based General Relativity visualization laboratory built with Three.js. Version 0.7.4 adds configurable simulation time scaling and adaptive scientific display units while preserving the v0.7 Schwarzschild physics and SI state.'
+              new = 'A browser-based General Relativity visualization laboratory built with Three.js. Version 0.7.11 adds a screen-space Particle Inspector while preserving the v0.7 Schwarzschild physics, conserved quantities, and SI state.'
+              s = replace_once(s, old, new, 'README version summary')
+              marker = '- GPU-buffered particle trail rendering\n'
+              return replace_once(s, marker, marker + '- Click/touch Particle Inspector with constant-pixel anchored readout and off-screen edge indicator\n', 'README inspector capability')
+          edit('README.md', readme_patch)
+
+          def ui_docs(s):
+              s = s.replace('and scientific particle inspection. These controls require corresponding tested engine data or rendering capabilities.', 'and unsupported derived physics overlays. These controls require corresponding tested engine data or rendering capabilities.')
+              addition = '''\n## v0.7.11 Particle Inspector\n\n`ParticleInspector` owns selection as UI state, separate from `Particle` and the Schwarzschild solver. It creates one HTML overlay and reuses it for the lifetime of the app. Pointer down/up displacement distinguishes taps/clicks from OrbitControls drags, and screen-space hit testing slightly expands only the interaction target without enlarging rendered particles.\n\nThe inspector reads the existing immutable presentation snapshot plus authoritative particle state. Radial/tangential local velocity fractions are exposed by `SchwarzschildParticleSubsystem.writeSnapshot()` from values it already computes; the inspector does not integrate, classify, or derive a second physics model. Render-space particle coordinates are projected with a reused Three.js vector. Card dimensions remain CSS-pixel sized at all camera distances and scale modes.\n\nWhen an in-front particle leaves the viewport, the same selection is represented by a clamped edge indicator. Behind-camera points are detected in camera space before perspective projection, so no mirrored or fabricated screen coordinate is used. The edge action delegates to the existing `Renderer.focusPoint()` behavior. Selection is not dropped for camera distance, apparent size, trail distance, render scale, or grid distance.\n\nThis patch does not add full-scene occlusion testing. The inspector can therefore remain visible when the selected particle is geometrically behind the black-hole presentation object from the current camera view; adding a depth/occlusion system is intentionally outside this focused interaction patch.\n'''
+              return s + addition if '## v0.7.11 Particle Inspector' not in s else s
+          edit('docs/UI_ARCHITECTURE.md', ui_docs)
+
+          def changelog(s):
+              marker = '## Unreleased\n\n'
+              entry = '''### v0.7.11\n\n- Added a bilingual screen-space Particle Inspector selected by click/touch, with constant CSS-pixel sizing, camera/particle-following projection, drag-safe OrbitControls coexistence, explicit behind-camera handling, and a persistent off-screen edge indicator that reuses the existing Focus Particle camera behavior.\n- Reused authoritative Schwarzschild snapshots for radius, local speed, proper/coordinate time, classification, conserved quantities, local radial/tangential velocity components, and available turning radii; selection and inspection do not mutate geodesic state, timestep, conserved quantities, camera scale semantics, or grid buffers.\n\n'''
+              return replace_once(s, marker, marker + entry, 'CHANGELOG insertion')
+          edit('CHANGELOG.md', changelog)
+          PY
+          npm version 0.7.11 --no-git-tag-version
+
+      - name: Focused source audit
+        run: |
+          git diff --check
+          test "$(node -p 'require("./package.json").version')" = "0.7.11"
+          grep -q 'ParticleInspector' src/main.js
+          grep -q 'sizeAttenuation: false' src/systems/particles/ParticleRenderer.js
+          if git diff origin/main -- src/physics | grep -q '^[-+]'; then
+            echo 'Unexpected src/physics modification.' >&2
+            exit 1
+          fi
+      - run: npm ci
+      - run: npm run lint
+      - run: npm run test
+      - run: npm run build
+      - run: npx playwright install --with-deps chromium
+      - name: Lightweight desktop + mobile inspector smoke
+        run: npx playwright test tests/e2e/app.smoke.spec.js --grep "Particle Inspector follows the selected particle"
+      - name: Commit validated patch
+        run: |
+          git add CHANGELOG.md README.md docs/UI_ARCHITECTURE.md index.html package.json package-lock.json src tests
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git commit -m 'feat(ui): add particle inspector overlay'
+          git push origin HEAD:${{ github.ref_name }}
