@@ -50,29 +50,8 @@ jobs:
               raise SystemExit('Could not locate mobile pause harness')
           s = s.replace(mobile_before, mobile_after, 1)
 
-          touch_before = '''  await page.evaluate(({ x, y }) => {
-    const target = document.querySelector("#viewport canvas");
-    const init = { bubbles: true, pointerId: 71, pointerType: "touch", isPrimary: true, button: 0, clientX: x, clientY: y };
-    target.dispatchEvent(new window.PointerEvent("pointerdown", init));
-    target.dispatchEvent(new window.PointerEvent("pointerup", init));
-  }, mobilePoint);
-'''
-          touch_after = '''  await page.evaluate(({ x, y }) => {
-    const target = document.querySelector("#viewport canvas");
-    const originalSetPointerCapture = target.setPointerCapture;
-    const originalReleasePointerCapture = target.releasePointerCapture;
-    target.setPointerCapture = () => {};
-    target.releasePointerCapture = () => {};
-    try {
-      const init = { bubbles: true, pointerId: 71, pointerType: "touch", isPrimary: true, button: 0, clientX: x, clientY: y };
-      target.dispatchEvent(new window.PointerEvent("pointerdown", init));
-      target.dispatchEvent(new window.PointerEvent("pointerup", init));
-    } finally {
-      target.setPointerCapture = originalSetPointerCapture;
-      target.releasePointerCapture = originalReleasePointerCapture;
-    }
-  }, mobilePoint);
-'''
+          touch_before = '  await page.evaluate(({ x, y }) => {\n    const target = document.querySelector("#viewport canvas");\n    const init = { bubbles: true, pointerId: 71, pointerType: "touch", isPrimary: true, button: 0, clientX: x, clientY: y };\n    target.dispatchEvent(new window.PointerEvent("pointerdown", init));\n    target.dispatchEvent(new window.PointerEvent("pointerup", init));\n  }, mobilePoint);\n'
+          touch_after = '  await page.evaluate(({ x, y }) => {\n    const target = document.querySelector("#viewport canvas");\n    const originalSetPointerCapture = target.setPointerCapture;\n    const originalReleasePointerCapture = target.releasePointerCapture;\n    target.setPointerCapture = () => {};\n    target.releasePointerCapture = () => {};\n    try {\n      const init = { bubbles: true, pointerId: 71, pointerType: "touch", isPrimary: true, button: 0, clientX: x, clientY: y };\n      target.dispatchEvent(new window.PointerEvent("pointerdown", init));\n      target.dispatchEvent(new window.PointerEvent("pointerup", init));\n    } finally {\n      target.setPointerCapture = originalSetPointerCapture;\n      target.releasePointerCapture = originalReleasePointerCapture;\n    }\n  }, mobilePoint);\n'
           if touch_before not in s:
               raise SystemExit('Could not locate synthetic touch harness')
           s = s.replace(touch_before, touch_after, 1)
