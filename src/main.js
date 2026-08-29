@@ -1,5 +1,5 @@
 import "./ui/main.css";
-import { PHYSICS_DEFAULTS, SIMULATION_DEFAULTS, SIMULATION_DOMAIN, TRAIL_CAPACITY, Store } from "./core/index.js";
+import { PHYSICS_DEFAULTS, SIMULATION_DEFAULTS, SIMULATION_DOMAIN, TRAIL_CAPACITY } from "./core/index.js";
 import { SchwarzschildModel } from "./physics/index.js";
 import { MassObject, RenderScaleMode, RenderScaleTransform, Renderer, VolumetricGrid } from "./rendering/index.js";
 import {
@@ -103,7 +103,6 @@ const snapshots = new SnapshotManager({
   copy: copyRenderSnapshot,
 });
 
-const store = new Store(SIMULATION_DEFAULTS);
 const model = new SchwarzschildModel(PHYSICS_DEFAULTS);
 const renderer = resources.register(new Renderer(document.querySelector("#viewport")));
 const grid = resources.register(new VolumetricGrid({
@@ -221,7 +220,6 @@ const runtimeControls = {
 
 const controlPanel = resources.register(new ControlPanel(
   document.querySelector("#control-panel"),
-  store,
   model,
   grid,
   runtimeControls,
@@ -279,18 +277,15 @@ function isTrackableSnapshot(snapshot) {
     && Number.isFinite(snapshot.renderX) && Number.isFinite(snapshot.renderY) && Number.isFinite(snapshot.renderZ);
 }
 
-function applyGridVisualization(nextState = store.getState()) {
+function applyGridVisualization() {
   const snapshot = snapshots.latest();
-  Object.assign(gridInputs, nextState);
   gridInputs.massSolar = snapshot?.massSolar ?? 0;
   gridInputs.renderScale = scaleTransform.isPhysical() ? scaleTransform.scaleFactor : 1;
   grid.update(model, gridInputs);
   visualSettings.updateLegends();
 }
-const applyState = (nextState) => applyGridVisualization(nextState);
-resources.register(store.subscribe(applyState));
 ensureCurrentSceneVisible(refreshPresentationSnapshot(true));
-applyState(store.getState());
+applyGridVisualization();
 if (scaleTransform.mode === RenderScaleMode.AUTO_FIT_PHYSICAL) fitPhysicalScene();
 
 const renderingSubsystem = {
@@ -326,7 +321,7 @@ const particleSubsystem = {
 };
 
 const subsystems = new SubsystemManager([particleSubsystem, renderingSubsystem]);
-subsystems.initialize({ resources, snapshots, store });
+subsystems.initialize({ resources, snapshots });
 
 let animationId;
 let disposed = false;

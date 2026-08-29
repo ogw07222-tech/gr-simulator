@@ -30,7 +30,7 @@ The entire supported domain uses uniform five-unit spacing. Thirty-one points pe
 
 Native frustum culling skips a fixed chunk only when its complete bounds are outside the view. When it re-enters, every original segment returns with identical topology. Distance-based LOD, sparse far-field geometry, render-distance omission, and distance-driven chunk switching are intentionally rejected because they degraded visual continuity.
 
-Raw deformation is evaluated only when mass, W distance, mode, warp scale, or maximum display displacement changes. Identical inputs do not recompute or upload attributes. Camera movement cannot change grid opacity or dirty model or GPU buffers.
+Raw deformation is sampled from ordinary 3D spatial radius `sqrt(x² + y² + z²)`; there is no W-axis rendering branch. Grid buffers are invalidated only by the remaining explicit visualization inputs such as applied mass, render scale, warp scale, maximum display displacement, or deformation gain. Identical inputs do not recompute or upload attributes. Camera movement cannot change grid opacity or dirty model or GPU buffers.
 
 ## Camera range
 

@@ -1,5 +1,7 @@
 # Performance Baseline
 
+> Historical measurements below may mention the retired experimental W-axis. Those entries describe older builds only; the current simulator uses ordinary 3D spatial distance and has no W-axis mode.
+
 ## v0.6.2 render correction
 
 Measurements use Chromium on the same Windows development host at 1600×1000. The pre-change short stationary sample reported 60 FPS, 225 DOM nodes, one canvas, 69,828 submitted grid line vertices, and one indivisible grid draw call. No short-run decline was reproduced, so this release does not claim a confirmed memory leak.
@@ -34,7 +36,7 @@ A one-minute post-change soak sampled the accepted uniform grid every ten second
 
 The current CI workflow intentionally retains its single ruleset-compatible `verify` check. Splitting it into stable `lint`, `test`, `build`, and `smoke` jobs is tracked separately in issue #20 so branch protection can be migrated atomically.
 
-This document defines repeatable measurements. Record browser version, operating system, hardware, viewport, device-pixel ratio, commit SHA, simulation mode, mass, W distance, grid parameters, trail capacity, and sampling duration with every result.
+This document defines repeatable measurements. Record browser version, operating system, hardware, viewport, device-pixel ratio, commit SHA, mass, 3D grid parameters, render scale, trail capacity, and sampling duration with every result.
 
 ## v0.6.1 structural comparison
 
@@ -57,7 +59,7 @@ Production build observed on 2026-08-04 for the earlier branch: HTML 1.80 kB raw
 
 - Production build served locally with `npm run preview`.
 - Desktop viewport: 1920 × 1080 at device-pixel ratio 1.
-- Default state: GR + W, mass 120, W distance 1.5, uniform grid width 150, spacing 5.
+- Current reference state: ordinary 3D Schwarzschild visualization, mass 120, uniform grid width 150, spacing 5.
 - Camera remains stationary after controls settle.
 - Warm up for 10 seconds, then measure for at least 30 seconds.
 - Repeat three times and report median plus range.
@@ -80,7 +82,7 @@ The v0.3 runtime clamps frame gaps to 100 ms and caps fixed simulation work at 4
 
 ## Grid update time
 
-Use DevTools User Timing around `VolumetricGrid.update` in a temporary profiling branch or invoke the method from a benchmark harness. Measure default state, mass change, W change, and mode switch separately. Do not commit instrumentation to production without review. Report median, p95, vertex count, and update count.
+Use DevTools User Timing around `VolumetricGrid.update` in a temporary profiling branch or invoke the method from a benchmark harness. Measure the default state, mass change, render-scale change, and grid-deformation-gain change separately. Do not commit instrumentation to production without review. Report median, p95, vertex count, and update count.
 
 ## Draw calls
 

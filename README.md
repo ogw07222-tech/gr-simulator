@@ -5,14 +5,15 @@ A browser-based General Relativity visualization laboratory built with Three.js.
 User documentation: [scientific user guide](docs/USER_GUIDE.md) · [glossary](docs/GLOSSARY.md)
 
 > This project is not yet a numerical Einstein field equation solver. The current implementation combines quantities derived from the Schwarzschild metric with explicitly documented weak-field visualization approximations.
+> In the current model, “4D” means standard 3+1 spacetime: three spatial dimensions plus time. There is no fourth spatial axis in the production Schwarzschild simulator.
 
 ## Current capabilities
 
 - Three.js volumetric grid visualization
 - Single Schwarzschild mass and event-horizon representation
 - Schwarzschild radius, lapse, and curvature proxy metrics
-- GR 3D and GR + W effective-distance comparison
-- Real-time mass and W-axis controls
+- Three-dimensional Schwarzschild grid visualization using `r = sqrt(x² + y² + z²)`
+- Black-hole mass and Schwarzschild orbit initial-condition controls
 - OrbitControls camera navigation
 - Fixed-timestep runtime controls and one default test particle
 - GPU-buffered particle trail rendering
@@ -70,8 +71,7 @@ The first browser-smoke run requires `npx playwright install chromium`. Unit tes
 - Drag: rotate camera
 - Right-drag: pan camera
 - Mouse wheel: zoom
-- GR 3D / GR + W: select the effective-distance model
-- Mass M / W-axis distance: update simulation inputs
+- Black-hole mass and orbit inputs: configure Schwarzschild test-particle initial conditions
 - Play / Pause / Time Scale: control the existing fixed-step runtime
 - Reset Particle / Reset All: restore particle or complete runtime time state
 - Visual Settings: adjust rendering materials without changing simulation state
@@ -91,7 +91,7 @@ The scale selector is a presentation boundary. Normalized mode maps one world un
 
 | Normalized (English) | Physical (English) | Auto-fit physical (Korean) | Physical mobile (Korean) |
 | --- | --- | --- | --- |
-| ![Normalized scale view](docs/screenshots/v0.7.10/normalized-en-desktop.png) | ![Physical scale view](docs/screenshots/v0.7.10/physical-en-desktop.png) | ![Auto-fit physical scale view](docs/screenshots/v0.7.10/auto-fit-ko-desktop.png) | ![Mobile physical scale view](docs/screenshots/v0.7.10/physical-ko-mobile-portrait.png) |
+| ![Normalized scale view](docs/screenshots/current/normalized-en-desktop.png) | ![Physical scale view](docs/screenshots/current/physical-en-desktop.png) | ![Auto-fit physical scale view](docs/screenshots/current/auto-fit-ko-desktop.png) | ![Mobile physical scale view](docs/screenshots/v0.7.10/physical-ko-mobile-portrait.png) |
 
 The v0.6.2 interface uses an original scientific-dashboard design language: compact telemetry, restrained accents, a viewport-first layout, and separate simulation and presentation controls. Grid deformation and trail speed include explicit legends. Desktop uses persistent side panels; tablet and mobile use keyboard- and touch-accessible drawers.
 
@@ -103,7 +103,7 @@ Screenshots are maintained in `docs/screenshots/` for desktop, tablet, and mobil
 
 | Desktop | Tablet portrait | Mobile portrait |
 | --- | --- | --- |
-| ![Desktop scientific dashboard](docs/screenshots/v0.7.10/normalized-en-desktop.png) | ![Tablet viewport layout](docs/screenshots/v0.7.10/normalized-en-tablet-portrait.png) | ![Mobile viewport layout](docs/screenshots/v0.7.10/physical-ko-mobile-portrait.png) |
+| ![Desktop scientific dashboard](docs/screenshots/current/normalized-en-desktop.png) | ![Tablet viewport layout](docs/screenshots/v0.7.10/normalized-en-tablet-portrait.png) | ![Mobile viewport layout](docs/screenshots/v0.7.10/physical-ko-mobile-portrait.png) |
 
 ## Architecture
 

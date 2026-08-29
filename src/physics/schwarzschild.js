@@ -9,9 +9,8 @@ export class SchwarzschildModel {
     return (2 * this.G * Math.max(0, mass)) / (this.c * this.c);
   }
 
-  effectiveRadius(dx, dy, dz, w = 0, useW = false) {
-    const wTerm = useW ? w * w : 0;
-    return Math.sqrt(dx * dx + dy * dy + dz * dz + wTerm + this.softening ** 2);
+  spatialRadius(dx, dy, dz) {
+    return Math.sqrt(dx * dx + dy * dy + dz * dz);
   }
 
   lapse(mass, radius) {

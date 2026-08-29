@@ -12,12 +12,9 @@ describe("SchwarzschildModel", () => {
     expect(model.schwarzschildRadius(-100)).toBe(0);
   });
 
-  it("calculates effective radius without the W axis", () => {
-    expect(model.effectiveRadius(3, 4, 0, 12, false)).toBeCloseTo(Math.sqrt(25.25));
-  });
-
-  it("includes the W axis when requested", () => {
-    expect(model.effectiveRadius(3, 4, 0, 12, true)).toBeCloseTo(Math.sqrt(169.25));
+  it("calculates ordinary three-dimensional spatial radius", () => {
+    expect(model.spatialRadius(3, 4, 12)).toBe(13);
+    expect(model.spatialRadius(0, 0, 0)).toBe(0);
   });
 
   it("calculates lapse outside the event horizon", () => {

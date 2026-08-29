@@ -21,11 +21,11 @@ describe("Store", () => {
   });
 
   it("merges state patches", () => {
-    const store = new Store({ mass: 120, mode: "GR_W" });
+    const store = new Store({ mass: 120, mode: "demo" });
 
     store.setState({ mass: 200 });
 
-    expect(store.getState()).toEqual({ mass: 200, mode: "GR_W" });
+    expect(store.getState()).toEqual({ mass: 200, mode: "demo" });
   });
 
   it("notifies subscribers with updated state", () => {

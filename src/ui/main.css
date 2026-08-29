@@ -138,9 +138,6 @@ button:disabled { cursor: default; opacity: .42; }
 .primary-action { color: #dff7ff; border-color: rgba(57, 189, 248, .48); background: linear-gradient(135deg, rgba(57, 189, 248, .22), rgba(77, 124, 255, .12)); }
 .danger-action { color: #ffdadd; border-color: rgba(255, 93, 102, .34); background: rgba(255, 93, 102, .1); }
 .secondary-action { width: 100%; color: var(--cyan); }
-.mode-switch { display: grid; grid-template-columns: 1fr 1fr; gap: 7px; margin-bottom: 14px; }
-.mode-switch button { min-height: 38px; font-size: .7rem; }
-.mode-switch button.active { border-color: var(--cyan); color: #03131d; background: var(--cyan); box-shadow: 0 0 20px rgba(57, 189, 248, .16); }
 
 .range-control, .visual-control, .select-control, .numeric-control { display: grid; grid-template-columns: minmax(0, 1fr) minmax(76px, 42%); gap: 7px; align-items: center; margin-top: 12px; color: var(--muted); font-size: .7rem; }
 .numeric-control input { min-width: 0; width: 100%; padding: 7px; border: 1px solid rgba(48, 179, 255, .25); border-radius: var(--control-radius); background: rgba(4, 12, 21, .9); color: var(--text); font: 600 .68rem ui-monospace, monospace; }

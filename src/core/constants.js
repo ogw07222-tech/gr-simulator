@@ -17,8 +17,6 @@ export const SIMULATION_DOMAIN = Object.freeze({
 });
 
 export const SIMULATION_DEFAULTS = Object.freeze({
-  mode: "GR_W",
-  w: 0,
   gridSize: SIMULATION_DOMAIN.width,
   gridSpacing: SIMULATION_DOMAIN.gridSpacing,
   warpScale: 12,

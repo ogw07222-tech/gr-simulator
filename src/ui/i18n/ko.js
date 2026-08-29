@@ -15,8 +15,7 @@ export const ko = Object.freeze({
   controls: {
     runtime: "실행 제어", runtimeIntro: "실행 상태와 슈바르츠실트 시각화 설정을 조정합니다.",
     play: "재생", pause: "일시정지", resetParticle: "입자 초기화", resetAll: "전체 초기화",
-    timeScale: "시간 배속", customTimeScale: "사용자 지정", applyTimeScale: "적용", timeScaleError: "{minimum}배 이상 {maximum}배 이하의 유한한 배속을 입력하세요.", centralBody: "중심 천체", physicsInputs: "시각화 프록시 입력", distanceMode: "거리 계산 모드",
-    wSlice: "W 슬라이스 (rₛ)",
+    timeScale: "시간 배속", customTimeScale: "사용자 지정", applyTimeScale: "적용", timeScaleError: "{minimum}배 이상 {maximum}배 이하의 유한한 배속을 입력하세요.", centralBody: "중심 천체", physicsInputs: "시각화 프록시 입력",
   },
   metrics: {
     title: "계량 정보", schwarzschildRadius: "슈바르츠실트 반지름", centralLapse: "중심 시간 지연 계수 α",
@@ -133,7 +132,6 @@ export const ko = Object.freeze({
   },
   glossary: {
     mass: { term: "블랙홀 질량", definition: "태양 질량(M☉) 단위의 중심 슈바르츠실트 질량입니다. 물리적 길이와 시간 척도를 정하지만 무차원 궤도 모양은 바꾸지 않습니다." },
-    wSlice: { term: "W 시각화 슬라이스", definition: "교육용 4차원 시각화 슬라이스의 W 위치를 선택합니다. 표시되는 변형 프록시만 바꾸며 슈바르츠실트 입자 물리 계산은 바꾸지 않습니다." },
     schwarzschildRadius: { term: "슈바르츠실트 반지름", definition: "rₛ = 2GM/c²입니다. 사건의 지평선은 1 rₛ에 있으며 시간꼴 입자는 그 바깥에서 시작해야 합니다." },
     eccentricity: { term: "궤도 이심률 e", definition: "이심률은 궤도가 얼마나 길쭉한지를 나타냅니다. e = 0은 원궤도이며 값이 커질수록 궤도가 더 길쭉해집니다. 이 데모에서는 선택한 이심률에 맞는 슈바르츠실트 궤도의 물리량을 시뮬레이터가 자동으로 계산합니다." },
     properTime: { term: "고유 시간", definition: "입자의 세계선을 따라 함께 움직이는 시계가 측정하는 시간입니다." }, coordinateTime: { term: "좌표 시간", definition: "멀리 떨어진 정지 관측자가 부여하는 슈바르츠실트 시간입니다." },

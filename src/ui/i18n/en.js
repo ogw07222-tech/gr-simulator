@@ -15,8 +15,7 @@ export const en = Object.freeze({
   controls: {
     runtime: "Runtime", runtimeIntro: "Runtime and Schwarzschild visualization controls.",
     play: "Play", pause: "Pause", resetParticle: "Reset Particle", resetAll: "Reset All",
-    timeScale: "Time Scale", customTimeScale: "Custom", applyTimeScale: "Apply", timeScaleError: "Enter a finite time scale from {minimum}x to {maximum}x.", centralBody: "Central Body", physicsInputs: "Visualization Proxy Inputs", distanceMode: "Distance mode",
-    wSlice: "W Slice (rₛ)",
+    timeScale: "Time Scale", customTimeScale: "Custom", applyTimeScale: "Apply", timeScaleError: "Enter a finite time scale from {minimum}x to {maximum}x.", centralBody: "Central Body", physicsInputs: "Visualization Proxy Inputs",
   },
   metrics: {
     title: "Metric Readout", schwarzschildRadius: "Schwarzschild radius", centralLapse: "Central lapse α",
@@ -134,7 +133,6 @@ export const en = Object.freeze({
   },
   glossary: {
     mass: { term: "Black-hole mass", definition: "The central Schwarzschild mass in solar masses (M☉). It sets physical length and time scales, not the dimensionless orbit shape." },
-    wSlice: { term: "W visualization slice", definition: "Selects the W position of the educational 4D visualization slice. This changes the displayed deformation proxy, not the Schwarzschild particle physics." },
     schwarzschildRadius: { term: "Schwarzschild radius", definition: "rₛ = 2GM/c². The horizon is at 1 rₛ; initial timelike particles must start outside it." },
     eccentricity: { term: "Orbit eccentricity e", definition: "Eccentricity describes how elongated the orbit is. e = 0 is circular, while larger values produce increasingly elongated bound orbits. In this demo the simulator automatically calculates a physically consistent Schwarzschild orbit from the selected eccentricity." },
     properTime: { term: "Proper time", definition: "Time measured by a clock moving with the particle along its worldline." }, coordinateTime: { term: "Coordinate time", definition: "Schwarzschild time assigned by a distant static observer; it is not the particle's own clock." },

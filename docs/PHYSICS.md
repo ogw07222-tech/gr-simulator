@@ -18,21 +18,21 @@ For a stationary observer, the displayed lapse is:
 
 The value is clamped to zero for `r <= r_s`.
 
-## W-axis model
+## Spatial radius
 
-GR + W mode defines an educational effective distance:
+The current visualization uses ordinary three-dimensional spatial distance:
 
-`R_eff = sqrt(x² + y² + z² + w² + ε²)`
+`r = sqrt(x² + y² + z²)`
 
-This is not a complete five-dimensional relativistic metric. It compares how an additional coordinate changes the apparent effect on an observed 3D slice.
+The Schwarzschild model is standard 3+1 spacetime: three spatial dimensions plus time. No fourth spatial coordinate is part of the production model.
 
 ## Grid displacement
 
 Grid points move toward the mass using the visualization approximation:
 
-`displacement = scale * r_s / R_eff²`
+`displacement = scale * r_s / r_sample²`
 
-Softening and maximum displacement prevent divergence and visual topology collapse. This displacement is a rendering proxy, not a physical observable.
+The spatial radius `r` above is exact. To preserve the established 3D grid rendering near the source, the educational grid derives a display-only softened sample radius `sqrt(r² + ε²)` and then applies the existing horizon boundary before evaluating the displacement. Maximum displacement prevents visual topology collapse. This softening is a rendering safeguard, not an additional spatial coordinate or a physical observable.
 
 ## v0.6.1 visualization mapping
 
@@ -40,7 +40,7 @@ The model evaluation is unchanged. At every topology vertex, the renderer stores
 
 `d_raw = displacementMagnitude(x, y, z)`
 
-before presentation. The valid numerical domain uses finite coordinates and the model's existing non-negative mass and softening rules. Evaluation at the source is made deterministic by the existing effective-radius boundary; no singular value is passed to the display mapping.
+before presentation. The valid numerical domain uses finite coordinates and the model's existing non-negative mass and softening rules. Evaluation at the source is made deterministic by the existing horizon/softening radius boundary; no singular value is passed to the display mapping.
 
 Only the displayed magnitude is normalized:
 
@@ -54,7 +54,7 @@ Neither the raw proxy nor its color legend is curvature, proper distance, an orb
 
 ## v0.6.2 rendering boundary
 
-The effective-radius equation, raw displacement equation, softening, and `asinh` normalization are unchanged. Uniform grid topology, native fixed-chunk frustum testing, proximity opacity, and the blue-cyan-red palette are presentation decisions. Distance-based topology changes and render-distance omission are not used inside the supported domain.
+The ordinary 3D spatial-radius sampling, raw displacement equation, display-only softening, and `asinh` normalization define the current grid proxy. Uniform grid topology, native fixed-chunk frustum testing, proximity opacity, and the blue-cyan-red palette are presentation decisions. Distance-based topology changes and render-distance omission are not used inside the supported domain.
 
 The black central sphere is a presentation silhouette. The green translucent shell is tied to the existing visual event-horizon radius but its rim brightness is not physical emission. Neither presentation object adds an observable or changes the Schwarzschild radius.
 
