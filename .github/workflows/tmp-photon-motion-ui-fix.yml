@@ -1,0 +1,77 @@
+name: Temporary Photon Motion UI Fix Validation
+
+on:
+  push:
+    branches:
+      - tmp/photon-motion-ui-fix-validation
+
+permissions:
+  contents: write
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - name: Apply bugfix candidate
+        run: node scripts/tmp-photon-motion-ui-fix.mjs
+      - name: Audit bugfix-only diff
+        shell: bash
+        run: |
+          set -euo pipefail
+          BASE=594284ddd01882534e844faaa7699c48a8dde43c
+          git diff --check "$BASE" -- . ':(exclude).github/workflows/tmp-photon-motion-ui-fix.yml' ':(exclude)scripts/tmp-photon-motion-ui-fix.mjs'
+          git diff --name-only "$BASE" -- . ':(exclude).github/workflows/tmp-photon-motion-ui-fix.yml' ':(exclude)scripts/tmp-photon-motion-ui-fix.mjs' | sort > /tmp/actual.txt
+          cat > /tmp/allowed.txt <<'EOF'
+          docs/PHYSICS.md
+          src/main.js
+          src/physics/relativity/SchwarzschildNullGeodesicSystem.js
+          src/systems/photons/PhotonSubsystem.js
+          src/ui/ControlPanel.js
+          src/ui/i18n/en.js
+          src/ui/i18n/ko.js
+          tests/e2e/app.smoke.spec.js
+          tests/e2e/photon-motion-ui.smoke.spec.js
+          tests/unit/photon-runtime-motion.test.js
+          tests/unit/telemetry-ownership.test.js
+          EOF
+          sed -i 's/^          //' /tmp/allowed.txt
+          sort -o /tmp/allowed.txt /tmp/allowed.txt
+          diff -u /tmp/allowed.txt /tmp/actual.txt
+          git diff --exit-code "$BASE" -- package.json package-lock.json src/systems/SchwarzschildParticleSubsystem.js
+          ! git diff --name-only "$BASE" -- .github | grep -v '^.github/workflows/tmp-photon-motion-ui-fix.yml$' | grep -q .
+      - name: Install dependencies
+        run: npm ci
+      - name: Lint
+        run: npm run lint
+      - name: Full test suite
+        run: npm run test
+      - name: Physics suite
+        run: npm run test:physics
+      - name: Photon regression focus
+        run: npx vitest run tests/physics/schwarzschild-null-validation.test.js tests/physics/schwarzschild-photon-reference.test.js tests/physics/schwarzschild-photon-deflection.test.js tests/unit/photon-bundles.test.js tests/unit/photon-light-bending.test.js tests/unit/photon-performance-gate.test.js tests/unit/photon-runtime-motion.test.js
+      - name: Massive regression focus
+        run: npx vitest run tests/physics/schwarzschild-validation.test.js tests/unit/schwarzschild-geodesics.test.js tests/unit/schwarzschild-particle-subsystem.test.js tests/unit/geodesic-motion-pipeline.test.js tests/unit/simulation-integration.test.js
+      - name: Build
+        run: npm run build
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
+      - name: Focused desktop/mobile smoke
+        env:
+          CI: ""
+        run: npx playwright test tests/e2e/photon-motion-ui.smoke.spec.js --project=chromium --reporter=list
+      - name: Commit validated bugfix files
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add docs/PHYSICS.md src/main.js src/physics/relativity/SchwarzschildNullGeodesicSystem.js src/systems/photons/PhotonSubsystem.js src/ui/ControlPanel.js src/ui/i18n/en.js src/ui/i18n/ko.js tests/e2e/app.smoke.spec.js tests/e2e/photon-motion-ui.smoke.spec.js tests/unit/photon-runtime-motion.test.js tests/unit/telemetry-ownership.test.js
+          git commit -m "fix(photon-ui): restore photon motion and remove duplicate telemetry"
+          git push origin HEAD:tmp/photon-motion-ui-fix-validation
