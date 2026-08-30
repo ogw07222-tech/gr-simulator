@@ -7,6 +7,8 @@ import {
   FrameRateController,
   ParticleManager,
   ParticleRenderer,
+  PhotonRenderer,
+  PhotonSubsystem,
   SchwarzschildParticleSubsystem,
   SimulationClock,
   SimulationState,
@@ -14,7 +16,7 @@ import {
   SnapshotManager,
   SubsystemManager,
 } from "./systems/index.js";
-import { AppShell, ControlPanel, ParticleInspector, ScaleIndicator, VisualSettingsPanel } from "./ui/index.js";
+import { AppShell, ControlPanel, ParticleInspector, PhotonControls, ScaleIndicator, VisualSettingsPanel } from "./ui/index.js";
 import { UnitFormatter } from "./ui/units/index.js";
 import { getLocale } from "./ui/i18n.js";
 
@@ -135,11 +137,19 @@ const particleRenderer = resources.register(new ParticleRenderer({
   maxTrailLength: particles.maxTrailLength,
   scaleTransform,
 }));
+const photonRenderer = resources.register(new PhotonRenderer({
+  maxPhotons: 64,
+  maxTrailLength: 128,
+  pointSize: 8,
+  scaleTransform,
+}));
 renderer.add(grid.object);
 renderer.add(massObject.group);
 renderer.add(particleRenderer.object);
 renderer.add(particleRenderer.haloObject);
 renderer.add(particleRenderer.trailObject);
+renderer.add(photonRenderer.markerObject);
+renderer.add(photonRenderer.trailObject);
 
 const geodesicSubsystem = new SchwarzschildParticleSubsystem({ particles });
 clock.setHighSpeedDelta(geodesicSubsystem.maximumSafeAdvanceSeconds());
@@ -147,12 +157,31 @@ const unitFormatter = new UnitFormatter({ locale: getLocale });
 const scaleIndicator = resources.register(new ScaleIndicator(
   document.querySelector("#viewport-shell"), scaleTransform, unitFormatter,
 ));
+const photonSubsystem = new PhotonSubsystem({
+  massSolar: geodesicSubsystem.configuration.massSolar,
+  maxTrailLength: photonRenderer.maxTrailLength,
+  renderer: photonRenderer,
+});
 const particleInspector = resources.register(new ParticleInspector(
   document.querySelector("#viewport-shell"),
   {
-    renderer, particleRenderer, particles, unitFormatter,
+    renderer, particleRenderer, particles, photonRenderer, photons: photonSubsystem, unitFormatter,
     snapshotParticleId: geodesicSubsystem.particleId,
     focusParticle: (x, y, z) => renderer.focusPoint(x, y, z),
+  },
+));
+resources.register(new PhotonControls(
+  document.querySelector("#viewport-shell"),
+  {
+    enabled: photonSubsystem.enabled,
+    count: photonSubsystem.count(),
+    onToggle: (enabled) => photonSubsystem.setEnabled(enabled),
+    onCount: (count) => photonSubsystem.setCount(count),
+    onPreset: (preset) => { photonSubsystem.applyPreset(preset); return photonSubsystem.configuration; },
+    onApply: (configuration) => { photonSubsystem.apply(configuration); return photonSubsystem.configuration; },
+    onDemo: () => { photonSubsystem.applyLightBendingDemo(); return { configuration: photonSubsystem.configuration, count: photonSubsystem.count() }; },
+    getConfiguration: () => photonSubsystem.configuration,
+    getCount: () => photonSubsystem.count(),
   },
 ));
 
@@ -216,6 +245,7 @@ const runtimeControls = {
       radiusRs: previous.radiusRs,
     } : null;
     geodesicSubsystem.apply(configuration);
+    photonSubsystem.setMassSolar(geodesicSubsystem.configuration.massSolar);
     clock.setHighSpeedDelta(geodesicSubsystem.maximumSafeAdvanceSeconds());
     const current = refreshPresentationSnapshot(true);
     applyGridVisualization();
@@ -232,6 +262,7 @@ const runtimeControls = {
   resetAll: () => {
     clock.reset();
     geodesicSubsystem.reset();
+    photonSubsystem.reset();
     refreshPresentationSnapshot(true);
   },
 };
@@ -314,7 +345,7 @@ const renderingSubsystem = {
     visualSettings.setParticleTrackingAvailable(trackable);
     if (trackable) renderer.updateParticleFollow(snapshot.renderX, snapshot.renderY, snapshot.renderZ);
     renderer.render(prepareGridView);
-    particleInspector.update(snapshot, snapshots.revision(), particles.revision());
+    particleInspector.update(snapshot, snapshots.revision(), particles.revision(), photonSubsystem.revision());
     appShell.update(renderDelta, simulationState);
     scaleIndicator.update(snapshot);
   },
@@ -339,7 +370,7 @@ const particleSubsystem = {
   },
 };
 
-const subsystems = new SubsystemManager([particleSubsystem, renderingSubsystem]);
+const subsystems = new SubsystemManager([particleSubsystem, photonSubsystem, renderingSubsystem]);
 subsystems.initialize({ resources, snapshots });
 
 let animationId;
@@ -380,6 +411,7 @@ window.addEventListener("beforeunload", dispose);
 if (import.meta.hot) import.meta.hot.dispose(dispose);
 window.__GR4D_DIAGNOSTICS__ = Object.freeze({
   getParticleScreenPosition(id) { return particleInspector.getProjectedParticlePosition(id); },
+  getPhotonScreenPosition(id) { return particleInspector.getProjectedPhotonPosition(id); },
   getSnapshot() {
     return {
       animationFrames: runtimeDiagnostics.animationFrames,
@@ -442,6 +474,17 @@ window.__GR4D_DIAGNOSTICS__ = Object.freeze({
         sizeAttenuation: particleRenderer.material.sizeAttenuation,
       },
       inspector: particleInspector.getDiagnostics(),
+      photons: photonSubsystem.getDiagnostics(),
+      photonRenderer: {
+      markerVisible: photonRenderer.markerObject.visible,
+      trailVisible: photonRenderer.trailObject.visible,
+      markerSizeCssPixels: photonRenderer.markerMaterial.size,
+      sizeAttenuation: photonRenderer.markerMaterial.sizeAttenuation,
+      markerX: photonRenderer.markerPositions[0],
+      markerY: photonRenderer.markerPositions[1],
+      markerZ: photonRenderer.markerPositions[2],
+      trailVertices: photonRenderer.trailGeometry.drawRange.count,
+    },
       scale: {
         mode: scaleTransform.mode,
         metresPerWorldUnit: scaleTransform.metresPerWorldUnit,

@@ -1,6 +1,6 @@
 // Edit English interface copy here. Keep this key structure identical to ko.js.
 export const en = Object.freeze({
-  app: { title: "GR-4D Simulator v0.7.11", description: "Browser-based General Relativity simulation and scientific visualization laboratory", eyebrow: "RELATIVITY RESEARCH CONSOLE" },
+  app: { title: "GR-4D Simulator v0.8.0", description: "Browser-based General Relativity simulation and scientific visualization laboratory", eyebrow: "RELATIVITY RESEARCH CONSOLE" },
   language: { label: "Select language", ko: "한국어", en: "English" },
   status: {
     running: "Running", paused: "Paused", frame: "FRAME", rendererOnline: "Renderer online",
@@ -29,14 +29,17 @@ export const en = Object.freeze({
   },
   displayUnits: { section: "Display Units", mode: "Unit system", automatic: "Automatic", si: "SI", astronomical: "Astronomical", note: "Display conversion only; physics always remains in SI units." },
   particle: { outOfDomain: "Outside supported domain" },
+  photon: { controls: { title: "Photons", off: "OFF", on: "ON", count: "Count", lightBending: "Light Bending", setup: "Photon Setup", preset: "Preset", advanced: "Advanced launch settings", radius: "Start radius (rₛ)", phi: "Start azimuth φ", impactParameter: "Impact parameter b (rₛ)", radialDirection: "Radial direction", angularDirection: "Propagation sense", inward: "Inward", outward: "Outward", counterclockwise: "Counterclockwise", clockwise: "Clockwise", apply: "Apply launch" }, presets: { weak: "Weak Deflection", strong: "Strong Deflection", nearCritical: "Near Critical", capture: "Capture" } },
   inspector: {
-    title: "Particle Inspector", close: "Close particle inspector", physicsModel: "Physics model",
-    identifierValue: "Particle {id}", modelSchwarzschild: "Schwarzschild · timelike test particle", modelParticle: "Particle",
-    radius: "Radial distance r", localSpeed: "Local / current speed", properTime: "Proper time τ", coordinateTime: "Coordinate time t", classification: "Orbit classification",
+    title: "Particle Inspector", photonTitle: "Photon Inspector", close: "Close inspector", physicsModel: "Physics model",
+    identifierValue: "Particle {id}", photonIdentifierValue: "Photon {id}", modelSchwarzschild: "Schwarzschild · timelike test particle", modelParticle: "Particle", modelPhotonSchwarzschild: "Schwarzschild · null geodesic",
+    radius: "Radial distance r", localSpeed: "Local / current speed", properTime: "Proper time τ", coordinateTime: "Coordinate time t", classification: "Orbit classification", photonRadius: "Radial distance r", photonImpactParameter: "Impact parameter b", photonStateLabel: "Photon state", photonDeflection: "Deflection angle",
     details: "Details", specificEnergy: "Specific energy ε", angularMomentum: "Angular momentum λ", radialVelocity: "Radial velocity βᵣ", tangentialVelocity: "Tangential velocity βφ",
-    periapsis: "Periapsis", apoapsis: "Apoapsis", particleState: "Particle state", integrationStatus: "Integration status",
+    periapsis: "Periapsis", apoapsis: "Apoapsis", particleState: "Particle state", integrationStatus: "Integration status", photonAffineParameter: "Affine parameter λ", photonEnergy: "Conserved energy E", photonAngularMomentum: "Conserved angular momentum L", photonRadialDirection: "Radial direction", photonNullAbsolute: "Null-condition |residual|", photonNullRelative: "Null-condition relative error",
     dimensionlessValue: "{value} (dimensionless)", cFractionValue: "{value} c", behindCamera: "Behind camera", outsideViewport: "Outside viewport",
-    focusSelected: "Focus selected particle {id}",
+    focusSelected: "Focus selected object {id}",
+    photonState: { ACTIVE: "Active", CAPTURED: "Captured", ESCAPED: "Escaped", NUMERICAL_FAILURE: "Numerical failure" },
+    photonRadial: { inward: "Inward", outward: "Outward", turning: "Turning point" },
     state: { Idle: "Idle", Moving: "Moving", Orbiting: "Bound / orbiting", Escaping: "Escape", Captured: "Captured", Absorbed: "Absorbed", OutOfDomain: "Out of domain" },
   },
   model: {

@@ -6,6 +6,13 @@ export { SnapshotManager } from "./SnapshotManager.js";
 export { SchwarzschildParticleSubsystem } from "./SchwarzschildParticleSubsystem.js";
 export { SubsystemManager } from "./SubsystemManager.js";
 export {
+  LIGHT_BENDING_IMPACT_PARAMETERS_RS,
+  LIGHT_BENDING_START_X_RS,
+  PhotonRenderer,
+  PhotonSubsystem,
+  PhotonTrail,
+} from "./photons/index.js";
+export {
   Particle,
   ParticleManager,
   ParticleRenderer,

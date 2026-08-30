@@ -281,3 +281,30 @@ select { min-width: 94px; padding: 7px 28px 7px 9px; border: 1px solid var(--pan
   .particle-inspector-readout div { grid-template-columns: 76px minmax(0, 1fr); }
   .particle-edge-indicator { max-width: 160px; min-height: 38px; }
 }
+
+.photon-controls {
+  position: absolute;
+  top: 0.75rem;
+  right: 0.75rem;
+  z-index: 12;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.35rem 0.45rem;
+  border: 1px solid var(--line, rgba(255,255,255,0.18));
+  background: rgba(8, 12, 18, 0.78);
+  backdrop-filter: blur(8px);
+}
+.photon-controls-label { font-size: 0.72rem; font-weight: 700; letter-spacing: 0.06em; }
+.photon-toggle { min-width: 3.4rem; padding: 0.25rem 0.45rem; font-size: 0.72rem; }
+
+.photon-controls { flex-direction: column; align-items: stretch; max-width: min(18rem, calc(100vw - 1.5rem)); }
+.photon-controls-row { display: flex; align-items: center; justify-content: space-between; gap: 0.45rem; }
+.photon-setup { font-size: 0.72rem; }
+.photon-setup-body, .photon-advanced-grid { display: grid; gap: 0.4rem; margin-top: 0.4rem; }
+.photon-setup label, .photon-advanced-grid label { display: grid; gap: 0.2rem; }
+.photon-setup select, .photon-setup input { width: 100%; }
+
+.photon-count-control { display: inline-flex; align-items: center; gap: .3rem; color: var(--muted); font-size: .62rem; }
+.photon-count-control[hidden] { display: none; }
+.photon-count { min-width: 3.4rem; padding: .25rem 1.35rem .25rem .4rem; font-size: .68rem; }
