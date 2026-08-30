@@ -1,0 +1,20 @@
+name: Temporary Photon Stage F Clean Validation
+on:
+  push:
+    branches:
+      - tmp/photon-stage-f-clean-validation
+permissions:
+  contents: read
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npm run lint
+      - run: npx vitest run tests/unit/photon-rendering.test.js tests/unit/photon-performance-gate.test.js tests/unit/photon-subsystem.test.js tests/unit/photon-deflection-subsystem.test.js
+      - run: npm run build
