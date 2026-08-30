@@ -147,7 +147,9 @@ export class PhotonSubsystem {
     target.energy = this.geodesic.state.energy;
     target.angularMomentum = this.geodesic.state.angularMomentum;
     target.radialDirection = Math.sign(values[NullGeodesicStateIndex.RADIAL_VELOCITY]) || 0;
-    target.nullConditionError = this.geodesic.diagnostics.lastRelativeNullError;
+    target.nullConditionAbsoluteError = Math.abs(this.geodesic.diagnostics.lastNullResidual);
+    target.nullConditionRelativeError = this.geodesic.diagnostics.lastRelativeNullError;
+    target.nullConditionError = target.nullConditionRelativeError;
     target.integrationSubsteps = this.geodesic.diagnostics.substeps;
     target.incomingAsymptoticDirectionX = this.deflectionMeasurement.incomingDirection.x;
     target.incomingAsymptoticDirectionZ = this.deflectionMeasurement.incomingDirection.z;
@@ -160,6 +162,9 @@ export class PhotonSubsystem {
     return target;
   }
 
+  count() { return 1; }
+  idAt(index) { return index === 0 ? "photon-0" : null; }
+  writeSnapshotAt(index, target = {}) { return index === 0 ? this.writeSnapshot(target) : null; }
   revision() { return this.revisionCounter; }
 
   resetWorkCounters() {
