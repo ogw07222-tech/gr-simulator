@@ -129,6 +129,15 @@ export class PhotonSubsystem {
     return this;
   }
 
+  recommendedRuntimeTimeScale() {
+    // The global runtime multiplier is dimensionless. Setting it to r_s/c in SI
+    // seconds makes one wall-clock second advance about one normalized
+    // Schwarzschild coordinate-time unit while preserving the same global clock
+    // for massive and null trajectories. This is a viewing cadence, not a
+    // photon-only displacement multiplier.
+    return Math.max(1, this.units.timeScale);
+  }
+
   update(deltaSeconds) {
     if (!this.enabled) return 0;
     if (!(deltaSeconds >= 0) || !Number.isFinite(deltaSeconds)) {
@@ -136,14 +145,13 @@ export class PhotonSubsystem {
     }
     if (deltaSeconds === 0) return 0;
 
-    const deltaAffine = this.units.siTimeToNormalized(deltaSeconds);
     let completedTotal = 0;
     let changed = false;
     for (let index = 0; index < this.photonCount; index += 1) {
       const ray = this.rays[index];
       if (ray.geodesic.status !== PhotonStatus.ACTIVE) continue;
       const previousStatus = ray.geodesic.status;
-      const completed = ray.geodesic.advanceAffine(deltaAffine);
+      const completed = ray.geodesic.advanceCoordinateTimeSI(deltaSeconds);
       this.work.integrationPasses += 1;
       this.work.diagnosticUpdates += 1;
       completedTotal += completed;
