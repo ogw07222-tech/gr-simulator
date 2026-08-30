@@ -1,0 +1,88 @@
+name: Temporary Photon Stage H Validation
+on:
+  push:
+    branches:
+      - tmp/photon-stage-h-validation
+permissions:
+  contents: write
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - name: Apply Stage H runtime/UI wiring
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          p = Path('src/main.js')
+          s = p.read_text()
+          s = s.replace(
+              'const photonRenderer = resources.register(new PhotonRenderer({\n  maxTrailLength: 128,',
+              'const photonRenderer = resources.register(new PhotonRenderer({\n  maxPhotons: 64,\n  maxTrailLength: 128,',
+          )
+          old = '''  {
+              enabled: photonSubsystem.enabled,
+              onToggle: (enabled) => photonSubsystem.setEnabled(enabled),
+              onPreset: (preset) => { photonSubsystem.applyPreset(preset); return photonSubsystem.configuration; },
+              onApply: (configuration) => { photonSubsystem.apply(configuration); return photonSubsystem.configuration; },
+              getConfiguration: () => photonSubsystem.configuration,
+            },'''.replace('            ', '')
+          new = '''  {
+              enabled: photonSubsystem.enabled,
+              count: photonSubsystem.count(),
+              onToggle: (enabled) => photonSubsystem.setEnabled(enabled),
+              onCount: (count) => photonSubsystem.setCount(count),
+              onPreset: (preset) => { photonSubsystem.applyPreset(preset); return photonSubsystem.configuration; },
+              onApply: (configuration) => { photonSubsystem.apply(configuration); return photonSubsystem.configuration; },
+              getConfiguration: () => photonSubsystem.configuration,
+              getCount: () => photonSubsystem.count(),
+            },'''.replace('            ', '')
+          if old not in s:
+              raise SystemExit('PhotonControls wiring anchor missing')
+          s = s.replace(old, new)
+          p.write_text(s)
+
+          for filename, old_text, new_text in [
+              ('src/ui/i18n/en.js', 'title: "Photons", off: "OFF", on: "ON", setup:', 'title: "Photons", off: "OFF", on: "ON", count: "Count", setup:'),
+              ('src/ui/i18n/ko.js', 'title: "광자", off: "꺼짐", on: "켜짐", setup:', 'title: "광자", off: "꺼짐", on: "켜짐", count: "광자 수", setup:'),
+          ]:
+              p = Path(filename)
+              s = p.read_text()
+              if old_text not in s:
+                  raise SystemExit(f'i18n anchor missing: {filename}')
+              p.write_text(s.replace(old_text, new_text, 1))
+
+          p = Path('src/ui/main.css')
+          s = p.read_text()
+          addition = '''
+          .photon-count-control { display: inline-flex; align-items: center; gap: .3rem; color: var(--muted); font-size: .62rem; }
+          .photon-count-control[hidden] { display: none; }
+          .photon-count { min-width: 3.4rem; padding: .25rem 1.35rem .25rem .4rem; font-size: .68rem; }
+          '''.replace('          ', '')
+          if '.photon-count-control {' not in s:
+              s += addition
+          p.write_text(s)
+          PY
+      - run: npm ci
+      - run: npm run lint
+      - name: Stage H bounded bundle tests
+        run: npx vitest run tests/unit/photon-bundles.test.js tests/unit/photon-rendering.test.js tests/unit/photon-performance-gate.test.js tests/unit/photon-subsystem.test.js tests/unit/photon-inspector.test.js tests/unit/particle-inspector.test.js tests/unit/i18n.test.js
+      - name: Photon physics regression
+        run: npx vitest run tests/physics/schwarzschild-null-validation.test.js tests/physics/schwarzschild-photon-reference.test.js tests/physics/schwarzschild-photon-deflection.test.js
+      - run: npm run build
+      - name: Confirm null core unchanged from Stage G
+        run: git diff --exit-code 2958f0c31257672fb40ef34dc4a41f5dc4613402 -- src/physics/relativity/SchwarzschildNullGeodesicSystem.js
+      - name: Commit validated Stage H product changes
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add src/main.js src/systems/photons/PhotonSubsystem.js src/systems/photons/PhotonRenderer.js src/systems/photons/index.js src/ui/PhotonControls.js src/ui/i18n/en.js src/ui/i18n/ko.js src/ui/main.css tests/unit/photon-bundles.test.js
+          git commit -m "feat(photons): support bounded photon bundles" || exit 0
+          git push origin HEAD:tmp/photon-stage-h-validation
