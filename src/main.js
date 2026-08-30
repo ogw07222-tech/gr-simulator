@@ -156,19 +156,19 @@ const unitFormatter = new UnitFormatter({ locale: getLocale });
 const scaleIndicator = resources.register(new ScaleIndicator(
   document.querySelector("#viewport-shell"), scaleTransform, unitFormatter,
 ));
-const particleInspector = resources.register(new ParticleInspector(
-  document.querySelector("#viewport-shell"),
-  {
-    renderer, particleRenderer, particles, unitFormatter,
-    snapshotParticleId: geodesicSubsystem.particleId,
-    focusParticle: (x, y, z) => renderer.focusPoint(x, y, z),
-  },
-));
 const photonSubsystem = new PhotonSubsystem({
   massSolar: geodesicSubsystem.configuration.massSolar,
   maxTrailLength: photonRenderer.maxTrailLength,
   renderer: photonRenderer,
 });
+const particleInspector = resources.register(new ParticleInspector(
+  document.querySelector("#viewport-shell"),
+  {
+    renderer, particleRenderer, particles, photonRenderer, photons: photonSubsystem, unitFormatter,
+    snapshotParticleId: geodesicSubsystem.particleId,
+    focusParticle: (x, y, z) => renderer.focusPoint(x, y, z),
+  },
+));
 resources.register(new PhotonControls(
   document.querySelector("#viewport-shell"),
   {
@@ -340,7 +340,7 @@ const renderingSubsystem = {
     visualSettings.setParticleTrackingAvailable(trackable);
     if (trackable) renderer.updateParticleFollow(snapshot.renderX, snapshot.renderY, snapshot.renderZ);
     renderer.render(prepareGridView);
-    particleInspector.update(snapshot, snapshots.revision(), particles.revision());
+    particleInspector.update(snapshot, snapshots.revision(), particles.revision(), photonSubsystem.revision());
     appShell.update(renderDelta, simulationState);
     scaleIndicator.update(snapshot);
   },
@@ -406,6 +406,7 @@ window.addEventListener("beforeunload", dispose);
 if (import.meta.hot) import.meta.hot.dispose(dispose);
 window.__GR4D_DIAGNOSTICS__ = Object.freeze({
   getParticleScreenPosition(id) { return particleInspector.getProjectedParticlePosition(id); },
+  getPhotonScreenPosition(id) { return particleInspector.getProjectedPhotonPosition(id); },
   getSnapshot() {
     return {
       animationFrames: runtimeDiagnostics.animationFrames,

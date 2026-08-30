@@ -82,6 +82,7 @@ export class ParticleInspector {
     this.unsubscribeLocale = subscribeLocale(() => {
       this.#createNumberFormatter();
       this.#localize();
+      if (this.selectedKind) this.#activateKind(this.selectedKind);
       this.valuesDirty = true;
       this.cardSizeDirty = true;
       this.edgeSizeDirty = true;
