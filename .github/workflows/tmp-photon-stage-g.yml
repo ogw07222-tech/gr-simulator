@@ -1,0 +1,137 @@
+name: Temporary Photon Stage G Validation
+on:
+  push:
+    branches:
+      - tmp/photon-stage-g-validation
+permissions:
+  contents: write
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - name: Apply Stage G wiring and locale candidate
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          p = Path('src/main.js')
+          s = p.read_text()
+          old = '''const particleInspector = resources.register(new ParticleInspector(
+            document.querySelector("#viewport-shell"),
+            {
+              renderer, particleRenderer, particles, unitFormatter,
+              snapshotParticleId: geodesicSubsystem.particleId,
+              focusParticle: (x, y, z) => renderer.focusPoint(x, y, z),
+            },
+          ));
+          const photonSubsystem = new PhotonSubsystem({
+            massSolar: geodesicSubsystem.configuration.massSolar,
+            maxTrailLength: photonRenderer.maxTrailLength,
+            renderer: photonRenderer,
+          });
+          '''.replace('          ', '')
+          new = '''const photonSubsystem = new PhotonSubsystem({
+            massSolar: geodesicSubsystem.configuration.massSolar,
+            maxTrailLength: photonRenderer.maxTrailLength,
+            renderer: photonRenderer,
+          });
+          const particleInspector = resources.register(new ParticleInspector(
+            document.querySelector("#viewport-shell"),
+            {
+              renderer, particleRenderer, particles, photonRenderer, photons: photonSubsystem, unitFormatter,
+              snapshotParticleId: geodesicSubsystem.particleId,
+              focusParticle: (x, y, z) => renderer.focusPoint(x, y, z),
+            },
+          ));
+          '''.replace('          ', '')
+          if old not in s:
+              raise SystemExit('main inspector/subsystem anchor missing')
+          s = s.replace(old, new)
+          s = s.replace(
+              'particleInspector.update(snapshot, snapshots.revision(), particles.revision());',
+              'particleInspector.update(snapshot, snapshots.revision(), particles.revision(), photonSubsystem.revision());',
+          )
+          s = s.replace(
+              'getParticleScreenPosition(id) { return particleInspector.getProjectedParticlePosition(id); },',
+              'getParticleScreenPosition(id) { return particleInspector.getProjectedParticlePosition(id); },\n  getPhotonScreenPosition(id) { return particleInspector.getProjectedPhotonPosition(id); },',
+          )
+          p.write_text(s)
+
+          p = Path('src/ui/ParticleInspector.js')
+          s = p.read_text()
+          anchor = '''      this.#localize();
+                this.valuesDirty = true;'''.replace('                ', '')
+          replacement = '''      this.#localize();
+                if (this.selectedKind) this.#activateKind(this.selectedKind);
+                this.valuesDirty = true;'''.replace('                ', '')
+          if anchor not in s:
+              raise SystemExit('inspector locale anchor missing')
+          s = s.replace(anchor, replacement, 1)
+          p.write_text(s)
+
+          p = Path('src/ui/i18n/en.js')
+          s = p.read_text()
+          s = s.replace(
+              'title: "Particle Inspector", close: "Close particle inspector", physicsModel: "Physics model",',
+              'title: "Particle Inspector", photonTitle: "Photon Inspector", close: "Close inspector", physicsModel: "Physics model",',
+          )
+          s = s.replace(
+              'identifierValue: "Particle {id}", modelSchwarzschild: "Schwarzschild · timelike test particle", modelParticle: "Particle",',
+              'identifierValue: "Particle {id}", photonIdentifierValue: "Photon {id}", modelSchwarzschild: "Schwarzschild · timelike test particle", modelParticle: "Particle", modelPhotonSchwarzschild: "Schwarzschild · null geodesic",',
+          )
+          s = s.replace(
+              'radius: "Radial distance r", localSpeed: "Local / current speed", properTime: "Proper time τ", coordinateTime: "Coordinate time t", classification: "Orbit classification",',
+              'radius: "Radial distance r", localSpeed: "Local / current speed", properTime: "Proper time τ", coordinateTime: "Coordinate time t", classification: "Orbit classification", photonRadius: "Radial distance r", photonImpactParameter: "Impact parameter b", photonStateLabel: "Photon state", photonDeflection: "Deflection angle",',
+          )
+          s = s.replace(
+              'periapsis: "Periapsis", apoapsis: "Apoapsis", particleState: "Particle state", integrationStatus: "Integration status",',
+              'periapsis: "Periapsis", apoapsis: "Apoapsis", particleState: "Particle state", integrationStatus: "Integration status", photonAffineParameter: "Affine parameter λ", photonEnergy: "Conserved energy E", photonAngularMomentum: "Conserved angular momentum L", photonRadialDirection: "Radial direction", photonNullAbsolute: "Null-condition |residual|", photonNullRelative: "Null-condition relative error",',
+          )
+          s = s.replace(
+              'focusSelected: "Focus selected particle {id}",',
+              'focusSelected: "Focus selected object {id}",\n    photonState: { ACTIVE: "Active", CAPTURED: "Captured", ESCAPED: "Escaped", NUMERICAL_FAILURE: "Numerical failure" },\n    photonRadial: { inward: "Inward", outward: "Outward", turning: "Turning point" },',
+          )
+          p.write_text(s)
+
+          p = Path('src/ui/i18n/ko.js')
+          s = p.read_text()
+          s = s.replace(
+              'title: "입자 검사기", close: "입자 검사기 닫기", physicsModel: "물리 모델",',
+              'title: "입자 검사기", photonTitle: "광자 검사기", close: "검사기 닫기", physicsModel: "물리 모델",',
+          )
+          s = s.replace(
+              'identifierValue: "입자 {id}", modelSchwarzschild: "슈바르츠실트 · 시간꼴 시험 입자", modelParticle: "입자",',
+              'identifierValue: "입자 {id}", photonIdentifierValue: "광자 {id}", modelSchwarzschild: "슈바르츠실트 · 시간꼴 시험 입자", modelParticle: "입자", modelPhotonSchwarzschild: "슈바르츠실트 · 영측지선",',
+          )
+          s = s.replace(
+              'radius: "방사 거리 r", localSpeed: "국소 / 현재 속도", properTime: "고유시간 τ", coordinateTime: "좌표시간 t", classification: "궤도 분류",',
+              'radius: "방사 거리 r", localSpeed: "국소 / 현재 속도", properTime: "고유시간 τ", coordinateTime: "좌표시간 t", classification: "궤도 분류", photonRadius: "방사 거리 r", photonImpactParameter: "충돌 매개변수 b", photonStateLabel: "광자 상태", photonDeflection: "편향각",',
+          )
+          s = s.replace(
+              'periapsis: "근일점", apoapsis: "원일점", particleState: "입자 상태", integrationStatus: "적분 상태",',
+              'periapsis: "근일점", apoapsis: "원일점", particleState: "입자 상태", integrationStatus: "적분 상태", photonAffineParameter: "아핀 매개변수 λ", photonEnergy: "보존 에너지 E", photonAngularMomentum: "보존 각운동량 L", photonRadialDirection: "방사 방향", photonNullAbsolute: "영조건 |잔차|", photonNullRelative: "영조건 상대 오차",',
+          )
+          s = s.replace(
+              'focusSelected: "선택한 입자 {id} 찾기",',
+              'focusSelected: "선택한 대상 {id} 찾기",\n    photonState: { ACTIVE: "활성", CAPTURED: "포획", ESCAPED: "탈출", NUMERICAL_FAILURE: "수치 실패" },\n    photonRadial: { inward: "안쪽", outward: "바깥쪽", turning: "전환점" },',
+          )
+          p.write_text(s)
+          PY
+      - run: npm ci
+      - run: npm run lint
+      - run: npx vitest run tests/unit/particle-inspector.test.js tests/unit/photon-inspector.test.js tests/unit/photon-performance-gate.test.js tests/unit/photon-rendering.test.js tests/unit/i18n.test.js
+      - run: npm run build
+      - name: Commit validated Stage G product changes
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add src/main.js src/ui/ParticleInspector.js src/ui/i18n/en.js src/ui/i18n/ko.js src/systems/photons/PhotonSubsystem.js tests/unit/photon-inspector.test.js
+          git commit -m "feat(ui): inspect Schwarzschild photons" || exit 0
+          git push origin HEAD:tmp/photon-stage-g-validation
