@@ -139,7 +139,8 @@ async function configureNearViewportPhoton(page) {
   await page.locator(".photon-radial").selectOption("-1");
   await page.locator(".photon-angular").selectOption("1");
   await page.locator(".photon-apply").click();
-  await expect.poll(async () => (await diagnostics(page)).photons.radiusRs).toBeLessThanOrEqual(8);
+  await resetCameraForSmoke(page);
+  await expect.poll(async () => Boolean(await firstVisiblePhoton(page, 8))).toBe(true);
 }
 
 test("Photon Foundation desktop smoke", async ({ page }) => {
