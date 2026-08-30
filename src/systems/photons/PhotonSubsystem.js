@@ -17,6 +17,7 @@ export const PHOTON_COUNTS = Object.freeze([1, 8, 32, 64]);
 export const MAX_PHOTON_COUNT = 64;
 export const LIGHT_BENDING_IMPACT_PARAMETERS_RS = Object.freeze([2.2, 2.45, 2.62, 2.8, 3.2, 4, 5, 6]);
 export const LIGHT_BENDING_START_X_RS = 40;
+const LIGHT_BENDING_MAX_AFFINE_STEP = 0.005;
 
 function createDeflectionMeasurement(initialState, angularMomentum) {
   const measurement = {
@@ -257,10 +258,13 @@ export class PhotonSubsystem {
     const configuration = this.rayConfigurations?.[index] ?? this.configuration;
     const initial = createPhotonInitialCondition(configuration);
     const maximumRadius = Math.max(this.maximumRadius, configuration.radius * 1.25);
+    const maximumAffineStep = configuration.preset === "lightBending"
+      ? Math.min(this.maximumAffineStep, LIGHT_BENDING_MAX_AFFINE_STEP)
+      : this.maximumAffineStep;
     const geodesic = new SchwarzschildNullGeodesicSystem({
       units: this.units,
       maximumRadius,
-      maximumAffineStep: this.maximumAffineStep,
+      maximumAffineStep,
     });
     geodesic.initialize(initial);
     const position = { x: 0, y: 0, z: 0 };
