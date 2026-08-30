@@ -1,6 +1,6 @@
 # GR-4D Simulator
 
-A browser-based General Relativity visualization laboratory built with Three.js. Version 0.7.11 adds a screen-space Particle Inspector while preserving the v0.7 Schwarzschild physics, conserved quantities, and SI state.
+A browser-based General Relativity visualization laboratory built with Three.js. Version 0.8.0 adds validated Schwarzschild null geodesics, bounded photon bundles, photon inspection, numerical deflection diagnostics, and a compact Light Bending demo while preserving the existing timelike Schwarzschild solver.
 
 User documentation: [scientific user guide](docs/USER_GUIDE.md) · [glossary](docs/GLOSSARY.md)
 
@@ -17,7 +17,10 @@ User documentation: [scientific user guide](docs/USER_GUIDE.md) · [glossary](do
 - OrbitControls camera navigation
 - Fixed-timestep runtime controls and one default test particle
 - GPU-buffered particle trail rendering
-- Click/touch Particle Inspector with constant-pixel anchored readout and off-screen edge indicator
+- Click/touch shared Particle/Photon Inspector with constant-pixel anchored readout, off-screen edge indicator, and Focus behavior
+- Schwarzschild null-geodesic photons evolved with affine parameter and explicit null-condition diagnostics
+- Bounded independent photon bundles with counts 1 / 8 / 32 / 64 and an absolute default-OFF recurring-work gate
+- Numerical photon deflection measurement plus an 8-ray Light Bending demo driven by actual null-geodesic integration
 - Responsive simulation and visual-settings panels
 - Presentation-only particle, trail, grid, and mass-rendering controls
 - Live Korean/English interface switching with persisted language preference
@@ -79,6 +82,9 @@ The first browser-smoke run requires `npx playwright install chromium`. Unit tes
 - Scale and View: switch between normalized, fixed physical, and auto-fit physical presentation; configure metres per world unit
 - Reset Camera / Fullscreen / Hide Panels: manage the scientific workspace
 - 한국어 / English: switch the complete interface language without resetting simulation, camera, or visual state
+- Photons OFF / ON: disable or enable the photon subsystem; OFF performs zero recurring photon integration, trail, diagnostic, and render-buffer work
+- Photon Count: when enabled, select a bounded independent bundle of 1, 8, 32, or 64 photons
+- Light Bending: launch the validated eight-ray Schwarzschild bending demonstration from the collapsed photon setup
 
 ## Localization
 
@@ -126,11 +132,14 @@ Each directory exposes or reserves a clear dependency boundary. Existing v0.1 be
 
 The long-term goal is a reproducible, testable, performance-oriented GR simulation platform. Physical observables, educational proxies, and visual effects must remain separately named and validated. Numerical methods will be introduced only with reference cases, error bounds, and benchmark budgets.
 
+Current photon scope does not include per-pixel ray tracing, black-hole image/shadow synthesis, accretion-disk rendering, Einstein-ring image synthesis, Kerr spacetime, or WebGPU/WASM photon acceleration.
+
 ## Project documentation
 
 Detailed, automatically generated repository metrics are available in [Project Statistics](PROJECT_STATS.md). Regenerate them with `npm run stats`.
 
 - [Physics model](docs/PHYSICS.md)
+- [Photon Foundation](docs/PHOTON_FOUNDATION.md)
 - [Architecture](docs/ARCHITECTURE.md)
 - [Module boundaries](docs/MODULES.md)
 - [Runtime engine](docs/RUNTIME_ENGINE.md)

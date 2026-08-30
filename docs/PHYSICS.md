@@ -61,3 +61,9 @@ The black central sphere is a presentation silhouette. The green translucent she
 ## v0.7 analytic spacetime solver
 
 The legacy grid deformation proxy remains unchanged and is separate from the new particle solver. Production particle motion uses conserved specific energy and angular momentum in a fixed analytic Schwarzschild metric, restricted to massive equatorial test particles. Equations, conventions, and coordinate limitations are defined in `SCHWARZSCHILD_GEODESICS.md`; the SI boundary is defined in `UNIT_SYSTEM.md`.
+
+## v0.8 Schwarzschild photon foundation
+
+v0.8 adds a separate equatorial null-geodesic solver in the same fixed analytic Schwarzschild spacetime. It advances photons with an affine parameter, not proper time, and validates the event horizon at `1.0 r_s`, photon sphere at `1.5 r_s`, and critical impact parameter `b_crit = (3√3/2) r_s`. Capture, scattering, near-critical strong deflection, null-condition error, numerical deflection, bounded 1/8/32/64 bundles, the shared Photon Inspector, and the Light Bending demo are documented in `PHOTON_FOUNDATION.md`. The existing massive/timelike solver is unchanged.
+
+Photon rendering remains trajectory visualization rather than per-pixel ray tracing or image synthesis. Kerr spacetime, accretion disks, Einstein-ring image synthesis, and WebGPU/WASM photon acceleration are outside v0.8.0 scope.
