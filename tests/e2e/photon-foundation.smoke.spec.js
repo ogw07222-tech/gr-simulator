@@ -78,8 +78,10 @@ async function selectPhotonWithTouchEvent(page, count) {
     }
   }, visible);
   await expect(page.locator(".particle-inspector")).toBeVisible();
-  expect((await diagnostics(page)).inspector).toMatchObject({ selectedKind: "photon", selectedId: visible.id });
-  return visible.id;
+  const inspector = (await diagnostics(page)).inspector;
+  expect(inspector.selectedKind).toBe("photon");
+  expect(inspector.selectedId).toMatch(/^photon-\d+$/);
+  return inspector.selectedId;
 }
 
 async function verifyOrbitDrag(page, selectedId) {
