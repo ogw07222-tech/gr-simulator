@@ -1,0 +1,58 @@
+name: Temporary Photon Stage I Validation
+on:
+  push:
+    branches:
+      - tmp/photon-stage-i-validation
+permissions:
+  contents: write
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - name: Apply Stage I runtime/UI wiring
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          p = Path('src/main.js')
+          s = p.read_text()
+          anchor = '    onApply: (configuration) => { photonSubsystem.apply(configuration); return photonSubsystem.configuration; },\n'
+          addition = anchor + '    onDemo: () => { photonSubsystem.applyLightBendingDemo(); return { configuration: photonSubsystem.configuration, count: photonSubsystem.count() }; },\n'
+          if anchor not in s:
+              raise SystemExit('PhotonControls demo anchor missing')
+          s = s.replace(anchor, addition, 1)
+          p.write_text(s)
+
+          for filename, old_text, new_text in [
+              ('src/ui/i18n/en.js', 'count: "Count", setup:', 'count: "Count", lightBending: "Light Bending", setup:'),
+              ('src/ui/i18n/ko.js', 'count: "광자 수", setup:', 'count: "광자 수", lightBending: "빛 휨", setup:'),
+          ]:
+              p = Path(filename)
+              s = p.read_text()
+              if old_text not in s:
+                  raise SystemExit(f'i18n demo anchor missing: {filename}')
+              p.write_text(s.replace(old_text, new_text, 1))
+          PY
+      - run: npm ci
+      - run: npm run lint
+      - name: Stage I actual light-bending tests
+        run: npx vitest run tests/unit/photon-light-bending.test.js tests/unit/photon-bundles.test.js tests/unit/photon-inspector.test.js tests/unit/photon-rendering.test.js tests/unit/photon-performance-gate.test.js tests/unit/i18n.test.js
+      - name: Photon physics regression
+        run: npx vitest run tests/physics/schwarzschild-null-validation.test.js tests/physics/schwarzschild-photon-reference.test.js tests/physics/schwarzschild-photon-deflection.test.js
+      - run: npm run build
+      - name: Confirm null core unchanged from Stage H
+        run: git diff --exit-code 9c27bc4c6b571d2ae67fff3d885c829a59550b74 -- src/physics/relativity/SchwarzschildNullGeodesicSystem.js
+      - name: Commit validated Stage I product changes
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add src/main.js src/systems/index.js src/systems/photons/PhotonSubsystem.js src/systems/photons/index.js src/ui/PhotonControls.js src/ui/i18n/en.js src/ui/i18n/ko.js tests/unit/photon-light-bending.test.js
+          git commit -m "feat(photons): add light-bending demo" || exit 0
+          git push origin HEAD:tmp/photon-stage-i-validation
