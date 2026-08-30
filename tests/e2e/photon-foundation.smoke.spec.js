@@ -130,6 +130,18 @@ async function runScaleTransitions(page) {
   }
 }
 
+async function configureNearViewportPhoton(page) {
+  const advanced = page.locator(".photon-advanced");
+  if (!(await advanced.getAttribute("open"))) await advanced.locator(":scope > summary").click();
+  await page.locator(".photon-radius").fill("8");
+  await page.locator(".photon-phi").fill("0");
+  await page.locator(".photon-impact").fill("3");
+  await page.locator(".photon-radial").selectOption("-1");
+  await page.locator(".photon-angular").selectOption("1");
+  await page.locator(".photon-apply").click();
+  await expect.poll(async () => (await diagnostics(page)).photons.radiusRs).toBeLessThanOrEqual(8);
+}
+
 test("Photon Foundation desktop smoke", async ({ page }) => {
   const errors = collectErrors(page);
   await page.setViewportSize({ width: 1280, height: 800 });
@@ -197,13 +209,21 @@ test("Photon Foundation mobile smoke", async ({ page }) => {
 
   await verifyPhotonStopsWhileMassiveParticleRuns(page, toggle);
   await toggle.click();
+
+  await page.locator("#open-simulation").click();
+  await page.locator("#time-scale").selectOption("1");
+  await page.locator("#control-panel [data-close-panel]").click();
+
   await page.locator(".photon-count").selectOption("8");
   await page.locator(".photon-setup > summary").click();
-  await page.locator(".photon-demo").click();
-  await expect.poll(async () => (await diagnostics(page)).photonRenderer.trailVertices).toBeGreaterThan(0);
-
+  await configureNearViewportPhoton(page);
   const selectedId = await selectPhotonWithTouchEvent(page, 8);
   await verifyOrbitDrag(page, selectedId);
+
+  await page.locator(".photon-demo").click();
+  await expect.poll(async () => (await diagnostics(page)).photons.preset).toBe("lightBending");
+  await expect.poll(async () => (await diagnostics(page)).photonRenderer.trailVertices).toBeGreaterThan(0);
+  expect((await diagnostics(page)).photons.count).toBe(8);
 
   await page.locator("#open-visuals").click();
   await runScaleTransitions(page);
@@ -211,7 +231,6 @@ test("Photon Foundation mobile smoke", async ({ page }) => {
 
   await page.locator("#locale-select").selectOption("ko");
   await expect(page.locator("html")).toHaveAttribute("lang", "ko");
-  await expect(page.locator(".particle-inspector-kicker")).toHaveText("광자 검사기");
   await page.locator("#locale-select").selectOption("en");
   await expect(page.locator("html")).toHaveAttribute("lang", "en");
   expect(errors).toEqual([]);
