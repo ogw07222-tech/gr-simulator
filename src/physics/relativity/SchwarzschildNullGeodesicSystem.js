@@ -92,6 +92,49 @@ export class SchwarzschildNullGeodesicSystem {
     return completed;
   }
 
+  advanceCoordinateTimeSI(deltaSeconds) {
+    if (this.status !== PhotonStatus.ACTIVE || deltaSeconds === 0) return 0;
+    if (!(deltaSeconds > 0) || !Number.isFinite(deltaSeconds)) {
+      throw new RangeError("Coordinate-time advance must be positive and finite.");
+    }
+    return this.advanceCoordinateTime(this.units.siTimeToNormalized(deltaSeconds));
+  }
+
+  advanceCoordinateTime(deltaTime) {
+    if (this.status !== PhotonStatus.ACTIVE || deltaTime === 0) return 0;
+    if (!(deltaTime > 0) || !Number.isFinite(deltaTime)) {
+      throw new RangeError("Normalized coordinate-time advance must be positive and finite.");
+    }
+
+    const targetTime = this.state.values[I.TIME] + deltaTime;
+    let completed = 0;
+    let steps = 0;
+    while (this.status === PhotonStatus.ACTIVE
+      && this.state.values[I.TIME] < targetTime
+      && steps < this.maximumSubsteps) {
+      const radius = this.state.values[I.RADIUS];
+      const lapseSquared = SchwarzschildMetric.lapseSquared(radius);
+      const dtDlambda = this.state.energy / lapseSquared;
+      const remainingTime = targetTime - this.state.values[I.TIME];
+      const affineStep = Math.min(this.maximumAffineStep, remainingTime / dtDlambda);
+      if (!(affineStep > 0) || !Number.isFinite(affineStep)) {
+        this.status = PhotonStatus.NUMERICAL_FAILURE;
+        break;
+      }
+      const beforeTime = this.state.values[I.TIME];
+      const advanced = this.advanceAffine(affineStep);
+      completed += advanced;
+      steps += 1;
+      if (advanced === 0 || this.state.values[I.TIME] <= beforeTime) break;
+    }
+    if (this.status === PhotonStatus.ACTIVE
+      && this.state.values[I.TIME] < targetTime
+      && steps >= this.maximumSubsteps) {
+      this.status = PhotonStatus.NUMERICAL_FAILURE;
+    }
+    return completed;
+  }
+
   nullCondition(values = this.state.values) {
     const radius = values[I.RADIUS];
     const f = SchwarzschildMetric.lapseSquared(radius);

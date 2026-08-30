@@ -162,6 +162,16 @@ const photonSubsystem = new PhotonSubsystem({
   maxTrailLength: photonRenderer.maxTrailLength,
   renderer: photonRenderer,
 });
+function ensurePhotonObservationTimeScale() {
+  if (simulationState.timeScale !== 1) return simulationState.timeScale;
+  const required = photonSubsystem.recommendedRuntimeTimeScale();
+  let next = TIME_SCALES[TIME_SCALES.length - 1];
+  for (const scale of TIME_SCALES) {
+    if (scale >= required) { next = scale; break; }
+  }
+  if (next > simulationState.timeScale) clock.setTimeScale(next);
+  return simulationState.timeScale;
+}
 const particleInspector = resources.register(new ParticleInspector(
   document.querySelector("#viewport-shell"),
   {
@@ -175,7 +185,11 @@ resources.register(new PhotonControls(
   {
     enabled: photonSubsystem.enabled,
     count: photonSubsystem.count(),
-    onToggle: (enabled) => photonSubsystem.setEnabled(enabled),
+    onToggle: (enabled) => {
+      const applied = photonSubsystem.setEnabled(enabled);
+      if (applied) ensurePhotonObservationTimeScale();
+      return applied;
+    },
     onCount: (count) => photonSubsystem.setCount(count),
     onPreset: (preset) => { photonSubsystem.applyPreset(preset); return photonSubsystem.configuration; },
     onApply: (configuration) => { photonSubsystem.apply(configuration); return photonSubsystem.configuration; },

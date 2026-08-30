@@ -61,3 +61,9 @@ The black central sphere is a presentation silhouette. The green translucent she
 ## v0.7 analytic spacetime solver
 
 The legacy grid deformation proxy remains unchanged and is separate from the new particle solver. Production particle motion uses conserved specific energy and angular momentum in a fixed analytic Schwarzschild metric, restricted to massive equatorial test particles. Equations, conventions, and coordinate limitations are defined in `SCHWARZSCHILD_GEODESICS.md`; the SI boundary is defined in `UNIT_SYSTEM.md`.
+
+## v0.8 photon runtime-time mapping
+
+Photon runtime updates use Schwarzschild **coordinate time**, not photon proper time and not a direct assumption that affine parameter equals seconds. For each runtime `deltaSeconds`, the null solver targets the corresponding SI coordinate-time increment, converts it to normalized Schwarzschild time through `r_s/c`, and advances the affine parameter through the existing relation `dt/dλ = E/f(r)` while retaining the validated RK4 null equations and affine-step limit. Render positions continue to come only from the integrated authoritative null state.
+
+At the untouched default 1× global clock, a `4×10^6 M☉` black hole has `r_s/c ≈ 39.4 s`, so physically correct photon motion is sub-pixel on ordinary frames. When photons are first enabled from that untouched 1× state, the application selects the smallest existing **global** time-scale preset that advances at least one Schwarzschild time unit per wall-clock second (50× for the default mass). This accelerates the whole simulation clock rather than applying any photon-only visual speed multiplier. Explicit user-selected non-default time scales are preserved.
