@@ -36,6 +36,9 @@ function createHarness() {
   const photonRenderer = new PhotonRenderer({ maxTrailLength: 128 });
   const photons = new PhotonSubsystem({ enabled: true, renderer: photonRenderer, maxTrailLength: 128 });
   photonRenderer.sync(photons);
+  photonRenderer.markerPositions[0] = 0;
+  photonRenderer.markerPositions[1] = 0;
+  photonRenderer.markerPositions[2] = 0;
   const unitFormatter = new UnitFormatter({ locale: () => "en" });
   const focusParticle = vi.fn(() => true);
   const inspector = new ParticleInspector(root, {
