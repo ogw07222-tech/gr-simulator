@@ -25,7 +25,7 @@ describe("Photon performance gate", () => {
     expect(massiveUpdate).toHaveBeenCalledTimes(1);
   });
 
-  it("does real photon integration only after the gate is enabled", () => {
+  it("does real photon integration and bounded trail work only after the gate is enabled", () => {
     const photons = new PhotonSubsystem();
     photons.setEnabled(true);
     const beforeAffine = photons.geodesic.affineParameter();
@@ -36,7 +36,7 @@ describe("Photon performance gate", () => {
     expect(diagnostics.integrationPasses).toBe(1);
     expect(diagnostics.trajectoryUpdates).toBe(1);
     expect(diagnostics.diagnosticUpdates).toBe(1);
-    expect(diagnostics.trailUpdates).toBe(0);
+    expect(diagnostics.trailUpdates).toBe(1);
     expect(diagnostics.renderBufferUpdates).toBe(0);
   });
 });

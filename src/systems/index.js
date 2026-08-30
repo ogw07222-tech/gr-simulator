@@ -5,7 +5,7 @@ export { SimulationState, TIME_SCALES, MIN_TIME_SCALE, MAX_TIME_SCALE } from "./
 export { SnapshotManager } from "./SnapshotManager.js";
 export { SchwarzschildParticleSubsystem } from "./SchwarzschildParticleSubsystem.js";
 export { SubsystemManager } from "./SubsystemManager.js";
-export { PhotonSubsystem } from "./photons/index.js";
+export { PhotonRenderer, PhotonSubsystem, PhotonTrail } from "./photons/index.js";
 export {
   Particle,
   ParticleManager,
