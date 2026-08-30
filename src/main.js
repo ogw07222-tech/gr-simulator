@@ -138,6 +138,7 @@ const particleRenderer = resources.register(new ParticleRenderer({
   scaleTransform,
 }));
 const photonRenderer = resources.register(new PhotonRenderer({
+  maxPhotons: 64,
   maxTrailLength: 128,
   pointSize: 8,
   scaleTransform,
@@ -173,10 +174,13 @@ resources.register(new PhotonControls(
   document.querySelector("#viewport-shell"),
   {
     enabled: photonSubsystem.enabled,
+    count: photonSubsystem.count(),
     onToggle: (enabled) => photonSubsystem.setEnabled(enabled),
+    onCount: (count) => photonSubsystem.setCount(count),
     onPreset: (preset) => { photonSubsystem.applyPreset(preset); return photonSubsystem.configuration; },
     onApply: (configuration) => { photonSubsystem.apply(configuration); return photonSubsystem.configuration; },
     getConfiguration: () => photonSubsystem.configuration,
+    getCount: () => photonSubsystem.count(),
   },
 ));
 
