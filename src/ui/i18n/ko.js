@@ -111,11 +111,8 @@ export const ko = Object.freeze({
   },
   geodesic: {
     title: "과학 지오데식 HUD", mass: "블랙홀 질량", schwarzschildRadius: "슈바르츠실트 반지름",
-    radius: "입자 반지름", localSpeed: "정지 관측자 기준 국소 속도", coordinateTime: "좌표 시간",
-    properTime: "고유 시간", energy: "비에너지 ε", angularMomentum: "비각운동량 λ / SI",
-    classification: "궤도 분류", status: "적분 상태", energyDrift: "상대 에너지 편차",
-    angularMomentumDrift: "상대 각운동량 편차", normalizationResidual: "4-속도 정규화 잔차",
-    substeps: "적분 서브스텝",
+    energyDrift: "상대 에너지 편차", angularMomentumDrift: "상대 각운동량 편차",
+    normalizationResidual: "4-속도 정규화 잔차", substeps: "적분 서브스텝",
   },
   scale: {
     section: "축척 및 보기", viewMode: "보기 모드",
@@ -139,7 +136,7 @@ export const ko = Object.freeze({
     workflows: { title: "궤도 설정 방식", body: "원형 궤도는 반지름에서 보존량을 계산합니다. 근일점 세차 데모는 이심률에서 안정한 속박 슈바르츠실트 궤도를 계산합니다. 국소 속도는 정지 관측자가 측정한 방사·접선 속도를 사용합니다. 보존량 방식은 ε와 λ를 직접 입력하고 방사 방향을 정합니다." },
     examples: { title: "실험 예시", body: "안정 원형: 6 rₛ. 근일점 세차: 데모를 선택하고 이심률을 바꿉니다. 방사 낙하: 4 rₛ에서 βᵣ = −0.8, βφ = 0. 바깥 경계 이탈: 5 rₛ에서 ε = 1.2, λ = 0, 바깥 방향." },
     integrator: { title: "적분기와 스텝 제어", body: "엔진은 1/240초 고정 런타임 스텝과 고전적 RK4를 사용합니다. 솔버는 정규화 하위 스텝을 0.02로 제한하고 업데이트당 계산량을 제한합니다." },
-    measurements: { title: "측정값과 분류", body: "HUD는 좌표·고유 시간, 반지름, 국소 속도, 보존량, 드리프트, 4-속도 잔차, 하위 스텝, 상태와 관측적 궤도 분류를 표시합니다." },
+    measurements: { title: "측정값과 분류", body: "선택한 객체의 Inspector가 입자 반지름, 국소 속도, 좌표·고유 시간, 보존량, 상태와 궤도 분류를 담당합니다. 기본 HUD에는 전역 블랙홀 정보와 수치 드리프트, 4-속도 정규화 잔차, 적분 서브스텝만 남깁니다." },
     scope: { title: "과학적 범위와 한계", body: "고정된 슈바르츠실트 시공간에서 시간꼴 시험 입자 운동을 적분합니다. 수치 상대론 솔버가 아니며 회전, 역반응, 복사 반작용, 충돌, 유한 크기 천체는 모델링하지 않습니다." },
     scaleViews: { title: "정규화 보기와 실제 축척", body: "정규화 보기는 월드 단위 1을 1 rₛ로 사용하므로 질량이 바뀌어도 같은 r/rₛ의 비율은 유지됩니다. 실제 축척 보기는 SI 미터를 설정된 월드 단위당 미터로 변환해 질량 증가에 따른 지평선과 궤도의 확대를 보여 줍니다. 자동 맞춤은 동일한 물리 형상을 유지하고 카메라 구도만 바꿉니다. 교육용 격자는 직접적인 SI 자가 아닌 정규화 시각화 프록시입니다." },
   },
