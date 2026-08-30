@@ -1,0 +1,82 @@
+name: Temporary v0.8 Photon Motion UI Transplant Validation
+
+on:
+  push:
+    branches:
+      - tmp/v080-photon-motion-ui-transplant-validation
+
+permissions:
+  contents: write
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - name: Apply validated bugfix transplant
+        run: |
+          node scripts/tmp-photon-motion-ui-fix.mjs
+          node scripts/tmp-photon-motion-smoke-adjust.mjs
+      - name: Audit transplant-only diff
+        shell: bash
+        run: |
+          set -euo pipefail
+          BASE=edfffc55878e5bf102de6c1b49efaaa36ad021ff
+          git diff --check "$BASE" -- . ':(exclude).github/workflows/tmp-v080-photon-motion-ui-transplant.yml' ':(exclude)scripts/tmp-photon-motion-ui-fix.mjs' ':(exclude)scripts/tmp-photon-motion-smoke-adjust.mjs'
+          { git diff --name-only "$BASE" -- . ':(exclude).github/workflows/tmp-v080-photon-motion-ui-transplant.yml' ':(exclude)scripts/tmp-photon-motion-ui-fix.mjs' ':(exclude)scripts/tmp-photon-motion-smoke-adjust.mjs'; git ls-files --others --exclude-standard | grep -v -E '^(\.github/workflows/tmp-v080-photon-motion-ui-transplant\.yml|scripts/tmp-photon-motion-ui-fix\.mjs|scripts/tmp-photon-motion-smoke-adjust\.mjs)$' || true; } | sort -u > /tmp/actual.txt
+          cat > /tmp/allowed.txt <<'EOF'
+          docs/PHYSICS.md
+          src/main.js
+          src/physics/relativity/SchwarzschildNullGeodesicSystem.js
+          src/systems/photons/PhotonSubsystem.js
+          src/ui/ControlPanel.js
+          src/ui/i18n/en.js
+          src/ui/i18n/ko.js
+          tests/e2e/app.smoke.spec.js
+          tests/e2e/photon-motion-ui.smoke.spec.js
+          tests/unit/photon-runtime-motion.test.js
+          tests/unit/telemetry-ownership.test.js
+          EOF
+          sed -i 's/^          //' /tmp/allowed.txt
+          sort -o /tmp/allowed.txt /tmp/allowed.txt
+          diff -u /tmp/allowed.txt /tmp/actual.txt
+          git diff --exit-code "$BASE" -- package.json package-lock.json index.html src/core/constants.js README.md CHANGELOG.md docs/PHOTON_FOUNDATION.md
+          node --input-type=module -e 'import p from "./package.json" with {type:"json"}; if (p.version !== "0.8.0") throw new Error(`version ${p.version}`);'
+          node --input-type=module -e 'import fs from "node:fs"; const p=JSON.parse(fs.readFileSync("package-lock.json","utf8")); if (p.version!=="0.8.0" || p.packages?.[""]?.version!=="0.8.0") throw new Error("package-lock version changed");'
+          test -f docs/PHOTON_FOUNDATION.md
+          ! git diff --name-only "$BASE" -- .github | grep -v '^.github/workflows/tmp-v080-photon-motion-ui-transplant.yml$' | grep -q .
+      - name: Install dependencies
+        run: npm ci
+      - name: Lint
+        run: npm run lint
+      - name: Full test suite
+        run: npm run test
+      - name: Physics suite
+        run: npm run test:physics
+      - name: Photon regression focus
+        run: npx vitest run tests/physics/schwarzschild-null-validation.test.js tests/physics/schwarzschild-photon-reference.test.js tests/physics/schwarzschild-photon-deflection.test.js tests/unit/photon-bundles.test.js tests/unit/photon-light-bending.test.js tests/unit/photon-performance-gate.test.js tests/unit/photon-runtime-motion.test.js tests/unit/photon-inspector.test.js
+      - name: Massive regression focus
+        run: npx vitest run tests/physics/schwarzschild-validation.test.js tests/unit/schwarzschild-geodesics.test.js tests/unit/schwarzschild-particle-subsystem.test.js tests/unit/geodesic-motion-pipeline.test.js tests/unit/simulation-integration.test.js tests/unit/particle-inspector.test.js
+      - name: Build
+        run: npm run build
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
+      - name: Focused desktop and mobile photon smoke
+        env:
+          CI: ""
+        run: npx playwright test tests/e2e/photon-motion-ui.smoke.spec.js --project=chromium --reporter=list
+      - name: Commit validated transplant files
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add docs/PHYSICS.md src/main.js src/physics/relativity/SchwarzschildNullGeodesicSystem.js src/systems/photons/PhotonSubsystem.js src/ui/ControlPanel.js src/ui/i18n/en.js src/ui/i18n/ko.js tests/e2e/app.smoke.spec.js tests/e2e/photon-motion-ui.smoke.spec.js tests/unit/photon-runtime-motion.test.js tests/unit/telemetry-ownership.test.js
+          git commit -m "fix(photon-ui): restore photon motion and remove duplicate telemetry"
+          git push origin HEAD:tmp/v080-photon-motion-ui-transplant-validation
