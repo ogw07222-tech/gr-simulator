@@ -179,6 +179,7 @@ resources.register(new PhotonControls(
     onCount: (count) => photonSubsystem.setCount(count),
     onPreset: (preset) => { photonSubsystem.applyPreset(preset); return photonSubsystem.configuration; },
     onApply: (configuration) => { photonSubsystem.apply(configuration); return photonSubsystem.configuration; },
+    onDemo: () => { photonSubsystem.applyLightBendingDemo(); return { configuration: photonSubsystem.configuration, count: photonSubsystem.count() }; },
     getConfiguration: () => photonSubsystem.configuration,
     getCount: () => photonSubsystem.count(),
   },

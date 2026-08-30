@@ -15,6 +15,9 @@ import { PhotonTrail } from "./PhotonTrail.js";
 
 export const PHOTON_COUNTS = Object.freeze([1, 8, 32, 64]);
 export const MAX_PHOTON_COUNT = 64;
+export const LIGHT_BENDING_IMPACT_PARAMETERS_RS = Object.freeze([2.2, 2.45, 2.62, 2.8, 3.2, 4, 5, 6]);
+export const LIGHT_BENDING_START_X_RS = 40;
+const LIGHT_BENDING_MAX_AFFINE_STEP = 0.005;
 
 function createDeflectionMeasurement(initialState, angularMomentum) {
   const measurement = {
@@ -26,6 +29,22 @@ function createDeflectionMeasurement(initialState, angularMomentum) {
   };
   writeNullSpatialDirection(initialState, angularMomentum, measurement.incomingDirection);
   return measurement;
+}
+
+function createLightBendingConfiguration(impactParameter, massSolar) {
+  const x = -LIGHT_BENDING_START_X_RS;
+  const z = -impactParameter;
+  return {
+    preset: "lightBending",
+    name: "Light Bending",
+    massSolar,
+    radius: Math.hypot(x, z),
+    phi: Math.atan2(z, x),
+    impactParameter,
+    radialDirection: -1,
+    angularDirection: 1,
+    energy: 1,
+  };
 }
 
 export class PhotonSubsystem {
@@ -46,6 +65,7 @@ export class PhotonSubsystem {
     this.renderer = renderer;
     this.configuration = { preset: "weak", massSolar, ...PHOTON_PRESETS.weak };
     this.photonCount = this.#validatedCount(photonCount);
+    this.rayConfigurations = null;
     this.rays = [];
     this.revisionCounter = 0;
     this.work = {
@@ -67,8 +87,9 @@ export class PhotonSubsystem {
 
   setCount(count) {
     const next = this.#validatedCount(count);
-    if (next === this.photonCount) return this.photonCount;
+    if (next === this.photonCount && this.rayConfigurations === null) return this.photonCount;
     this.photonCount = next;
+    this.rayConfigurations = null;
     this.#rebuildRays();
     return this.photonCount;
   }
@@ -87,6 +108,18 @@ export class PhotonSubsystem {
 
   apply(configuration) {
     this.configuration = { ...this.configuration, ...configuration };
+    this.rayConfigurations = null;
+    this.#rebuildRays();
+    return this;
+  }
+
+  applyLightBendingDemo() {
+    const massSolar = this.configuration.massSolar;
+    this.photonCount = 8;
+    this.rayConfigurations = LIGHT_BENDING_IMPACT_PARAMETERS_RS.map((impactParameter) => (
+      createLightBendingConfiguration(impactParameter, massSolar)
+    ));
+    this.configuration = { ...this.rayConfigurations[0] };
     this.#rebuildRays();
     return this;
   }
@@ -202,6 +235,7 @@ export class PhotonSubsystem {
     return {
       enabled: this.enabled,
       count: this.photonCount,
+      preset: this.configuration.preset,
       active,
       captured,
       escaped,
@@ -221,12 +255,16 @@ export class PhotonSubsystem {
   }
 
   #createRay(index) {
-    const initial = createPhotonInitialCondition(this.configuration);
-    const maximumRadius = Math.max(this.maximumRadius, this.configuration.radius * 1.25);
+    const configuration = this.rayConfigurations?.[index] ?? this.configuration;
+    const initial = createPhotonInitialCondition(configuration);
+    const maximumRadius = Math.max(this.maximumRadius, configuration.radius * 1.25);
+    const maximumAffineStep = configuration.preset === "lightBending"
+      ? Math.min(this.maximumAffineStep, LIGHT_BENDING_MAX_AFFINE_STEP)
+      : this.maximumAffineStep;
     const geodesic = new SchwarzschildNullGeodesicSystem({
       units: this.units,
       maximumRadius,
-      maximumAffineStep: this.maximumAffineStep,
+      maximumAffineStep,
     });
     geodesic.initialize(initial);
     const position = { x: 0, y: 0, z: 0 };

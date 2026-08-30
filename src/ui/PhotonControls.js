@@ -10,6 +10,7 @@ export class PhotonControls {
     onCount = null,
     onPreset = null,
     onApply = null,
+    onDemo = null,
     getConfiguration = null,
     getCount = null,
   } = {}) {
@@ -20,6 +21,7 @@ export class PhotonControls {
     this.onCount = onCount;
     this.onPreset = onPreset;
     this.onApply = onApply;
+    this.onDemo = onDemo;
     this.getConfiguration = getConfiguration;
     this.getCount = getCount;
     this.element = document.createElement("div");
@@ -27,6 +29,7 @@ export class PhotonControls {
     this.element.innerHTML = `<div class="photon-controls-row"><span class="photon-controls-label"></span><button class="photon-toggle" type="button"></button><label class="photon-count-control" hidden><span data-role="count-label"></span><select class="photon-count"><option value="1">1</option><option value="8">8</option><option value="32">32</option><option value="64">64</option></select></label></div>
       <details class="photon-setup" hidden><summary data-role="setup-label"></summary><div class="photon-setup-body">
         <label><span data-role="preset-label"></span><select class="photon-preset"><option value="weak"></option><option value="strong"></option><option value="nearCritical"></option><option value="capture"></option></select></label>
+        <button class="photon-demo" type="button"></button>
         <details class="photon-advanced"><summary data-role="advanced-label"></summary><div class="photon-advanced-grid">
 <label><span data-role="radius-label"></span><input class="photon-radius" type="number" min="1.001" step="0.1"></label>
 <label><span data-role="phi-label"></span><input class="photon-phi" type="number" step="0.01"></label>
@@ -41,6 +44,7 @@ export class PhotonControls {
     this.countSelect = this.element.querySelector(".photon-count");
     this.setup = this.element.querySelector(".photon-setup");
     this.preset = this.element.querySelector(".photon-preset");
+    this.demoButton = this.element.querySelector(".photon-demo");
     this.radius = this.element.querySelector(".photon-radius");
     this.phi = this.element.querySelector(".photon-phi");
     this.impact = this.element.querySelector(".photon-impact");
@@ -55,9 +59,15 @@ export class PhotonControls {
     };
     this.handlePreset = () => { const configuration = this.onPreset?.(this.preset.value); if (configuration) this.setConfiguration(configuration); };
     this.handleApply = () => { const configuration = this.onApply?.({ preset: "custom", radius: Number(this.radius.value), phi: Number(this.phi.value), impactParameter: Number(this.impact.value), radialDirection: Number(this.radial.value), angularDirection: Number(this.angular.value) }); if (configuration) this.setConfiguration(configuration); };
+    this.handleDemo = () => {
+      const result = this.onDemo?.();
+      if (result?.configuration) this.setConfiguration(result.configuration);
+      if (PHOTON_COUNTS.includes(result?.count)) this.setCount(result.count);
+    };
     this.button.addEventListener("click", this.handleClick);
     this.countSelect.addEventListener("change", this.handleCount);
     this.preset.addEventListener("change", this.handlePreset);
+    this.demoButton.addEventListener("click", this.handleDemo);
     this.applyButton.addEventListener("click", this.handleApply);
     this.root.append(this.element);
     this.unsubscribeLocale = subscribeLocale(() => this.localize());
@@ -110,6 +120,7 @@ export class PhotonControls {
     this.radial.options[1].textContent = t("photon.controls.outward");
     this.angular.options[0].textContent = t("photon.controls.counterclockwise");
     this.angular.options[1].textContent = t("photon.controls.clockwise");
+    this.demoButton.textContent = t("photon.controls.lightBending");
     this.applyButton.textContent = t("photon.controls.apply");
     this.setEnabled(this.enabled);
   }
@@ -119,6 +130,7 @@ export class PhotonControls {
     this.button.removeEventListener("click", this.handleClick);
     this.countSelect.removeEventListener("change", this.handleCount);
     this.preset.removeEventListener("change", this.handlePreset);
+    this.demoButton.removeEventListener("click", this.handleDemo);
     this.applyButton.removeEventListener("click", this.handleApply);
     this.element.remove();
   }
