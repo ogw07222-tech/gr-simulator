@@ -20,14 +20,16 @@ jobs:
           node-version: 24
           cache: npm
       - name: Apply bugfix candidate
-        run: node scripts/tmp-photon-motion-ui-fix.mjs
+        run: |
+          node scripts/tmp-photon-motion-ui-fix.mjs
+          node scripts/tmp-photon-motion-smoke-adjust.mjs
       - name: Audit bugfix-only diff
         shell: bash
         run: |
           set -euo pipefail
           BASE=594284ddd01882534e844faaa7699c48a8dde43c
-          git diff --check "$BASE" -- . ':(exclude).github/workflows/tmp-photon-motion-ui-fix.yml' ':(exclude)scripts/tmp-photon-motion-ui-fix.mjs'
-          { git diff --name-only "$BASE" -- . ':(exclude).github/workflows/tmp-photon-motion-ui-fix.yml' ':(exclude)scripts/tmp-photon-motion-ui-fix.mjs'; git ls-files --others --exclude-standard | grep -v -E '^(\.github/workflows/tmp-photon-motion-ui-fix\.yml|scripts/tmp-photon-motion-ui-fix\.mjs)$' || true; } | sort -u > /tmp/actual.txt
+          git diff --check "$BASE" -- . ':(exclude).github/workflows/tmp-photon-motion-ui-fix.yml' ':(exclude)scripts/tmp-photon-motion-ui-fix.mjs' ':(exclude)scripts/tmp-photon-motion-smoke-adjust.mjs'
+          { git diff --name-only "$BASE" -- . ':(exclude).github/workflows/tmp-photon-motion-ui-fix.yml' ':(exclude)scripts/tmp-photon-motion-ui-fix.mjs' ':(exclude)scripts/tmp-photon-motion-smoke-adjust.mjs'; git ls-files --others --exclude-standard | grep -v -E '^(\.github/workflows/tmp-photon-motion-ui-fix\.yml|scripts/tmp-photon-motion-ui-fix\.mjs|scripts/tmp-photon-motion-smoke-adjust\.mjs)$' || true; } | sort -u > /tmp/actual.txt
           cat > /tmp/allowed.txt <<'EOF'
           docs/PHYSICS.md
           src/main.js
