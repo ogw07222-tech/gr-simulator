@@ -1,0 +1,178 @@
+name: Temporary Photon Foundation v0.8.0 Final Validation
+on:
+  push:
+    branches:
+      - tmp/photon-v080-final-validation
+permissions:
+  contents: write
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - name: Apply v0.8.0 version and documentation bookkeeping
+        run: |
+          npm version 0.8.0 --no-git-tag-version
+          python - <<'PY'
+          from pathlib import Path
+
+          replacements = {
+              'src/core/constants.js': [('export const VERSION = "0.7.11";', 'export const VERSION = "0.8.0";')],
+              'index.html': [('<title>GR-4D Simulator v0.7.11</title>', '<title>GR-4D Simulator v0.8.0</title>')],
+              'src/ui/i18n/en.js': [('GR-4D Simulator v0.7.11', 'GR-4D Simulator v0.8.0')],
+              'src/ui/i18n/ko.js': [('GR-4D Simulator v0.7.11', 'GR-4D Simulator v0.8.0')],
+              'tests/unit/i18n.test.js': [('GR-4D Simulator v0.7.11', 'GR-4D Simulator v0.8.0')],
+              'tests/e2e/app.smoke.spec.js': [('GR-4D Simulator v0.7.11', 'GR-4D Simulator v0.8.0'), ('v0.7.11', 'v0.8.0')],
+          }
+          for filename, pairs in replacements.items():
+              p = Path(filename)
+              s = p.read_text()
+              for old, new in pairs:
+                  s = s.replace(old, new)
+              p.write_text(s)
+
+          p = Path('README.md')
+          s = p.read_text()
+          s = s.replace(
+              'A browser-based General Relativity visualization laboratory built with Three.js. Version 0.7.11 adds a screen-space Particle Inspector while preserving the v0.7 Schwarzschild physics, conserved quantities, and SI state.',
+              'A browser-based General Relativity visualization laboratory built with Three.js. Version 0.8.0 adds validated Schwarzschild null geodesics, bounded photon bundles, photon inspection, numerical deflection diagnostics, and a compact Light Bending demo while preserving the existing timelike Schwarzschild solver.',
+          )
+          s = s.replace(
+              '- Click/touch Particle Inspector with constant-pixel anchored readout and off-screen edge indicator\n',
+              '- Click/touch Particle/Photon Inspector with constant-pixel anchored readout, off-screen edge indicator, and shared Focus behavior\n- True Schwarzschild null-geodesic photons with affine-parameter integration, null-condition diagnostics, bounded 1/8/32/64 bundles, and an absolute OFF kill switch\n- Numerical photon deflection measurement and an 8-ray Light Bending demo driven by actual null-geodesic integration (not ray tracing)\n',
+          )
+          s = s.replace(
+              '- [Physics model](docs/PHYSICS.md)\n',
+              '- [Physics model](docs/PHYSICS.md)\n- [Photon Foundation](docs/PHOTON_FOUNDATION.md)\n',
+          )
+          p.write_text(s)
+
+          p = Path('CHANGELOG.md')
+          s = p.read_text()
+          entry = '''### v0.8.0
+
+- Added a true Schwarzschild null-geodesic solver using affine parameter rather than proper time, with `ACTIVE` / `CAPTURED` / `ESCAPED` states, conserved null quantities, and explicit null-condition diagnostics.
+- Fixed the reference geometry at event horizon `r = r_s`, photon sphere `r = 1.5 r_s`, and critical impact parameter `b_crit = (3√3/2) r_s`; deterministic tests cover capture, scattering, near-critical strong deflection, and the unstable null circular orbit.
+- Added numerical incoming/outgoing-direction deflection measurement and a weak-field regression against `α ≈ 4GM/(bc²)` without injecting the analytic angle into rendering.
+- Added a default-OFF photon subsystem, compact 1/8/32/64 count control, fixed-size photon markers, bounded trails, shared Particle/Photon Inspector infrastructure, and zero recurring photon integration/trail/diagnostic/render-buffer work while OFF.
+- Added an 8-ray Light Bending demo using independent validated null-geodesic integrations across captured and scattered impact parameters. This release does not implement per-pixel ray tracing, black-hole shadow synthesis, or image-space lensing.
+
+'''
+          anchor = '## Unreleased\n\n'
+          if entry not in s:
+              if anchor not in s: raise SystemExit('CHANGELOG Unreleased anchor missing')
+              s = s.replace(anchor, anchor + entry, 1)
+          p.write_text(s)
+          PY
+          cat > docs/PHOTON_FOUNDATION.md <<'EOF'
+          # Schwarzschild Photon Foundation — v0.8.0
+
+          ## Scope
+
+          v0.8.0 adds test photons that follow true null geodesics in the same fixed analytic Schwarzschild spacetime used by the existing massive-particle simulator. Photons are not implemented as zero-mass approximations of the timelike particle solver. The photon solver has its own null state and uses an affine parameter; there is no advancing photon proper time.
+
+          This is a trajectory visualization and diagnostic foundation. It is **not** per-pixel ray tracing, a black-hole shadow renderer, Einstein-ring image synthesis, an accretion-disk renderer, or a Kerr solver.
+
+          ## Coordinates and normalization
+
+          The photon solver uses the project Schwarzschild convention
+
+          - `r_s = 2GM/c² = 2 M_geo`
+          - `r̄ = r / r_s`
+          - `t̄ = c t / r_s`
+          - `f(r̄) = 1 - 1/r̄`
+
+          The equatorial null state is evolved with a dimensionless affine parameter `λ̄`. With conserved energy `E` and angular momentum `L`, the implemented first-order system is
+
+          ```text
+          dt̄/dλ̄ = E / f
+          dr̄/dλ̄ = u_r
+          dφ/dλ̄ = L / r̄²
+          du_r/dλ̄ = L² (1/r̄³ - 3/(2 r̄⁴))
+          ```
+
+          and the null first integral is
+
+          ```text
+          u_r² = E² - f L²/r̄² .
+          ```
+
+          The normalized impact parameter is `b/r_s = L/E`. The solver continuously measures the null-condition residual from `g_{μν} k^μ k^ν` and exposes absolute and relative errors through photon diagnostics and the Photon Inspector.
+
+          ## Schwarzschild reference physics
+
+          In the conventions above:
+
+          - Event horizon: `r_h = r_s`
+          - Photon sphere: `r_ph = 1.5 r_s`
+          - Critical impact parameter: `b_crit = (3√3/2) r_s ≈ 2.598076 r_s`
+
+          Deterministic trajectory tests verify capture below `b_crit`, scattering above it, strong deflection near it, and the unstable null circular-orbit reference at the photon sphere.
+
+          ## Deflection measurement
+
+          Scattering photons retain the incoming asymptotic coordinate direction derived from the null initial state. On escape, the outgoing direction is derived from the integrated null state and the total deflection is measured from the unwrapped spatial heading. Rendering never inserts an analytic bending angle.
+
+          The weak-field validation uses `b = 25 r_s` and compares the numerical result with
+
+          ```text
+          α ≈ 4GM/(b c²) = 2 r_s/b .
+          ```
+
+          The test tolerance accounts for the known higher-order Schwarzschild correction and the finite asymptotic boundary; it is not used to modify the rendered trajectory.
+
+          ## States and termination
+
+          Photon trajectory states are `ACTIVE`, `CAPTURED`, `ESCAPED`, with numerical failure tracked separately. The validated null solver uses a near-horizon capture threshold of `1.0005 r_s`, a bounded escape domain, and RK4 substeps capped by the solver configuration. The Light Bending demo tightens its maximum affine substep to `0.005` for strong-field accuracy without changing the null equations or validation tolerances.
+
+          ## Performance and rendering
+
+          `Photons OFF` is the default and an absolute recurring-work gate. While OFF, photon integration, trajectory/trail updates, photon diagnostics, and photon render-buffer synchronization do not run. The massive-particle subsystem continues normally.
+
+          Supported bundle counts are `1`, `8`, `32`, and `64`; enabling photons defaults to `1`. Each photon owns an independent instance of the same validated null-geodesic solver and independent bounded trail state. Rendering uses one preallocated `THREE.Points` marker buffer and one bounded line-segment trail buffer for up to 64 photons. The marker uses `sizeAttenuation: false` and has no physical photon-radius interpretation.
+
+          ## Photon Inspector
+
+          The existing screen-space Particle Inspector infrastructure is shared with photons. A selected photon shows ID, Schwarzschild null-geodesic model, radius, impact parameter, state, and measured deflection when available. Collapsed details expose affine parameter, conserved `E` and `L`, radial direction, integration state, and null-condition absolute/relative errors. Timelike-only fields such as rest mass, orbit classification, and advancing proper time are not shown for photons.
+
+          ## Light Bending demo
+
+          The collapsed photon setup includes **Light Bending**. It launches eight approximately parallel rays from a finite weak-field starting line with impact parameters spanning both sides of `b_crit`. Captured and scattered rays separate because each ray is independently integrated by the Schwarzschild null solver. No trail rotation, analytic graphics offset, screen-space distortion, or fake lensing is applied.
+          EOF
+          sed -i 's/^          //' docs/PHOTON_FOUNDATION.md
+      - run: npm ci
+      - name: Lint
+        run: npm run lint
+      - name: Full unit and physics tests
+        run: npm run test
+      - name: Physics validation suite
+        run: npm run test:physics
+      - name: Explicit massive-particle regression
+        run: npx vitest run tests/physics/schwarzschild-validation.test.js tests/unit/schwarzschild-geodesics.test.js tests/unit/schwarzschild-particle-subsystem.test.js
+      - name: Explicit photon foundation gates
+        run: npx vitest run tests/physics/schwarzschild-null-validation.test.js tests/physics/schwarzschild-photon-reference.test.js tests/physics/schwarzschild-photon-deflection.test.js tests/unit/photon-bundles.test.js tests/unit/photon-light-bending.test.js tests/unit/photon-performance-gate.test.js tests/unit/photon-inspector.test.js tests/unit/i18n.test.js
+      - name: Production build
+        run: npm run build
+      - name: Confirm release bookkeeping did not alter physics solvers
+        run: |
+          git diff --exit-code 594284ddd01882534e844faaa7699c48a8dde43c -- src/physics
+          git diff --exit-code 594284ddd01882534e844faaa7699c48a8dde43c -- src/systems/SchwarzschildParticleSubsystem.js
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
+      - name: Desktop and mobile Photon Foundation smoke
+        env:
+          CI: ""
+        run: npx playwright test tests/e2e/photon-foundation.smoke.spec.js --reporter=list
+      - name: Commit validated v0.8.0 release files
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add package.json package-lock.json src/core/constants.js index.html src/ui/i18n/en.js src/ui/i18n/ko.js tests/unit/i18n.test.js tests/e2e/app.smoke.spec.js tests/e2e/photon-foundation.smoke.spec.js README.md CHANGELOG.md docs/PHOTON_FOUNDATION.md
+          git commit -m "docs(release): prepare Photon Foundation v0.8.0" || exit 0
+          git push origin HEAD:tmp/photon-v080-final-validation
