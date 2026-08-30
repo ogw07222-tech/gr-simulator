@@ -13,6 +13,21 @@ import {
 } from "../../physics/index.js";
 import { PhotonTrail } from "./PhotonTrail.js";
 
+export const PHOTON_COUNTS = Object.freeze([1, 8, 32, 64]);
+export const MAX_PHOTON_COUNT = 64;
+
+function createDeflectionMeasurement(initialState, angularMomentum) {
+  const measurement = {
+    incomingDirection: { x: 0, z: 0 },
+    outgoingDirection: { x: Number.NaN, z: Number.NaN },
+    incomingHeading: nullSpatialHeading(initialState, angularMomentum),
+    outgoingHeading: Number.NaN,
+    deflectionAngleRadians: Number.NaN,
+  };
+  writeNullSpatialDirection(initialState, angularMomentum, measurement.incomingDirection);
+  return measurement;
+}
+
 export class PhotonSubsystem {
   constructor({
     enabled = false,
@@ -20,16 +35,18 @@ export class PhotonSubsystem {
     maximumRadius = 60,
     maximumAffineStep = 0.02,
     maxTrailLength = 128,
+    photonCount = 1,
     renderer = null,
   } = {}) {
     this.order = 70;
     this.enabled = Boolean(enabled);
     this.maximumRadius = maximumRadius;
     this.maximumAffineStep = maximumAffineStep;
+    this.maxTrailLength = maxTrailLength;
     this.renderer = renderer;
     this.configuration = { preset: "weak", massSolar, ...PHOTON_PRESETS.weak };
-    this.position = { x: 0, y: 0, z: 0 };
-    this.trail = new PhotonTrail(maxTrailLength);
+    this.photonCount = this.#validatedCount(photonCount);
+    this.rays = [];
     this.revisionCounter = 0;
     this.work = {
       integrationPasses: 0,
@@ -38,7 +55,7 @@ export class PhotonSubsystem {
       diagnosticUpdates: 0,
       renderBufferUpdates: 0,
     };
-    this.apply(this.configuration);
+    this.#rebuildRays();
     this.renderer?.setEnabled(this.enabled);
   }
 
@@ -46,6 +63,14 @@ export class PhotonSubsystem {
     this.enabled = Boolean(enabled);
     this.renderer?.setEnabled(this.enabled);
     return this.enabled;
+  }
+
+  setCount(count) {
+    const next = this.#validatedCount(count);
+    if (next === this.photonCount) return this.photonCount;
+    this.photonCount = next;
+    this.#rebuildRays();
+    return this.photonCount;
   }
 
   setMassSolar(massSolar) {
@@ -61,70 +86,55 @@ export class PhotonSubsystem {
   }
 
   apply(configuration) {
-    const next = { ...this.configuration, ...configuration };
-    const initial = createPhotonInitialCondition(next);
-    const units = new SchwarzschildUnits(solarMassesToKilograms(next.massSolar));
-    const maximumRadius = Math.max(this.maximumRadius, next.radius * 1.25);
-    const geodesic = new SchwarzschildNullGeodesicSystem({
-      units,
-      maximumRadius,
-      maximumAffineStep: this.maximumAffineStep,
-    });
-    geodesic.initialize(initial);
-    this.configuration = next;
-    this.units = units;
-    this.geodesic = geodesic;
-    this.initialDeflectionState = new Float64Array(geodesic.state.values);
-    this.deflectionMeasurement = {
-      incomingDirection: { x: 0, z: 0 },
-      outgoingDirection: { x: Number.NaN, z: Number.NaN },
-      incomingHeading: nullSpatialHeading(this.initialDeflectionState, geodesic.state.angularMomentum),
-      outgoingHeading: Number.NaN,
-      deflectionAngleRadians: Number.NaN,
-    };
-    writeNullSpatialDirection(
-      this.initialDeflectionState,
-      geodesic.state.angularMomentum,
-      this.deflectionMeasurement.incomingDirection,
-    );
-    this.#syncPosition();
-    this.trail.clear();
-    this.trail.append(this.position.x, this.position.y, this.position.z);
-    this.revisionCounter += 1;
+    this.configuration = { ...this.configuration, ...configuration };
+    this.#rebuildRays();
     return this;
   }
 
-  reset() { return this.apply(this.configuration); }
+  reset() {
+    this.#rebuildRays();
+    return this;
+  }
 
   update(deltaSeconds) {
-    if (!this.enabled || this.geodesic.status !== PhotonStatus.ACTIVE) return 0;
+    if (!this.enabled) return 0;
     if (!(deltaSeconds >= 0) || !Number.isFinite(deltaSeconds)) {
       throw new RangeError("Photon update delta must be finite and non-negative.");
     }
     if (deltaSeconds === 0) return 0;
+
     const deltaAffine = this.units.siTimeToNormalized(deltaSeconds);
-    const previousStatus = this.geodesic.status;
-    const completed = this.geodesic.advanceAffine(deltaAffine);
-    if (previousStatus === PhotonStatus.ACTIVE && this.geodesic.status === PhotonStatus.ESCAPED) {
-      writePhotonDeflectionMeasurement(
-        this.initialDeflectionState,
-        this.geodesic.state.values,
-        this.geodesic.state.angularMomentum,
-        this.deflectionMeasurement,
-      );
-    }
-    this.work.integrationPasses += 1;
-    this.work.diagnosticUpdates += 1;
-    if (completed > 0 || this.geodesic.status !== PhotonStatus.ACTIVE) {
-      this.#syncPosition();
-      this.work.trajectoryUpdates += 1;
-      if (completed > 0) {
-        this.trail.append(this.position.x, this.position.y, this.position.z);
-        this.work.trailUpdates += 1;
+    let completedTotal = 0;
+    let changed = false;
+    for (let index = 0; index < this.photonCount; index += 1) {
+      const ray = this.rays[index];
+      if (ray.geodesic.status !== PhotonStatus.ACTIVE) continue;
+      const previousStatus = ray.geodesic.status;
+      const completed = ray.geodesic.advanceAffine(deltaAffine);
+      this.work.integrationPasses += 1;
+      this.work.diagnosticUpdates += 1;
+      completedTotal += completed;
+
+      if (previousStatus === PhotonStatus.ACTIVE && ray.geodesic.status === PhotonStatus.ESCAPED) {
+        writePhotonDeflectionMeasurement(
+          ray.initialDeflectionState,
+          ray.geodesic.state.values,
+          ray.geodesic.state.angularMomentum,
+          ray.deflectionMeasurement,
+        );
       }
-      this.revisionCounter += 1;
+      if (completed > 0 || ray.geodesic.status !== previousStatus) {
+        ray.geodesic.writeRenderPosition(ray.position, 1);
+        this.work.trajectoryUpdates += 1;
+        if (completed > 0) {
+          ray.trail.append(ray.position.x, ray.position.y, ray.position.z);
+          this.work.trailUpdates += 1;
+        }
+        changed = true;
+      }
     }
-    return completed;
+    if (changed) this.revisionCounter += 1;
+    return completedTotal;
   }
 
   render() {
@@ -134,37 +144,43 @@ export class PhotonSubsystem {
     return 1;
   }
 
-  writeSnapshot(target = {}) {
-    const values = this.geodesic.state.values;
-    target.id = "photon-0";
+  writeSnapshot(target = {}) { return this.writeSnapshotAt(0, target); }
+
+  writeSnapshotAt(index, target = {}) {
+    const ray = this.rays[index];
+    if (!ray) return null;
+    const values = ray.geodesic.state.values;
+    target.id = ray.id;
     target.physicsModel = "Schwarzschild null geodesic";
-    target.status = this.geodesic.status;
+    target.status = ray.geodesic.status;
     target.radiusRs = values[NullGeodesicStateIndex.RADIUS];
     target.radiusMetres = this.units.normalizedRadiusToSI(target.radiusRs);
-    target.impactParameterRs = this.geodesic.impactParameterRs();
+    target.impactParameterRs = ray.geodesic.impactParameterRs();
     target.affineParameter = values[NullGeodesicStateIndex.AFFINE_PARAMETER];
-    target.coordinateTime = this.geodesic.coordinateTimeSI();
-    target.energy = this.geodesic.state.energy;
-    target.angularMomentum = this.geodesic.state.angularMomentum;
+    target.coordinateTime = ray.geodesic.coordinateTimeSI();
+    target.energy = ray.geodesic.state.energy;
+    target.angularMomentum = ray.geodesic.state.angularMomentum;
     target.radialDirection = Math.sign(values[NullGeodesicStateIndex.RADIAL_VELOCITY]) || 0;
-    target.nullConditionAbsoluteError = Math.abs(this.geodesic.diagnostics.lastNullResidual);
-    target.nullConditionRelativeError = this.geodesic.diagnostics.lastRelativeNullError;
+    target.nullConditionAbsoluteError = Math.abs(ray.geodesic.diagnostics.lastNullResidual);
+    target.nullConditionRelativeError = ray.geodesic.diagnostics.lastRelativeNullError;
     target.nullConditionError = target.nullConditionRelativeError;
-    target.integrationSubsteps = this.geodesic.diagnostics.substeps;
-    target.incomingAsymptoticDirectionX = this.deflectionMeasurement.incomingDirection.x;
-    target.incomingAsymptoticDirectionZ = this.deflectionMeasurement.incomingDirection.z;
-    target.outgoingAsymptoticDirectionX = this.deflectionMeasurement.outgoingDirection.x;
-    target.outgoingAsymptoticDirectionZ = this.deflectionMeasurement.outgoingDirection.z;
-    target.deflectionAngleRadians = this.deflectionMeasurement.deflectionAngleRadians;
-    target.x = this.position.x;
-    target.y = this.position.y;
-    target.z = this.position.z;
+    target.integrationSubsteps = ray.geodesic.diagnostics.substeps;
+    target.incomingAsymptoticDirectionX = ray.deflectionMeasurement.incomingDirection.x;
+    target.incomingAsymptoticDirectionZ = ray.deflectionMeasurement.incomingDirection.z;
+    target.outgoingAsymptoticDirectionX = ray.deflectionMeasurement.outgoingDirection.x;
+    target.outgoingAsymptoticDirectionZ = ray.deflectionMeasurement.outgoingDirection.z;
+    target.deflectionAngleRadians = ray.deflectionMeasurement.deflectionAngleRadians;
+    target.x = ray.position.x;
+    target.y = ray.position.y;
+    target.z = ray.position.z;
     return target;
   }
 
-  count() { return 1; }
-  idAt(index) { return index === 0 ? "photon-0" : null; }
-  writeSnapshotAt(index, target = {}) { return index === 0 ? this.writeSnapshot(target) : null; }
+  count() { return this.photonCount; }
+  idAt(index) { return this.rays[index]?.id ?? null; }
+  positionAt(index) { return this.rays[index]?.position ?? null; }
+  trailAt(index) { return this.rays[index]?.trail ?? null; }
+  geodesicAt(index) { return this.rays[index]?.geodesic ?? null; }
   revision() { return this.revisionCounter; }
 
   resetWorkCounters() {
@@ -172,8 +188,24 @@ export class PhotonSubsystem {
   }
 
   getDiagnostics() {
+    let active = 0;
+    let captured = 0;
+    let escaped = 0;
+    let failures = 0;
+    for (let index = 0; index < this.photonCount; index += 1) {
+      const status = this.rays[index].geodesic.status;
+      if (status === PhotonStatus.ACTIVE) active += 1;
+      else if (status === PhotonStatus.CAPTURED) captured += 1;
+      else if (status === PhotonStatus.ESCAPED) escaped += 1;
+      else failures += 1;
+    }
     return {
       enabled: this.enabled,
+      count: this.photonCount,
+      active,
+      captured,
+      escaped,
+      numericalFailures: failures,
       ...this.work,
       status: this.geodesic.status,
       affineParameter: this.geodesic.affineParameter(),
@@ -183,5 +215,45 @@ export class PhotonSubsystem {
     };
   }
 
-  #syncPosition() { this.geodesic.writeRenderPosition(this.position, 1); }
+  #validatedCount(count) {
+    if (!PHOTON_COUNTS.includes(count)) throw new RangeError("Photon count must be one of 1, 8, 32, or 64.");
+    return count;
+  }
+
+  #createRay(index) {
+    const initial = createPhotonInitialCondition(this.configuration);
+    const maximumRadius = Math.max(this.maximumRadius, this.configuration.radius * 1.25);
+    const geodesic = new SchwarzschildNullGeodesicSystem({
+      units: this.units,
+      maximumRadius,
+      maximumAffineStep: this.maximumAffineStep,
+    });
+    geodesic.initialize(initial);
+    const position = { x: 0, y: 0, z: 0 };
+    geodesic.writeRenderPosition(position, 1);
+    const trail = new PhotonTrail(this.maxTrailLength);
+    trail.append(position.x, position.y, position.z);
+    const initialDeflectionState = new Float64Array(geodesic.state.values);
+    return {
+      id: `photon-${index}`,
+      geodesic,
+      position,
+      trail,
+      initialDeflectionState,
+      deflectionMeasurement: createDeflectionMeasurement(initialDeflectionState, geodesic.state.angularMomentum),
+    };
+  }
+
+  #rebuildRays() {
+    this.units = new SchwarzschildUnits(solarMassesToKilograms(this.configuration.massSolar));
+    this.rays = new Array(this.photonCount);
+    for (let index = 0; index < this.photonCount; index += 1) this.rays[index] = this.#createRay(index);
+    const first = this.rays[0];
+    this.geodesic = first.geodesic;
+    this.position = first.position;
+    this.trail = first.trail;
+    this.initialDeflectionState = first.initialDeflectionState;
+    this.deflectionMeasurement = first.deflectionMeasurement;
+    this.revisionCounter += 1;
+  }
 }

@@ -29,7 +29,7 @@ export const ko = Object.freeze({
   },
   displayUnits: { section: "표시 단위", mode: "단위 체계", automatic: "자동", si: "SI", astronomical: "천문학", note: "표시만 변환하며 물리 계산은 항상 SI 단위를 유지합니다." },
   particle: { outOfDomain: "지원 영역 이탈" },
-  photon: { controls: { title: "광자", off: "꺼짐", on: "켜짐", setup: "광자 설정", preset: "프리셋", advanced: "고급 발사 설정", radius: "시작 반지름 (rₛ)", phi: "시작 방위각 φ", impactParameter: "충돌 매개변수 b (rₛ)", radialDirection: "방사 방향", angularDirection: "진행 회전 방향", inward: "안쪽", outward: "바깥쪽", counterclockwise: "반시계", clockwise: "시계", apply: "발사 적용" }, presets: { weak: "약한 편향", strong: "강한 편향", nearCritical: "임계값 근처", capture: "포획" } },
+  photon: { controls: { title: "광자", off: "꺼짐", on: "켜짐", count: "광자 수", setup: "광자 설정", preset: "프리셋", advanced: "고급 발사 설정", radius: "시작 반지름 (rₛ)", phi: "시작 방위각 φ", impactParameter: "충돌 매개변수 b (rₛ)", radialDirection: "방사 방향", angularDirection: "진행 회전 방향", inward: "안쪽", outward: "바깥쪽", counterclockwise: "반시계", clockwise: "시계", apply: "발사 적용" }, presets: { weak: "약한 편향", strong: "강한 편향", nearCritical: "임계값 근처", capture: "포획" } },
   inspector: {
     title: "입자 검사기", photonTitle: "광자 검사기", close: "검사기 닫기", physicsModel: "물리 모델",
     identifierValue: "입자 {id}", photonIdentifierValue: "광자 {id}", modelSchwarzschild: "슈바르츠실트 · 시간꼴 시험 입자", modelParticle: "입자", modelPhotonSchwarzschild: "슈바르츠실트 · 영측지선",
