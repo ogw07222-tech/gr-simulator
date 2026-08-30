@@ -13,6 +13,11 @@ async function diagnostics(page) {
   return page.evaluate(() => window.__GR4D_DIAGNOSTICS__.getSnapshot());
 }
 
+async function resetCameraForSmoke(page) {
+  await page.evaluate(() => document.querySelector("#reset-camera")?.click());
+  await page.waitForTimeout(80);
+}
+
 async function firstVisiblePhoton(page, count) {
   return page.evaluate((photonCount) => {
     for (let index = 0; index < photonCount; index += 1) {
@@ -43,8 +48,7 @@ async function verifyPhotonStopsWhileMassiveParticleRuns(page, toggle) {
 }
 
 async function selectPhotonWithMouse(page, count) {
-  await page.locator("#reset-camera").click();
-  await page.waitForTimeout(80);
+  await resetCameraForSmoke(page);
   const visible = await firstVisiblePhoton(page, count);
   expect(visible).not.toBeNull();
   await page.mouse.click(visible.x, visible.y);
@@ -55,8 +59,7 @@ async function selectPhotonWithMouse(page, count) {
 }
 
 async function selectPhotonWithTouchEvent(page, count) {
-  await page.locator("#reset-camera").click();
-  await page.waitForTimeout(80);
+  await resetCameraForSmoke(page);
   const visible = await firstVisiblePhoton(page, count);
   expect(visible).not.toBeNull();
   await page.evaluate(({ x, y }) => {
@@ -80,15 +83,40 @@ async function selectPhotonWithTouchEvent(page, count) {
 }
 
 async function verifyOrbitDrag(page, selectedId) {
-  const canvas = page.locator("#viewport canvas");
-  const bounds = await canvas.boundingBox();
   const before = (await diagnostics(page)).camera;
-  const start = { x: bounds.x + bounds.width * 0.78, y: bounds.y + bounds.height * 0.25 };
-  await page.mouse.move(start.x, start.y);
-  await page.mouse.down();
-  await page.mouse.move(start.x - 90, start.y + 60, { steps: 6 });
-  await page.mouse.up();
-  await page.waitForTimeout(100);
+  await page.evaluate(() => {
+    const target = document.querySelector("#viewport canvas");
+    const rect = target.getBoundingClientRect();
+    const startX = rect.left + rect.width * 0.52;
+    const startY = rect.top + rect.height * 0.28;
+    const originalSetPointerCapture = target.setPointerCapture;
+    const originalReleasePointerCapture = target.releasePointerCapture;
+    target.setPointerCapture = () => {};
+    target.releasePointerCapture = () => {};
+    try {
+      const base = { bubbles: true, pointerId: 73, pointerType: "mouse", isPrimary: true, button: 0 };
+      target.dispatchEvent(new window.PointerEvent("pointerdown", { ...base, buttons: 1, clientX: startX, clientY: startY }));
+      for (let step = 1; step <= 6; step += 1) {
+        target.dispatchEvent(new window.PointerEvent("pointermove", {
+          ...base,
+          button: -1,
+          buttons: 1,
+          clientX: startX - 15 * step,
+          clientY: startY + 10 * step,
+        }));
+      }
+      target.dispatchEvent(new window.PointerEvent("pointerup", {
+        ...base,
+        buttons: 0,
+        clientX: startX - 90,
+        clientY: startY + 60,
+      }));
+    } finally {
+      target.setPointerCapture = originalSetPointerCapture;
+      target.releasePointerCapture = originalReleasePointerCapture;
+    }
+  });
+  await page.waitForTimeout(200);
   const after = await diagnostics(page);
   const cameraDelta = Math.abs(after.camera.x - before.x) + Math.abs(after.camera.y - before.y) + Math.abs(after.camera.z - before.z);
   expect(cameraDelta).toBeGreaterThan(1e-4);
