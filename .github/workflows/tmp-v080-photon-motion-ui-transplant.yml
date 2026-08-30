@@ -22,7 +22,7 @@ jobs:
       - name: Apply validated bugfix transplant
         run: |
           node scripts/tmp-photon-motion-ui-fix.mjs
-          node scripts/tmp-photon-motion-smoke-adjust.mjs
+          git show eb58a8186d65dbe581b4ec3c63b1b2798590d0fc:tests/e2e/photon-motion-ui.smoke.spec.js > tests/e2e/photon-motion-ui.smoke.spec.js
       - name: Audit transplant-only diff
         shell: bash
         run: |
