@@ -2,6 +2,15 @@
 
 ## Unreleased
 
+### v0.8.0
+
+- Added a true Schwarzschild null-geodesic solver using affine parameter rather than proper time, with `ACTIVE` / `CAPTURED` / `ESCAPED` states, conserved null quantities, and explicit null-condition diagnostics.
+- Fixed the reference geometry at event horizon `r = 1.0 r_s`, photon sphere `r = 1.5 r_s`, and critical impact parameter `b_crit = (3√3/2) r_s`; deterministic tests cover capture, scattering, near-critical strong deflection, and the unstable null circular orbit.
+- Added numerical incoming/outgoing-direction deflection measurement and a weak-field regression at `b = 25 r_s` against `α ≈ 4GM/(bc²)` without injecting the analytic angle into rendering.
+- Added a default-OFF photon subsystem, compact 1/8/32/64 count control, fixed-size photon markers, bounded trails, shared Particle/Photon Inspector infrastructure, and zero recurring photon integration/trajectory/trail/diagnostic/render-buffer work while OFF.
+- Added an eight-ray Light Bending demo using independent validated null-geodesic integrations at impact parameters `[2.2, 2.45, 2.62, 2.8, 3.2, 4, 5, 6] r_s`, preserving the validated demo maximum affine substep of `0.005`.
+- Scope remains intentionally bounded: no per-pixel ray tracing, black-hole image/shadow synthesis, accretion disk, Einstein-ring image synthesis, Kerr spacetime, or WebGPU/WASM photon acceleration.
+
 ### v0.7.11
 
 - Added a bilingual screen-space Particle Inspector selected by click/touch, with constant CSS-pixel sizing, camera/particle-following projection, drag-safe OrbitControls coexistence, explicit behind-camera handling, and a persistent off-screen edge indicator that reuses the existing Focus Particle camera behavior.
