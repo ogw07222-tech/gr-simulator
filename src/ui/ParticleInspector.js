@@ -18,6 +18,8 @@ export class ParticleInspector {
     renderer,
     particleRenderer,
     particles,
+    photonRenderer = null,
+    photons = null,
     unitFormatter,
     snapshotParticleId = null,
     focusParticle = () => false,
@@ -32,10 +34,13 @@ export class ParticleInspector {
     this.canvas = renderer.renderer.domElement;
     this.particleRenderer = particleRenderer;
     this.particles = particles;
+    this.photonRenderer = photonRenderer;
+    this.photons = photons;
     this.unitFormatter = unitFormatter;
     this.snapshotParticleId = snapshotParticleId;
     this.focusParticle = focusParticle;
 
+    this.selectedKind = null;
     this.selectedId = null;
     this.selectedIndex = -1;
     this.pointerId = null;
@@ -46,6 +51,7 @@ export class ParticleInspector {
     this.edgeSizeDirty = true;
     this.lastSnapshotRevision = -1;
     this.lastParticleRevision = -1;
+    this.lastPhotonRevision = -1;
     this.cardWidth = 250;
     this.cardHeight = 220;
     this.edgeWidth = 190;
@@ -54,6 +60,7 @@ export class ParticleInspector {
     this.mode = "hidden";
     this.screenX = Number.NaN;
     this.screenY = Number.NaN;
+    this.photonSnapshot = {};
 
     this.worldPosition = new THREE.Vector3();
     this.viewPosition = new THREE.Vector3();
@@ -93,20 +100,26 @@ export class ParticleInspector {
     this.layer.innerHTML = `
       <section class="particle-inspector" hidden aria-live="polite" aria-atomic="false">
         <header>
-          <div><span class="particle-inspector-kicker" data-i18n="inspector.title"></span><strong data-field="id"></strong></div>
+          <div><span class="particle-inspector-kicker" data-field="inspectorTitle"></span><strong data-field="id"></strong></div>
           <button class="particle-inspector-close" type="button" data-i18n-aria="inspector.close" aria-label=""></button>
         </header>
         <div class="particle-inspector-model"><span data-i18n="inspector.physicsModel"></span><strong data-field="model"></strong></div>
-        <dl class="particle-inspector-readout">
+        <dl class="particle-inspector-readout" data-inspector-kind="particle">
           <div><dt data-i18n="inspector.radius"></dt><dd data-field="radius"></dd></div>
           <div><dt data-i18n="inspector.localSpeed"></dt><dd data-field="speed"></dd></div>
           <div><dt data-i18n="inspector.properTime"></dt><dd data-field="properTime"></dd></div>
           <div><dt data-i18n="inspector.coordinateTime"></dt><dd data-field="coordinateTime"></dd></div>
           <div><dt data-i18n="inspector.classification"></dt><dd data-field="classification"></dd></div>
         </dl>
+        <dl class="particle-inspector-readout" data-inspector-kind="photon" hidden>
+          <div><dt data-i18n="inspector.photonRadius"></dt><dd data-field="photonRadius"></dd></div>
+          <div><dt data-i18n="inspector.photonImpactParameter"></dt><dd data-field="photonImpactParameter"></dd></div>
+          <div><dt data-i18n="inspector.photonStateLabel"></dt><dd data-field="photonState"></dd></div>
+          <div><dt data-i18n="inspector.photonDeflection"></dt><dd data-field="photonDeflection"></dd></div>
+        </dl>
         <details class="particle-inspector-details">
           <summary data-i18n="inspector.details"></summary>
-          <dl class="particle-inspector-readout particle-inspector-advanced">
+          <dl class="particle-inspector-readout particle-inspector-advanced" data-inspector-kind="particle">
             <div><dt data-i18n="inspector.specificEnergy"></dt><dd data-field="energy"></dd></div>
             <div><dt data-i18n="inspector.angularMomentum"></dt><dd data-field="angularMomentum"></dd></div>
             <div><dt data-i18n="inspector.radialVelocity"></dt><dd data-field="radialVelocity"></dd></div>
@@ -115,6 +128,15 @@ export class ParticleInspector {
             <div><dt data-i18n="inspector.apoapsis"></dt><dd data-field="apoapsis"></dd></div>
             <div><dt data-i18n="inspector.particleState"></dt><dd data-field="particleState"></dd></div>
             <div><dt data-i18n="inspector.integrationStatus"></dt><dd data-field="integrationStatus"></dd></div>
+          </dl>
+          <dl class="particle-inspector-readout particle-inspector-advanced" data-inspector-kind="photon" hidden>
+            <div><dt data-i18n="inspector.photonAffineParameter"></dt><dd data-field="photonAffineParameter"></dd></div>
+            <div><dt data-i18n="inspector.photonEnergy"></dt><dd data-field="photonEnergy"></dd></div>
+            <div><dt data-i18n="inspector.photonAngularMomentum"></dt><dd data-field="photonAngularMomentum"></dd></div>
+            <div><dt data-i18n="inspector.photonRadialDirection"></dt><dd data-field="photonRadialDirection"></dd></div>
+            <div><dt data-i18n="inspector.integrationStatus"></dt><dd data-field="photonIntegrationStatus"></dd></div>
+            <div><dt data-i18n="inspector.photonNullAbsolute"></dt><dd data-field="photonNullAbsolute"></dd></div>
+            <div><dt data-i18n="inspector.photonNullRelative"></dt><dd data-field="photonNullRelative"></dd></div>
           </dl>
         </details>
       </section>
@@ -129,6 +151,7 @@ export class ParticleInspector {
     this.details = this.layer.querySelector(".particle-inspector-details");
     this.edge = this.layer.querySelector(".particle-edge-indicator");
     this.edgeArrow = this.layer.querySelector(".particle-edge-arrow");
+    this.kindGroups = Array.from(this.layer.querySelectorAll("[data-inspector-kind]"));
     this.fields = Object.create(null);
     this.layer.querySelectorAll("[data-field]").forEach((element) => { this.fields[element.dataset.field] = element; });
   }
@@ -146,8 +169,8 @@ export class ParticleInspector {
       const dy = event.clientY - this.pointerStartY;
       this.pointerId = null;
       if (dx * dx + dy * dy > POINTER_MOVE_TOLERANCE_SQUARED) return;
-      const particle = this.#hitTest(event.clientX, event.clientY);
-      if (particle) this.select(particle.id);
+      const target = this.#hitTest(event.clientX, event.clientY);
+      if (target) this.select(target.id, target.kind);
       else this.deselect();
     };
     this.handlePointerCancel = () => { this.pointerId = null; };
@@ -184,20 +207,53 @@ export class ParticleInspector {
     if (this.selectedId !== null) this.edge.setAttribute("aria-label", t("inspector.focusSelected", { id: this.selectedId }));
   }
 
-  select(id) {
-    const particle = this.particles.findById(id);
-    if (!particle) return null;
-    this.selectedId = id;
-    this.selectedIndex = this.#findParticleIndex(id);
+  select(id, kind = null) {
+    let selectedKind = kind;
+    if (selectedKind === null) {
+      if (this.particles.findById(id)) selectedKind = "particle";
+      else if (this.#findPhotonIndex(id) >= 0) selectedKind = "photon";
+    }
+    if (selectedKind === "particle") {
+      const particle = this.particles.findById(id);
+      if (!particle) return null;
+      this.selectedKind = "particle";
+      this.selectedId = id;
+      this.selectedIndex = this.#findParticleIndex(id);
+      this.#activateKind("particle");
+      this.#showSelection(id);
+      return particle;
+    }
+    if (selectedKind === "photon") {
+      if (!this.photons?.enabled) return null;
+      const index = this.#findPhotonIndex(id);
+      if (index < 0) return null;
+      this.selectedKind = "photon";
+      this.selectedId = id;
+      this.selectedIndex = index;
+      this.#activateKind("photon");
+      this.#showSelection(id);
+      return id;
+    }
+    return null;
+  }
+
+  selectPhoton(id) { return this.select(id, "photon"); }
+
+  #showSelection(id) {
     this.valuesDirty = true;
     this.cardSizeDirty = true;
     this.card.hidden = false;
     this.edge.hidden = true;
     this.edge.setAttribute("aria-label", t("inspector.focusSelected", { id }));
-    return particle;
+  }
+
+  #activateKind(kind) {
+    for (const group of this.kindGroups) group.hidden = group.dataset.inspectorKind !== kind;
+    this.#write("inspectorTitle", t(kind === "photon" ? "inspector.photonTitle" : "inspector.title"));
   }
 
   deselect() {
+    this.selectedKind = null;
     this.selectedId = null;
     this.selectedIndex = -1;
     this.card.hidden = true;
@@ -207,8 +263,13 @@ export class ParticleInspector {
     this.screenY = Number.NaN;
   }
 
-  update(snapshot, snapshotRevision = 0, particleRevision = this.particles.revision()) {
+  update(snapshot, snapshotRevision = 0, particleRevision = this.particles.revision(), photonRevision = this.photons?.revision?.() ?? -1) {
     if (this.selectedId === null) return false;
+    if (this.selectedKind === "photon") return this.#updatePhoton(photonRevision);
+    return this.#updateParticle(snapshot, snapshotRevision, particleRevision);
+  }
+
+  #updateParticle(snapshot, snapshotRevision, particleRevision) {
     if (particleRevision !== this.lastParticleRevision) {
       if (this.selectedIndex < 0 || this.particles.particleAt(this.selectedIndex)?.id !== this.selectedId) {
         this.selectedIndex = this.#findParticleIndex(this.selectedId);
@@ -216,7 +277,7 @@ export class ParticleInspector {
       if (this.selectedIndex < 0) { this.deselect(); return false; }
     }
     if (this.valuesDirty || snapshotRevision !== this.lastSnapshotRevision || particleRevision !== this.lastParticleRevision) {
-      this.#syncValues(snapshot);
+      this.#syncParticleValues(snapshot);
       this.valuesDirty = false;
       this.lastSnapshotRevision = snapshotRevision;
       this.lastParticleRevision = particleRevision;
@@ -225,7 +286,26 @@ export class ParticleInspector {
     return true;
   }
 
-  #syncValues(snapshot) {
+  #updatePhoton(photonRevision) {
+    if (!this.photons?.enabled) { this.deselect(); return false; }
+    if (photonRevision !== this.lastPhotonRevision) {
+      if (this.selectedIndex < 0 || this.photons.idAt?.(this.selectedIndex) !== this.selectedId) {
+        this.selectedIndex = this.#findPhotonIndex(this.selectedId);
+      }
+      if (this.selectedIndex < 0) { this.deselect(); return false; }
+    }
+    if (this.valuesDirty || photonRevision !== this.lastPhotonRevision) {
+      const snapshot = this.photons.writeSnapshotAt?.(this.selectedIndex, this.photonSnapshot);
+      if (!snapshot) { this.deselect(); return false; }
+      this.#syncPhotonValues(snapshot);
+      this.valuesDirty = false;
+      this.lastPhotonRevision = photonRevision;
+    }
+    this.#positionSelected();
+    return true;
+  }
+
+  #syncParticleValues(snapshot) {
     const particle = this.particles.particleAt(this.selectedIndex);
     if (!particle) return;
     const hasGeodesicSnapshot = this.selectedId === this.snapshotParticleId && snapshot;
@@ -254,6 +334,28 @@ export class ParticleInspector {
     this.#write("edgeStatus", this.edgeBaseStatus);
   }
 
+  #syncPhotonValues(snapshot) {
+    const unavailable = t("runtime.notAvailable");
+    this.#write("id", t("inspector.photonIdentifierValue", { id: snapshot.id }));
+    this.#write("model", t("inspector.modelPhotonSchwarzschild"));
+    this.#write("edgeId", t("inspector.photonIdentifierValue", { id: snapshot.id }));
+    this.#write("photonRadius", `${this.#number(snapshot.radiusRs)} rₛ · ${this.unitFormatter?.formatDistance(snapshot.radiusMetres) ?? unavailable}`);
+    this.#write("photonImpactParameter", `${this.#number(snapshot.impactParameterRs)} rₛ`);
+    const state = this.#translatedValue("inspector.photonState", snapshot.status);
+    this.#write("photonState", state);
+    this.#write("photonDeflection", Number.isFinite(snapshot.deflectionAngleRadians) ? `${this.#number(snapshot.deflectionAngleRadians)} rad` : unavailable);
+    this.#write("photonAffineParameter", t("inspector.dimensionlessValue", { value: this.#number(snapshot.affineParameter) }));
+    this.#write("photonEnergy", t("inspector.dimensionlessValue", { value: this.#number(snapshot.energy) }));
+    this.#write("photonAngularMomentum", t("inspector.dimensionlessValue", { value: this.#number(snapshot.angularMomentum) }));
+    const radialDirection = snapshot.radialDirection < 0 ? "inward" : snapshot.radialDirection > 0 ? "outward" : "turning";
+    this.#write("photonRadialDirection", t(`inspector.photonRadial.${radialDirection}`));
+    this.#write("photonIntegrationStatus", state);
+    this.#write("photonNullAbsolute", this.#number(snapshot.nullConditionAbsoluteError));
+    this.#write("photonNullRelative", this.#number(snapshot.nullConditionRelativeError));
+    this.edgeBaseStatus = state;
+    this.#write("edgeStatus", state);
+  }
+
   #translatedValue(prefix, value) {
     if (!value) return t("runtime.notAvailable");
     const translated = t(`${prefix}.${value}`);
@@ -267,7 +369,7 @@ export class ParticleInspector {
   #write(field, value) {
     if (this.lastText[field] === value) return;
     this.lastText[field] = value;
-    this.fields[field].textContent = value;
+    if (this.fields[field]) this.fields[field].textContent = value;
     if (field === "edgeId" || field === "edgeStatus") this.edgeSizeDirty = true;
   }
 
@@ -278,12 +380,22 @@ export class ParticleInspector {
     return -1;
   }
 
+  #findPhotonIndex(id) {
+    if (!this.photons?.enabled || typeof this.photons.count !== "function" || typeof this.photons.idAt !== "function") return -1;
+    for (let index = 0; index < this.photons.count(); index += 1) {
+      if (this.photons.idAt(index) === id) return index;
+    }
+    return -1;
+  }
+
   #selectedRenderPosition() {
     if (this.selectedIndex < 0) return null;
     const offset = this.selectedIndex * 3;
-    const x = this.particleRenderer.positions[offset];
-    const y = this.particleRenderer.positions[offset + 1];
-    const z = this.particleRenderer.positions[offset + 2];
+    const positions = this.selectedKind === "photon" ? this.photonRenderer?.markerPositions : this.particleRenderer.positions;
+    if (!positions) return null;
+    const x = positions[offset];
+    const y = positions[offset + 1];
+    const z = positions[offset + 2];
     if (!isFiniteVector(x, y, z)) return null;
     this.worldPosition.set(x, y, z);
     return this.worldPosition;
@@ -400,49 +512,67 @@ export class ParticleInspector {
     const rect = this.canvas.getBoundingClientRect();
     const x = clientX - rect.left;
     const y = clientY - rect.top;
-    const hitRadius = Math.max(
-      MINIMUM_HIT_RADIUS_CSS_PIXELS,
-      this.particleRenderer.material.size * 0.5 + HIT_PADDING_CSS_PIXELS,
-    );
-    const hitRadiusSquared = hitRadius * hitRadius;
     let nearest = null;
-    let nearestDistanceSquared = hitRadiusSquared;
+    let nearestDistanceSquared = Number.POSITIVE_INFINITY;
+
+    const particleRadius = Math.max(MINIMUM_HIT_RADIUS_CSS_PIXELS, this.particleRenderer.material.size * 0.5 + HIT_PADDING_CSS_PIXELS);
+    const particleRadiusSquared = particleRadius * particleRadius;
     for (let index = 0; index < this.particles.count(); index += 1) {
       const offset = index * 3;
       const projection = this.#projectRenderPosition(
-        this.particleRenderer.positions[offset],
-        this.particleRenderer.positions[offset + 1],
-        this.particleRenderer.positions[offset + 2],
-        rect,
+        this.particleRenderer.positions[offset], this.particleRenderer.positions[offset + 1], this.particleRenderer.positions[offset + 2], rect,
       );
       if (!projection.projected || !projection.inside || !projection.renderVisible) continue;
       const dx = projection.screenX - x;
       const dy = projection.screenY - y;
       const distanceSquared = dx * dx + dy * dy;
-      if (distanceSquared > nearestDistanceSquared) continue;
+      if (distanceSquared > particleRadiusSquared || distanceSquared > nearestDistanceSquared) continue;
       nearestDistanceSquared = distanceSquared;
-      nearest = this.particles.particleAt(index);
+      nearest = { kind: "particle", id: this.particles.particleAt(index).id };
+    }
+
+    if (this.photons?.enabled && this.photonRenderer?.markerObject?.visible) {
+      const photonRadius = Math.max(MINIMUM_HIT_RADIUS_CSS_PIXELS, this.photonRenderer.markerMaterial.size * 0.5 + HIT_PADDING_CSS_PIXELS);
+      const photonRadiusSquared = photonRadius * photonRadius;
+      for (let index = 0; index < this.photons.count(); index += 1) {
+        const offset = index * 3;
+        const projection = this.#projectRenderPosition(
+          this.photonRenderer.markerPositions[offset], this.photonRenderer.markerPositions[offset + 1], this.photonRenderer.markerPositions[offset + 2], rect,
+        );
+        if (!projection.projected || !projection.inside || !projection.renderVisible) continue;
+        const dx = projection.screenX - x;
+        const dy = projection.screenY - y;
+        const distanceSquared = dx * dx + dy * dy;
+        if (distanceSquared > photonRadiusSquared || distanceSquared > nearestDistanceSquared) continue;
+        nearestDistanceSquared = distanceSquared;
+        nearest = { kind: "photon", id: this.photons.idAt(index) };
+      }
     }
     return nearest;
   }
 
-  getProjectedParticlePosition(id) {
-    const index = this.#findParticleIndex(id);
-    if (index < 0) return null;
+  #projectedPositionAt(positions, index) {
     const rect = this.canvas.getBoundingClientRect();
     const offset = index * 3;
-    const projection = this.#projectRenderPosition(
-      this.particleRenderer.positions[offset],
-      this.particleRenderer.positions[offset + 1],
-      this.particleRenderer.positions[offset + 2],
-      rect,
-    );
+    const projection = this.#projectRenderPosition(positions[offset], positions[offset + 1], positions[offset + 2], rect);
     if (!projection.projected || !projection.inside) return null;
     return { x: rect.left + projection.screenX, y: rect.top + projection.screenY };
   }
 
+  getProjectedParticlePosition(id) {
+    const index = this.#findParticleIndex(id);
+    return index < 0 ? null : this.#projectedPositionAt(this.particleRenderer.positions, index);
+  }
+
+  getProjectedPhotonPosition(id) {
+    if (!this.photons?.enabled || !this.photonRenderer) return null;
+    const index = this.#findPhotonIndex(id);
+    return index < 0 ? null : this.#projectedPositionAt(this.photonRenderer.markerPositions, index);
+  }
+
   getDiagnostics() {
     return {
+      selectedKind: this.selectedKind,
       selectedId: this.selectedId,
       mode: this.mode,
       cardWidth: this.card.hidden ? 0 : this.card.offsetWidth,
