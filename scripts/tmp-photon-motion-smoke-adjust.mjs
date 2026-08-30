@@ -17,4 +17,10 @@ source = replaceOnce(
   `async function clickProjected(page, position) {\n  if (!position || !Number.isFinite(position.x) || !Number.isFinite(position.y)) throw new Error("Projected object is unavailable");\n  await page.mouse.click(position.x, position.y);\n}\n`,
   "use inspector screen coordinates directly",
 );
+source = replaceOnce(
+  source,
+  `  await page.waitForTimeout(900);\n  const screenAfter = await page.evaluate(() => window.__GR4D_DIAGNOSTICS__.getPhotonScreenPosition("photon-0"));`,
+  `  await page.waitForTimeout(250);\n  const screenAfter = await page.evaluate(() => window.__GR4D_DIAGNOSTICS__.getPhotonScreenPosition("photon-0"));`,
+  "sample visible motion before photon exits viewport",
+);
 write(path, source);
