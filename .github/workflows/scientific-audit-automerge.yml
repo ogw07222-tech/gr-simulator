@@ -1,0 +1,60 @@
+name: Scientific Audit Auto-Merge
+
+on:
+  issue_comment:
+    types: [created, edited]
+
+permissions:
+  contents: write
+  pull-requests: write
+  checks: read
+
+jobs:
+  audit-automerge:
+    if: github.event.issue.pull_request != null
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Validate audit marker, audited SHA, and CI
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          PR_NUMBER: ${{ github.event.issue.number }}
+          COMMENT_BODY: ${{ github.event.comment.body }}
+          AUTHOR_ASSOCIATION: ${{ github.event.comment.author_association }}
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          case "$AUTHOR_ASSOCIATION" in
+            OWNER|MEMBER|COLLABORATOR) ;;
+            *)
+              echo "Audit marker rejected: comment author is not trusted for merge gating."
+              exit 1
+              ;;
+          esac
+
+          HEAD_SHA="$(gh api "repos/$REPO/pulls/$PR_NUMBER" --jq '.head.sha')"
+
+          grep -Fq 'AUDIT_VERDICT: PASS' <<< "$COMMENT_BODY"
+          grep -Fq "AUDIT_HEAD_SHA: $HEAD_SHA" <<< "$COMMENT_BODY"
+
+          VERIFY_SUCCESS="$(gh api -H 'Accept: application/vnd.github+json' "repos/$REPO/commits/$HEAD_SHA/check-runs" --jq '[.check_runs[] | select(.name == "verify" and .conclusion == "success")] | length')"
+          test "$VERIFY_SUCCESS" -ge 1
+
+          echo "Scientific audit PASS matches current PR head and CI verify is green."
+
+      - name: Merge the exact audited head
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          PR_NUMBER: ${{ github.event.issue.number }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          HEAD_SHA="$(gh api "repos/$REPO/pulls/$PR_NUMBER" --jq '.head.sha')"
+          gh api \
+            --method PUT \
+            "repos/$REPO/pulls/$PR_NUMBER/merge" \
+            -f merge_method=merge \
+            -f sha="$HEAD_SHA"
