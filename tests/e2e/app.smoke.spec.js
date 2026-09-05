@@ -16,8 +16,9 @@ test("preserves simulation behavior while switching scientific UI locales", asyn
   await expect(page.locator("#locale-select")).toHaveValue("en");
   await expect(page.getByRole("heading", { name: "Simulation" })).toBeVisible();
   await expect(page.locator(".version-chip")).toHaveText("v0.8.0");
-  await expect(page.locator("#geo-classification")).toHaveText("Stable circular");
-  await expect(page.locator("#geo-status")).toHaveText("Active");
+  const initialPhysics = await page.evaluate(() => window.__GR4D_DIAGNOSTICS__.getSnapshot().physics);
+  expect(initialPhysics.classification).toBe("StableCircular");
+  expect(initialPhysics.status).toBe("Active");
   await expect(page.locator("#orbit-preset")).toHaveValue("circular");
 
   const canvas = page.locator("#viewport canvas");
@@ -49,10 +50,10 @@ test("preserves simulation behavior while switching scientific UI locales", asyn
   await expect(page.locator("#runtime-time-scale")).toHaveText("2x");
   await page.getByRole("button", { name: "Pause", exact: true }).click();
   const pausedTime = await page.locator("#simulation-time").textContent();
-  const pausedProperTime = await page.locator("#geo-proper-time").textContent();
+  const pausedProperTime = await page.evaluate(() => window.__GR4D_DIAGNOSTICS__.getSnapshot().snapshot.properTime);
   await page.waitForTimeout(150);
   await expect(page.locator("#simulation-time")).toHaveText(pausedTime);
-  await expect(page.locator("#geo-proper-time")).toHaveText(pausedProperTime);
+  expect(await page.evaluate(() => window.__GR4D_DIAGNOSTICS__.getSnapshot().snapshot.properTime)).toBe(pausedProperTime);
 
   const pausedCanvas = await canvas.screenshot();
   await page.mouse.move(bounds.x + bounds.width * 0.7, bounds.y + bounds.height * 0.7);
@@ -65,7 +66,7 @@ test("preserves simulation behavior while switching scientific UI locales", asyn
   await page.getByRole("button", { name: "Play", exact: true }).click();
   await page.locator("#orbit-radius").fill("5");
   await page.getByRole("button", { name: "Apply Initial Condition" }).click();
-  await expect(page.locator("#geo-radius")).toContainText("5.000000 rₛ");
+  expect((await page.evaluate(() => window.__GR4D_DIAGNOSTICS__.getSnapshot())).physics.radius).toBeCloseTo(5, 10);
   const timeBeforeLocaleSwitch = Number.parseFloat(await page.locator("#simulation-time").textContent());
   await page.locator("#locale-select").selectOption("ko");
   await expect(page.locator("html")).toHaveAttribute("lang", "ko");
@@ -274,12 +275,12 @@ test("changes custom clock speed and display units without resetting simulation 
   await expect(page.locator("#time-scale-error")).toBeVisible();
   expect((await page.locator("#time-scale-error").textContent()).length).toBeGreaterThan(10);
 
-  const physicalRadius = before.snapshot.radiusMetres;
+  const physicalRadius = before.snapshot.schwarzschildRadiusMetres;
   await page.locator("#display-unit-mode").selectOption("si");
-  await expect(page.locator("#geo-radius")).toContainText("m");
+  await expect(page.locator("#geo-rs")).toContainText("m");
   await page.locator("#display-unit-mode").selectOption("astronomical");
-  await expect(page.locator("#geo-radius")).toContainText("AU");
-  expect(await page.evaluate(() => window.__GR4D_DIAGNOSTICS__.getSnapshot().snapshot.radiusMetres)).toBe(physicalRadius);
+  await expect(page.locator("#geo-rs")).toContainText("AU");
+  expect(await page.evaluate(() => window.__GR4D_DIAGNOSTICS__.getSnapshot().snapshot.schwarzschildRadiusMetres)).toBe(physicalRadius);
   await page.reload();
   await expect(page.locator("#display-unit-mode")).toHaveValue("astronomical");
   expect(consoleErrors).toEqual([]);

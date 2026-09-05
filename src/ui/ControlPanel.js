@@ -121,14 +121,6 @@ export class ControlPanel {
       ${this.runtime?.applyOrbit ? `<details class="panel-section control-disclosure scientific-measurements"><summary><span data-i18n="geodesic.title"></span></summary><div class="disclosure-body"><div class="runtime-status geodesic-status" aria-live="polite">
         <div><small data-i18n="geodesic.mass"></small><strong id="geo-mass"></strong></div>
         <div><small data-i18n="geodesic.schwarzschildRadius"></small><strong id="geo-rs"></strong></div>
-        <div><small data-i18n="geodesic.radius"></small><strong id="geo-radius"></strong></div>
-        <div><small data-i18n="geodesic.localSpeed"></small><strong id="geo-speed"></strong></div>
-        <div><small><span data-i18n="geodesic.coordinateTime"></span>${helpButton("coordinateTime")}</small><strong id="geo-coordinate-time"></strong></div>
-        <div><small><span data-i18n="geodesic.properTime"></span>${helpButton("properTime")}</small><strong id="geo-proper-time"></strong></div>
-        <div><small><span data-i18n="geodesic.energy"></span>${helpButton("specificEnergy")}</small><strong id="geo-energy"></strong></div>
-        <div><small><span data-i18n="geodesic.angularMomentum"></span>${helpButton("angularMomentum")}</small><strong id="geo-angular-momentum"></strong></div>
-        <div><small><span data-i18n="geodesic.classification"></span>${helpButton("classification")}</small><strong id="geo-classification"></strong></div>
-        <div><small data-i18n="geodesic.status"></small><strong id="geo-status"></strong></div>
         <div><small data-i18n="geodesic.energyDrift"></small><strong id="geo-energy-drift"></strong></div>
         <div><small data-i18n="geodesic.angularMomentumDrift"></small><strong id="geo-angular-drift"></strong></div>
         <div><small><span data-i18n="geodesic.normalizationResidual"></span>${helpButton("residual")}</small><strong id="geo-normalization"></strong></div>
@@ -238,10 +230,9 @@ export class ControlPanel {
     }
   }
 
-  syncGeodesic(snapshot, runtimeState = null) {
+  syncGeodesic(snapshot) {
     if (!this.runtime?.applyOrbit || !snapshot || globalThis.performance.now() - this.geodesicView.lastRefresh < 100) return;
     this.geodesicView.snapshot = snapshot;
-    this.geodesicView.paused = runtimeState?.paused ?? false;
     this.geodesicView.lastRefresh = globalThis.performance.now();
     this.#writeGeodesic(snapshot);
   }
@@ -391,14 +382,6 @@ export class ControlPanel {
     const format = (value, digits = 4) => Number(value).toExponential(digits);
     this.root.querySelector("#geo-mass").textContent = this.unitFormatter?.formatMass(snapshot.massKg) ?? `${format(snapshot.massKg)} kg`;
     this.root.querySelector("#geo-rs").textContent = this.unitFormatter?.formatDistance(snapshot.schwarzschildRadiusMetres) ?? `${format(snapshot.schwarzschildRadiusMetres)} m`;
-    this.root.querySelector("#geo-radius").textContent = `${snapshot.radiusRs.toFixed(6)} rₛ / ${this.unitFormatter?.formatDistance(snapshot.radiusMetres) ?? `${format(snapshot.radiusMetres)} m`}`;
-    this.root.querySelector("#geo-speed").textContent = this.unitFormatter?.formatVelocity(snapshot.localSpeedMetresPerSecond) ?? `${format(snapshot.localSpeedMetresPerSecond)} m/s`;
-    this.root.querySelector("#geo-coordinate-time").textContent = this.unitFormatter?.formatTime(snapshot.coordinateTime) ?? `${format(snapshot.coordinateTime)} s`;
-    this.root.querySelector("#geo-proper-time").textContent = this.unitFormatter?.formatTime(snapshot.properTime) ?? `${format(snapshot.properTime)} s`;
-    this.root.querySelector("#geo-energy").textContent = snapshot.energy.toFixed(10);
-    this.root.querySelector("#geo-angular-momentum").textContent = `${snapshot.angularMomentum.toFixed(8)} / ${format(snapshot.angularMomentumSI)} m²/s`;
-    this.root.querySelector("#geo-classification").textContent = t(`orbit.classification.${snapshot.orbitClassification}`);
-    this.root.querySelector("#geo-status").textContent = t(`orbit.status.${this.geodesicView.paused ? "Paused" : snapshot.geodesicStatus}`);
     this.root.querySelector("#geo-energy-drift").textContent = format(snapshot.energyDrift);
     this.root.querySelector("#geo-angular-drift").textContent = format(snapshot.angularMomentumDrift);
     this.root.querySelector("#geo-normalization").textContent = format(snapshot.normalizationResidual);
