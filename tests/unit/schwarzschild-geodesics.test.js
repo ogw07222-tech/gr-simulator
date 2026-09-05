@@ -100,7 +100,7 @@ describe("Schwarzschild geodesic integration", () => {
     expect(classifyOrbit(scattering.state, scattering.status)).toBe(OrbitClassification.UNBOUND_SCATTERING);
   });
 
-  it("reports invalid input, domain exit, and a substep safety failure", () => {
+  it("reports invalid input and domain exit while splitting oversized requests into bounded batches", () => {
     const invalid = new SchwarzschildGeodesicSystem({ units });
     expect(() => invalid.initialize(createCircularInitialCondition(11))).toThrow(RangeError);
     expect(invalid.status).toBe(GeodesicStatus.INVALID_INITIAL_CONDITION);
@@ -112,7 +112,9 @@ describe("Schwarzschild geodesic integration", () => {
 
     const limited = new SchwarzschildGeodesicSystem({ units, maximumSubsteps: 1 });
     limited.initialize(createCircularInitialCondition(6));
-    expect(limited.advanceProperTimeSI(units.normalizedTimeToSI(1))).toBe(0);
-    expect(limited.status).toBe(GeodesicStatus.NUMERICAL_FAILURE);
+    limited.advanceProperTimeSI(units.normalizedTimeToSI(1));
+    expect(limited.status).toBe(GeodesicStatus.ACTIVE);
+    expect(limited.properTimeSI()).toBeCloseTo(units.normalizedTimeToSI(1), 12);
+    expect(limited.diagnostics.substeps).toBe(50);
   });
 });

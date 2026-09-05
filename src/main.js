@@ -152,7 +152,6 @@ renderer.add(photonRenderer.markerObject);
 renderer.add(photonRenderer.trailObject);
 
 const geodesicSubsystem = new SchwarzschildParticleSubsystem({ particles });
-clock.setHighSpeedDelta(geodesicSubsystem.maximumSafeAdvanceSeconds());
 const unitFormatter = new UnitFormatter({ locale: getLocale });
 const scaleIndicator = resources.register(new ScaleIndicator(
   document.querySelector("#viewport-shell"), scaleTransform, unitFormatter,
@@ -260,8 +259,7 @@ const runtimeControls = {
     } : null;
     geodesicSubsystem.apply(configuration);
     photonSubsystem.setMassSolar(geodesicSubsystem.configuration.massSolar);
-    clock.setHighSpeedDelta(geodesicSubsystem.maximumSafeAdvanceSeconds());
-    const current = refreshPresentationSnapshot(true);
+        const current = refreshPresentationSnapshot(true);
     applyGridVisualization();
     particleRenderer.sync(particles);
     scaleIndicator.recordApplied(previousValues, current);

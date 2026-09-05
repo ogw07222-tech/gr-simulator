@@ -40,38 +40,47 @@ export class SchwarzschildGeodesicSystem {
   advanceProperTimeSI(deltaSeconds) {
     if (this.status !== GeodesicStatus.ACTIVE || deltaSeconds === 0) return 0;
     if (!(deltaSeconds > 0) || !Number.isFinite(deltaSeconds)) throw new RangeError("Integration time must be positive and finite.");
-    const normalizedDelta = this.units.siTimeToNormalized(deltaSeconds);
-    const substeps = Math.ceil(normalizedDelta / this.maximumNormalizedStep);
-    if (substeps > this.maximumSubsteps) {
-      this.status = GeodesicStatus.NUMERICAL_FAILURE;
-      this.classification = classifyOrbit(this.state, this.status);
-      return 0;
-    }
-    const step = normalizedDelta / substeps;
-    for (let index = 0; index < substeps; index += 1) {
-      const currentRadius = this.state.values[I.RADIUS];
-      const currentRadialVelocity = this.state.values[I.RADIAL_VELOCITY];
-      if (currentRadialVelocity < 0 && currentRadius + currentRadialVelocity * step <= this.captureRadius) {
-        this.status = GeodesicStatus.CAPTURED;
-        break;
+
+    const targetProperTime = this.state.values[I.PROPER_TIME] + this.units.siTimeToNormalized(deltaSeconds);
+    const maximumBatchAdvance = this.maximumNormalizedStep * this.maximumSubsteps;
+    while (this.status === GeodesicStatus.ACTIVE && this.state.values[I.PROPER_TIME] < targetProperTime) {
+      const beforeBatchProperTime = this.state.values[I.PROPER_TIME];
+      const remaining = targetProperTime - beforeBatchProperTime;
+      const batchAdvance = Math.min(remaining, maximumBatchAdvance);
+      const substeps = Math.ceil(batchAdvance / this.maximumNormalizedStep);
+      const step = batchAdvance / substeps;
+
+      for (let index = 0; index < substeps; index += 1) {
+        const currentRadius = this.state.values[I.RADIUS];
+        const currentRadialVelocity = this.state.values[I.RADIAL_VELOCITY];
+        if (currentRadialVelocity < 0 && currentRadius + currentRadialVelocity * step <= this.captureRadius) {
+          this.status = GeodesicStatus.CAPTURED;
+          break;
+        }
+        this.#rk4(step);
+        const radius = this.candidate[I.RADIUS];
+        if (!this.#candidateFinite()) {
+          this.status = GeodesicStatus.NUMERICAL_FAILURE;
+          break;
+        }
+        if (radius <= this.captureRadius) {
+          this.status = GeodesicStatus.CAPTURED;
+          break;
+        }
+        if (radius > this.maximumRadius) {
+          this.status = GeodesicStatus.OUT_OF_DOMAIN;
+          break;
+        }
+        this.state.values.set(this.candidate);
+        this.diagnostics.substeps += 1;
+        this.diagnostics.update(this.state);
       }
-      this.#rk4(step);
-      const radius = this.candidate[I.RADIUS];
-      if (!this.#candidateFinite()) {
+
+      if (this.status !== GeodesicStatus.ACTIVE || this.state.values[I.PROPER_TIME] >= targetProperTime) break;
+      if (this.state.values[I.PROPER_TIME] <= beforeBatchProperTime) {
         this.status = GeodesicStatus.NUMERICAL_FAILURE;
         break;
       }
-      if (radius <= this.captureRadius) {
-        this.status = GeodesicStatus.CAPTURED;
-        break;
-      }
-      if (radius > this.maximumRadius) {
-        this.status = GeodesicStatus.OUT_OF_DOMAIN;
-        break;
-      }
-      this.state.values.set(this.candidate);
-      this.diagnostics.substeps += 1;
-      this.diagnostics.update(this.state);
     }
     this.classification = classifyOrbit(this.state, this.status);
     return this.diagnostics.substeps;

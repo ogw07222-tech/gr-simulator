@@ -198,6 +198,9 @@ export class SchwarzschildParticleSubsystem {
   reset() { return this.apply(this.configuration); }
 
   maximumSafeAdvanceSeconds() {
+    // Legacy helper: this is the capacity of one bounded solver batch, not a
+    // limit on a runtime request. advanceProperTimeSI() repeats batches until
+    // the requested interval is consumed or the physical trajectory terminates.
     return this.units.normalizedTimeToSI(
       this.geodesic.maximumNormalizedStep * this.geodesic.maximumSubsteps,
     );
