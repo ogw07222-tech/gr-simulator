@@ -1,0 +1,44 @@
+name: Temporary Audit v0.8 Runtime Stepping Final Head
+
+on:
+  push:
+    paths:
+      - .github/workflows/tmp-audit-v080-final-head.yml
+
+jobs:
+  validate:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - name: Verify exact product parent
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD^)" = "faf7df516b33abe7332c3b1ac546190e25c1d1b7"
+          git diff --check b29f41f78ebe504e084232f0f29b2fbc86d86cf6 faf7df516b33abe7332c3b1ac546190e25c1d1b7
+          test "$(git diff --name-only b29f41f78ebe504e084232f0f29b2fbc86d86cf6 faf7df516b33abe7332c3b1ac546190e25c1d1b7 | wc -l)" -eq 10
+          git diff --exit-code b29f41f78ebe504e084232f0f29b2fbc86d86cf6 faf7df516b33abe7332c3b1ac546190e25c1d1b7 -- audits package.json package-lock.json CHANGELOG.md .github/AUDIT_POLICY.md .github/workflows/scientific-audit-automerge.yml
+      - run: npm ci
+      - name: Lint
+        run: npm run lint
+      - name: Full test suite
+        run: npm run test
+      - name: Physics suite
+        run: npm run test:physics
+      - name: Focused audit and scientific regressions
+        run: npx vitest run tests/physics/runtime-stepping-audit.test.js tests/unit/photon-performance-gate.test.js tests/physics/schwarzschild-null-validation.test.js tests/physics/schwarzschild-photon-reference.test.js tests/physics/schwarzschild-photon-deflection.test.js tests/unit/photon-light-bending.test.js tests/physics/schwarzschild-validation.test.js tests/unit/schwarzschild-particle-subsystem.test.js
+      - name: Build
+        run: npm run build
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
+      - name: Lightweight Chromium smoke
+        env:
+          CI: ""
+        run: npx playwright test tests/e2e/app.smoke.spec.js --project=chromium --grep "preserves simulation behavior while switching scientific UI locales" --reporter=list
