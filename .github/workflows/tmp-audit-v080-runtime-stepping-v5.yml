@@ -1,0 +1,143 @@
+name: Temporary v0.8 Audit Runtime Stepping Validation v5
+
+on:
+  push:
+    paths:
+      - .github/workflows/tmp-audit-v080-runtime-stepping-v5.yml
+
+permissions:
+  contents: write
+
+jobs:
+  validate:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - name: Apply focused audit patch
+        run: |
+          node scripts/tmp-audit-v080-runtime-stepping.mjs
+          node scripts/tmp-audit-v080-regression-adjust.mjs
+      - name: Audit patch scope
+        shell: bash
+        run: |
+          set -euo pipefail
+          git diff --check
+          {
+            git diff --name-only b29f41f78ebe504e084232f0f29b2fbc86d86cf6 -- . \
+              ':(exclude).github/workflows/tmp-audit-v080-runtime-stepping.yml' \
+              ':(exclude).github/workflows/tmp-audit-v080-runtime-stepping-v3.yml' \
+              ':(exclude).github/workflows/tmp-audit-v080-runtime-stepping-v4.yml' \
+              ':(exclude).github/workflows/tmp-audit-v080-runtime-stepping-v5.yml' \
+              ':(exclude)scripts/tmp-audit-v080-runtime-stepping.mjs' \
+              ':(exclude)scripts/tmp-audit-v080-regression-adjust.mjs'
+            git ls-files --others --exclude-standard -- tests/physics/runtime-stepping-audit.test.js
+          } | sort -u > /tmp/actual.txt
+          cat > /tmp/expected.txt <<'EOF'
+          docs/PHYSICS.md
+          docs/UNIT_SYSTEM.md
+          src/main.js
+          src/physics/relativity/SchwarzschildGeodesicSystem.js
+          src/physics/relativity/SchwarzschildNullGeodesicSystem.js
+          src/systems/SchwarzschildParticleSubsystem.js
+          src/ui/i18n/en.js
+          src/ui/i18n/ko.js
+          tests/physics/runtime-stepping-audit.test.js
+          tests/unit/schwarzschild-geodesics.test.js
+          EOF
+          sed -i 's/^          //' /tmp/expected.txt
+          sort -o /tmp/expected.txt /tmp/expected.txt
+          diff -u /tmp/expected.txt /tmp/actual.txt
+          git diff --exit-code b29f41f78ebe504e084232f0f29b2fbc86d86cf6 -- \
+            audits .github/AUDIT_POLICY.md .github/workflows/scientific-audit-automerge.yml \
+            package.json package-lock.json CHANGELOG.md
+      - name: Install dependencies
+        run: npm ci
+      - name: Lint product tree
+        run: npx eslint . --ignore-pattern scripts/tmp-audit-v080-runtime-stepping.mjs --ignore-pattern scripts/tmp-audit-v080-regression-adjust.mjs
+      - name: Focused audit regressions
+        run: npx vitest run tests/physics/runtime-stepping-audit.test.js tests/unit/schwarzschild-geodesics.test.js tests/unit/photon-performance-gate.test.js
+      - name: Photon scientific regressions
+        run: npx vitest run tests/physics/schwarzschild-null-validation.test.js tests/physics/schwarzschild-photon-reference.test.js tests/physics/schwarzschild-photon-deflection.test.js tests/unit/photon-light-bending.test.js tests/unit/photon-bundles.test.js tests/unit/photon-inspector.test.js
+      - name: Timelike scientific regressions
+        run: npx vitest run tests/physics/schwarzschild-validation.test.js tests/unit/schwarzschild-particle-subsystem.test.js tests/unit/geodesic-motion-pipeline.test.js tests/unit/simulation-clock.test.js
+      - name: Full test suite
+        run: npx vitest run
+      - name: Physics suite
+        run: npm run test:physics
+      - name: Build
+        run: npm run build
+      - name: Numerical evidence
+        shell: bash
+        run: |
+          node --input-type=module <<'NODE'
+          import {
+            GeodesicStatus, PhotonStatus, SchwarzschildGeodesicSystem,
+            SchwarzschildNullGeodesicSystem, SchwarzschildUnits,
+            createCircularInitialCondition, solarMassesToKilograms,
+          } from './src/physics/index.js';
+          import { PhotonSubsystem } from './src/systems/index.js';
+          const tick = 1 / 240;
+          const units = new SchwarzschildUnits(solarMassesToKilograms(1));
+          const bcrit = 3 * Math.sqrt(3) / 2;
+          const photon = new SchwarzschildNullGeodesicSystem({ units, maximumRadius: 100 });
+          photon.initialize({ radius: 1.5, energy: 1, angularMomentum: bcrit, radialVelocity: 0 });
+          const p0 = photon.coordinateTimeSI();
+          photon.advanceCoordinateTimeSI(tick);
+          const timelike = new SchwarzschildGeodesicSystem({ units });
+          timelike.initialize(createCircularInitialCondition(6));
+          const t0 = timelike.properTimeSI();
+          timelike.advanceProperTimeSI(tick);
+          const off = new PhotonSubsystem({ enabled: false, massSolar: 1, photonCount: 64 });
+          const affineBefore = off.geodesic.affineParameter();
+          off.resetWorkCounters();
+          off.update(tick);
+          off.render();
+          console.log('AUDIT_EVIDENCE', JSON.stringify({
+            photon: {
+              status: photon.status,
+              requestedSeconds: tick,
+              consumedSeconds: photon.coordinateTimeSI() - p0,
+              affine: photon.affineParameter(),
+              maxRelativeNullError: photon.diagnostics.maximumRelativeNullError,
+            },
+            timelike: {
+              status: timelike.status,
+              requestedSeconds: tick,
+              consumedSeconds: timelike.properTimeSI() - t0,
+              energyDrift: timelike.diagnostics.relativeEnergyDrift,
+              angularMomentumDrift: timelike.diagnostics.relativeAngularMomentumDrift,
+              normalizationResidual: timelike.diagnostics.normalizationResidual,
+            },
+            off64: { ...off.getDiagnostics(), affineUnchanged: off.geodesic.affineParameter() === affineBefore },
+            sanity: { photonActive: photon.status === PhotonStatus.ACTIVE, timelikeActive: timelike.status === GeodesicStatus.ACTIVE },
+          }));
+          NODE
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
+      - name: Lightweight Chromium smoke
+        env:
+          CI: ""
+        run: npx playwright test tests/e2e/app.smoke.spec.js --project=chromium --grep "preserves simulation behavior while switching scientific UI locales" --reporter=list
+      - name: Commit validated product changes
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add \
+            docs/PHYSICS.md docs/UNIT_SYSTEM.md src/main.js \
+            src/physics/relativity/SchwarzschildGeodesicSystem.js \
+            src/physics/relativity/SchwarzschildNullGeodesicSystem.js \
+            src/systems/SchwarzschildParticleSubsystem.js \
+            src/ui/i18n/en.js src/ui/i18n/ko.js \
+            tests/physics/runtime-stepping-audit.test.js \
+            tests/unit/schwarzschild-geodesics.test.js
+          git commit -m "fix(physics): resolve low-mass runtime stepping audit failures"
+          git push origin HEAD:tmp/audit-v080-runtime-stepping-validation
