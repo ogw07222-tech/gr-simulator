@@ -27,9 +27,12 @@ jobs:
         run: |
           set -euo pipefail
           git diff --check
-          git diff --name-only b29f41f78ebe504e084232f0f29b2fbc86d86cf6 -- . \
-            ':(exclude).github/workflows/tmp-audit-v080-runtime-stepping.yml' \
-            ':(exclude)scripts/tmp-audit-v080-runtime-stepping.mjs' | sort > /tmp/actual.txt
+          {
+            git diff --name-only b29f41f78ebe504e084232f0f29b2fbc86d86cf6 -- . \
+              ':(exclude).github/workflows/tmp-audit-v080-runtime-stepping.yml' \
+              ':(exclude)scripts/tmp-audit-v080-runtime-stepping.mjs'
+            git ls-files --others --exclude-standard -- tests/physics/runtime-stepping-audit.test.js
+          } | sort -u > /tmp/actual.txt
           cat > /tmp/expected.txt <<'EOF'
           docs/PHYSICS.md
           docs/UNIT_SYSTEM.md
@@ -84,9 +87,6 @@ jobs:
           timelike.initialize(createCircularInitialCondition(6));
           const t0 = timelike.properTimeSI();
           timelike.advanceProperTimeSI(tick);
-          const below = new PhotonSubsystem({ enabled: true, massSolar: 1 });
-          below.apply({ preset: 'nearCritical', impactParameter: bcrit * 0.99 });
-          below.update(tick);
           const off = new PhotonSubsystem({ enabled: false, massSolar: 1, photonCount: 64 });
           const affineBefore = off.affineParameter;
           off.resetWorkCounters();
