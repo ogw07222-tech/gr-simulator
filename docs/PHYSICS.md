@@ -62,6 +62,12 @@ The black central sphere is a presentation silhouette. The green translucent she
 
 The legacy grid deformation proxy remains unchanged and is separate from the new particle solver. Production particle motion uses conserved specific energy and angular momentum in a fixed analytic Schwarzschild metric, restricted to massive equatorial test particles. Equations, conventions, and coordinate limitations are defined in `SCHWARZSCHILD_GEODESICS.md`; the SI boundary is defined in `UNIT_SYSTEM.md`.
 
+## v0.8 photon runtime-time mapping
+
+Photon runtime updates use Schwarzschild **coordinate time**, not photon proper time and not a direct assumption that affine parameter equals seconds. For each runtime `deltaSeconds`, the null solver targets the corresponding SI coordinate-time increment, converts it to normalized Schwarzschild time through `r_s/c`, and advances the affine parameter through the existing relation `dt/dλ = E/f(r)` while retaining the validated RK4 null equations and affine-step limit. Render positions continue to come only from the integrated authoritative null state.
+
+At the untouched default 1× global clock, a `4×10^6 M☉` black hole has `r_s/c ≈ 39.4 s`, so physically correct photon motion is sub-pixel on ordinary frames. When photons are first enabled from that untouched 1× state, the application selects the smallest existing **global** time-scale preset that advances at least one Schwarzschild time unit per wall-clock second (50× for the default mass). This accelerates the whole simulation clock rather than applying any photon-only visual speed multiplier. Explicit user-selected non-default time scales are preserved.
+
 ## v0.8 Schwarzschild photon foundation
 
 v0.8 adds a separate equatorial null-geodesic solver in the same fixed analytic Schwarzschild spacetime. It advances photons with an affine parameter, not proper time, and validates the event horizon at `1.0 r_s`, photon sphere at `1.5 r_s`, and critical impact parameter `b_crit = (3√3/2) r_s`. Capture, scattering, near-critical strong deflection, null-condition error, numerical deflection, bounded 1/8/32/64 bundles, the shared Photon Inspector, and the Light Bending demo are documented in `PHOTON_FOUNDATION.md`. The existing massive/timelike solver is unchanged.

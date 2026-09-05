@@ -112,11 +112,8 @@ export const en = Object.freeze({
   },
   geodesic: {
     title: "Scientific Geodesic HUD", mass: "Black-hole mass", schwarzschildRadius: "Schwarzschild radius",
-    radius: "Particle radius", localSpeed: "Local static-observer speed", coordinateTime: "Coordinate time",
-    properTime: "Proper time", energy: "Specific energy ε", angularMomentum: "Specific angular momentum λ / SI",
-    classification: "Orbit classification", status: "Integration status", energyDrift: "Relative energy drift",
-    angularMomentumDrift: "Relative angular-momentum drift", normalizationResidual: "Four-velocity residual",
-    substeps: "Integrator substeps",
+    energyDrift: "Relative energy drift", angularMomentumDrift: "Relative angular-momentum drift",
+    normalizationResidual: "Four-velocity residual", substeps: "Integrator substeps",
   },
   scale: {
     section: "Scale and View", viewMode: "View mode",
@@ -140,7 +137,7 @@ export const en = Object.freeze({
     workflows: { title: "Orbit workflows", body: "Circular orbit derives conserved quantities from radius. Periapsis Precession Demo derives a stable bound Schwarzschild orbit from eccentricity. Local velocity uses radial and tangential speeds measured by a static observer. Conserved quantities accepts ε and λ directly and requires a radial direction." },
     examples: { title: "Example experiments", body: "Stable circular: 6 rₛ. Periapsis precession: choose the demo and vary eccentricity. Radial plunge: local velocity at 4 rₛ with βᵣ = −0.8 and βφ = 0. Outward domain exit: ε = 1.2, λ = 0 at 5 rₛ, outward." },
     integrator: { title: "Integrator and step controls", body: "The engine uses a fixed 1/240 s runtime step and classical RK4. The solver limits normalized substeps to 0.02 and caps work per update. Raise the cap only when a valid trajectory reports insufficient substeps." },
-    measurements: { title: "Measurements and classifications", body: "The HUD reports coordinate and proper time, radius, local speed, conserved quantities, drift, four-velocity residual, substeps, status, and an observational orbit classification." },
+    measurements: { title: "Measurements and classifications", body: "The selected-object Inspector owns particle radius, local speed, coordinate/proper time, conserved quantities, status, and classification. The base HUD keeps global black-hole context plus numerical drift, four-velocity residual, and integrator substeps." },
     scope: { title: "Scientific scope and limitations", body: "This release integrates timelike test-particle motion in a fixed Schwarzschild spacetime. It is not a numerical-relativity solver and does not model spin, backreaction, radiation reaction, collisions, or extended bodies." },
     scaleViews: { title: "Normalized and physical scale", body: "Normalized View uses 1 world unit = 1 rₛ, so equal r/rₛ values keep the same proportions as mass changes. Physical Scale View converts SI metres through the configured metres per world unit, so mass growth visibly enlarges the horizon and orbit. Auto-fit uses the same physical geometry and changes only camera framing. The educational grid remains a normalized visualization proxy, not a literal SI ruler." },
   },
