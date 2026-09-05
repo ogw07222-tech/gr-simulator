@@ -108,29 +108,33 @@ export class SchwarzschildNullGeodesicSystem {
 
     const targetTime = this.state.values[I.TIME] + deltaTime;
     let completed = 0;
-    let steps = 0;
-    while (this.status === PhotonStatus.ACTIVE
-      && this.state.values[I.TIME] < targetTime
-      && steps < this.maximumSubsteps) {
-      const radius = this.state.values[I.RADIUS];
-      const lapseSquared = SchwarzschildMetric.lapseSquared(radius);
-      const dtDlambda = this.state.energy / lapseSquared;
-      const remainingTime = targetTime - this.state.values[I.TIME];
-      const affineStep = Math.min(this.maximumAffineStep, remainingTime / dtDlambda);
-      if (!(affineStep > 0) || !Number.isFinite(affineStep)) {
+    while (this.status === PhotonStatus.ACTIVE && this.state.values[I.TIME] < targetTime) {
+      const beforeBatchTime = this.state.values[I.TIME];
+      let batchSteps = 0;
+      while (this.status === PhotonStatus.ACTIVE
+        && this.state.values[I.TIME] < targetTime
+        && batchSteps < this.maximumSubsteps) {
+        const radius = this.state.values[I.RADIUS];
+        const lapseSquared = SchwarzschildMetric.lapseSquared(radius);
+        const dtDlambda = this.state.energy / lapseSquared;
+        const remainingTime = targetTime - this.state.values[I.TIME];
+        const affineStep = Math.min(this.maximumAffineStep, remainingTime / dtDlambda);
+        if (!(affineStep > 0) || !Number.isFinite(affineStep)) {
+          this.status = PhotonStatus.NUMERICAL_FAILURE;
+          break;
+        }
+        const beforeTime = this.state.values[I.TIME];
+        const advanced = this.advanceAffine(affineStep);
+        completed += advanced;
+        batchSteps += 1;
+        if (advanced === 0 || this.state.values[I.TIME] <= beforeTime) break;
+      }
+
+      if (this.status !== PhotonStatus.ACTIVE || this.state.values[I.TIME] >= targetTime) break;
+      if (this.state.values[I.TIME] <= beforeBatchTime) {
         this.status = PhotonStatus.NUMERICAL_FAILURE;
         break;
       }
-      const beforeTime = this.state.values[I.TIME];
-      const advanced = this.advanceAffine(affineStep);
-      completed += advanced;
-      steps += 1;
-      if (advanced === 0 || this.state.values[I.TIME] <= beforeTime) break;
-    }
-    if (this.status === PhotonStatus.ACTIVE
-      && this.state.values[I.TIME] < targetTime
-      && steps >= this.maximumSubsteps) {
-      this.status = PhotonStatus.NUMERICAL_FAILURE;
     }
     return completed;
   }
