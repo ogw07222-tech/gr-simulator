@@ -1,0 +1,82 @@
+name: Sync issues to Projects
+on:
+  issues:
+    types: [opened, reopened, labeled, unlabeled, closed]
+  workflow_dispatch:
+permissions:
+  contents: read
+  issues: read
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Add issue and sync status
+        uses: actions/github-script@v7
+        env:
+          PROJECTS_TOKEN: ${{ secrets.PROJECTS_TOKEN }}
+          PROJECT_NUMBER: ${{ vars.PROJECT_NUMBER }}
+          PROJECT_OWNER: ${{ vars.PROJECT_OWNER }}
+        with:
+          github-token: ${{ secrets.PROJECTS_TOKEN || github.token }}
+          script: |
+            const token = process.env.PROJECTS_TOKEN;
+            const number = Number(process.env.PROJECT_NUMBER);
+            const owner = process.env.PROJECT_OWNER || context.repo.owner;
+            if (!token || !Number.isInteger(number) || number < 1) {
+              core.notice('Projects sync not configured: set PROJECTS_TOKEN and PROJECT_NUMBER.');
+              return;
+            }
+            if (!context.payload.issue) {
+              core.notice('Manual run has no issue payload; skipped.');
+              return;
+            }
+            const issue = context.payload.issue;
+            const graph = github.graphql;
+            const query = `query($owner: String!, $number: Int!) {
+              organization(login: $owner) { projectV2(number: $number) { id fields(first: 100) {
+                nodes { ... on ProjectV2SingleSelectField { id name options { id name } } }
+              } } }
+              user(login: $owner) { projectV2(number: $number) { id fields(first: 100) {
+                nodes { ... on ProjectV2SingleSelectField { id name options { id name } } }
+              } } }
+            }`;
+            // GitHub may return an error when organization(login:) is used on a user.
+            async function load(kind) {
+              const q = `query($owner: String!, $number: Int!) {
+                ${kind}(login: $owner) { projectV2(number: $number) {
+                  id fields(first: 100) { nodes { ... on ProjectV2SingleSelectField {
+                    id name options { id name }
+                  } } }
+                } }
+              }`;
+              try { return (await graph(q, {owner, number}))[kind]?.projectV2; }
+              catch (e) { core.info(`${kind} lookup skipped: ${e.message}`); return null; }
+            }
+            const project = (await load('organization')) || (await load('user'));
+            if (!project) throw new Error('Project not found or token lacks Projects access.');
+            const added = await graph(`mutation($project: ID!, $issue: ID!) {
+              addProjectV2ItemById(input: {projectId: $project, contentId: $issue}) {
+                item { id }
+              }
+            }`, {project: project.id, issue: issue.node_id});
+            const itemId = added.addProjectV2ItemById.item.id;
+            const field = project.fields.nodes.find(f => f?.name?.toLowerCase() === 'status');
+            if (!field) { core.notice('Issue added; Status single-select field missing.'); return; }
+            const labels = issue.labels.map(x => x.name.toLowerCase());
+            const desired = issue.state === 'closed' ? ['done', '완료'] :
+              labels.includes('status:idea') ? ['idea','ideas','아이디어'] :
+              labels.includes('status:review') ? ['review','검증'] :
+              labels.includes('status:in-progress') ? ['in progress','in-progress','진행 중','작업 중'] :
+              ['todo','to do','할 일'];
+            const option = field.options.find(x => desired.includes(x.name.toLowerCase()));
+            if (!option) {
+              core.notice(`Issue added, but Status option not found: ${desired.join(' / ')}`);
+              return;
+            }
+            await graph(`mutation($project: ID!, $item: ID!, $field: ID!, $option: String!) {
+              updateProjectV2ItemFieldValue(input: {
+                projectId: $project, itemId: $item, fieldId: $field,
+                value: {singleSelectOptionId: $option}
+              }) { projectV2Item { id } }
+            }`, {project: project.id, item: itemId, field: field.id, option: option.id});
+            core.info(`Synced issue #${issue.number} => ${option.name}`);
